@@ -116,6 +116,15 @@ test('point in polygon + zoneForPoint', () => {
   assert.equal(c.zoneForPoint([{ id: 'a', polygon: sq }], 20, 2), null);
 });
 
+test('zones stored as {lat,lng} points (Firestore-safe) + distance', () => {
+  const zone = { id: 'z', points: [{ lat: 0, lng: 0 }, { lat: 0, lng: 10 }, { lat: 10, lng: 10 }, { lat: 10, lng: 0 }] };
+  assert.equal(c.zoneForPoint([zone], 5, 5), 'z');
+  assert.equal(c.zoneForPoint([zone], 15, 5), null);
+  assert.equal(c.zoneForPoint([{ id: 'empty', points: [] }], 5, 5), null);
+  const m = c.metersBetween({ lat: 32.46, lng: -84.98 }, { lat: 32.47, lng: -84.98 });
+  assert.ok(m > 1100 && m < 1120, `~1112 m, got ${m}`);
+});
+
 test('stale GPS after 3 min', () => {
   assert.equal(c.isLocationStale({ at: 0 }, 180_000), false);
   assert.equal(c.isLocationStale({ at: 0 }, 180_001), true);

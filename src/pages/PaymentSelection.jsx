@@ -44,6 +44,8 @@ export default function PaymentSelection() {
         phone: normalizePhone(ride.phone),
         cardholderName: cardholderName || null,
         pickup: ride.pickup,
+        pickupLat: typeof ride.pickupLat === "number" ? ride.pickupLat : null,
+        pickupLng: typeof ride.pickupLng === "number" ? ride.pickupLng : null,
         dropoff: ride.dropoff,
         outOfArea: !!ride.outOfArea,
         outOfAreaCity: ride.outOfArea ? ride.outOfAreaCity || null : null,

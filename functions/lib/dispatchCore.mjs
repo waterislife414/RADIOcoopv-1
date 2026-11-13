@@ -266,10 +266,33 @@ export function pointInPolygon(lng, lat, polygon) {
   return true;
 }
 
+/**
+ * Zone outline as polygon rings. Firestore can't store nested arrays, so
+ * zones are saved as points: [{lat, lng}, ...]; GeoJSON `polygon` also works.
+ */
+export function zonePolygon(zone) {
+  if (zone?.points?.length >= 3) return [zone.points.map((p) => [p.lng, p.lat])];
+  if (zone?.polygon) return zone.polygon.coordinates ?? zone.polygon;
+  return null;
+}
+
 /** First zone containing the point, or null. */
 export function zoneForPoint(zones, lng, lat) {
-  const z = zones.find((zone) => zone.polygon && pointInPolygon(lng, lat, zone.polygon));
+  const z = zones.find((zone) => {
+    const poly = zonePolygon(zone);
+    return poly && pointInPolygon(lng, lat, poly);
+  });
   return z ? z.id : null;
+}
+
+/** Straight-line distance in meters (for "moved far enough to report"). */
+export function metersBetween(a, b) {
+  const R = 6371000;
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
 }
 
 /** Location older than staleMin → driver falls off the board. */

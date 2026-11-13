@@ -1,6 +1,6 @@
 // Regenerates every file that must mirror branding.config.json:
 //   - public/manifest.webmanifest  (PWA install name/colors)
-//   - functions/branding.json      (backend: product names + tier prices)
+//   - functions/branding.json      (backend: product names, tier prices, dispatch defaults)
 // Runs automatically via the "prebuild" npm hook — never edit those two by hand.
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -36,6 +36,7 @@ const backend = {
   perMileCents: Math.round(branding.pricing.fare.PER_MILE * 100),
   subscriptionTrialDays: branding.pricing.subscriptionTrialDays,
   dataRetentionDays: branding.policies.dataRetentionDays,
+  dispatch: branding.dispatch,
 };
 writeFileSync(join(root, "functions/branding.json"), JSON.stringify(backend, null, 2) + "\n");
 

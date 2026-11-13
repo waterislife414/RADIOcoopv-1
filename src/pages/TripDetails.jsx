@@ -25,6 +25,30 @@ export default function TripDetails() {
   const [showStops, setShowStops] = useState(ride.stops.length > 0);
   const [scheduleType, setScheduleType] = useState(ride.scheduleType);
   const [error, setError] = useState("");
+  const [locating, setLocating] = useState(false);
+  const [locateError, setLocateError] = useState("");
+
+  // Optional: attaches the rider's GPS pin so the ride lands in the right
+  // zone and the driver can navigate straight to them.
+  function shareLocation() {
+    if (!navigator.geolocation) {
+      setLocateError("Your phone can't share location here. Type your address instead.");
+      return;
+    }
+    setLocating(true);
+    setLocateError("");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        updateRide({ pickupLat: pos.coords.latitude, pickupLng: pos.coords.longitude });
+        setLocating(false);
+      },
+      () => {
+        setLocateError("Couldn't get your location. Type your address instead.");
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000 }
+    );
+  }
 
   useEffect(() => {
     if (!currentUser || !userProfile) return;
@@ -127,6 +151,23 @@ export default function TripDetails() {
                 onChange={(e) => updateRide({ pickup: e.target.value })}
                 placeholder={COPY.pickupPlaceholder}
               />
+              <button
+                type="button"
+                onClick={shareLocation}
+                disabled={locating}
+                className={`mt-2 w-full rounded-xl py-2.5 text-base font-semibold border-2 transition ${
+                  typeof ride.pickupLat === "number"
+                    ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                    : "border-slate-300 text-slate-700"
+                }`}
+              >
+                {typeof ride.pickupLat === "number"
+                  ? "✓ Your location is attached — drivers find you faster"
+                  : locating
+                    ? "Finding you…"
+                    : "\u{1F4CD} Share my location with the driver"}
+              </button>
+              {locateError && <p className="text-sm text-red-600 mt-1">{locateError}</p>}
             </div>
 
             <div>

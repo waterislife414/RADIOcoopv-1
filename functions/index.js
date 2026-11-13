@@ -598,3 +598,4 @@ exports.purgeStaleGuestRides = onSchedule(
 
 // Driver accounts, auto-dispatch, lease ledger (see drivers.js etc.).
 Object.assign(exports, require("./drivers"));
+Object.assign(exports, require("./zones"));

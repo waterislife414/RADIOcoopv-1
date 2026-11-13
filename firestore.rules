@@ -80,6 +80,12 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Zone names + map shapes (drawn in the admin Zone Editor).
+    match /zones/{zoneId} {
+      allow read: if isAdmin() || isDriver();
+      allow write: if isAdmin();
+    }
+
     // Fleet: car #, plate, wheelchair van flag.
     match /vehicles/{carNumber} {
       allow read: if isAdmin() || isDriver();

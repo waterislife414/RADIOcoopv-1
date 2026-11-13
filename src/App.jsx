@@ -27,6 +27,7 @@ import PostSignupUpsell from "./pages/PostSignupUpsell";
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const DispatcherDashboard = lazy(() => import("./pages/admin/DispatcherDashboard"));
 const DriversAdmin = lazy(() => import("./pages/admin/DriversAdmin"));
+const ZoneEditor = lazy(() => import("./pages/admin/ZoneEditor"));
 // Driver screens load only for drivers, same as the dispatcher terminal.
 const DriverSignIn = lazy(() => import("./pages/driver/DriverSignIn"));
 const DriverHome = lazy(() => import("./pages/driver/DriverHome"));
@@ -121,6 +122,17 @@ export default function App() {
                 <RequireAdmin>
                   <Suspense fallback={<AdminLoadingFallback />}>
                     <DriversAdmin />
+                  </Suspense>
+                </RequireAdmin>
+              }
+            />
+
+            <Route
+              path="/admin/zones"
+              element={
+                <RequireAdmin>
+                  <Suspense fallback={<AdminLoadingFallback />}>
+                    <ZoneEditor />
                   </Suspense>
                 </RequireAdmin>
               }

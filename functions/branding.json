@@ -10,5 +10,96 @@
   "baseFareCents": 216,
   "perMileCents": 198,
   "subscriptionTrialDays": 7,
-  "dataRetentionDays": 5
+  "dataRetentionDays": 5,
+  "dispatch": {
+    "_note": "Zone board + auto-dispatch defaults for this client. Zone shapes are drawn in the admin Zone Editor; this list only seeds names and order.",
+    "timeZone": "America/New_York",
+    "mapCenter": {
+      "lat": 32.44,
+      "lng": -84.96
+    },
+    "mapZoom": 11,
+    "zones": [
+      {
+        "id": "downtown",
+        "label": "Downtown"
+      },
+      {
+        "id": "north-highland",
+        "label": "North Highland"
+      },
+      {
+        "id": "beallwood",
+        "label": "Beallwood"
+      },
+      {
+        "id": "rose-hill",
+        "label": "Rose Hill"
+      },
+      {
+        "id": "peachtree",
+        "label": "Peachtree"
+      },
+      {
+        "id": "airport",
+        "label": "Airport"
+      },
+      {
+        "id": "wynnton",
+        "label": "Wynnton"
+      },
+      {
+        "id": "east-wynnton",
+        "label": "East Wynnton"
+      },
+      {
+        "id": "east",
+        "label": "East"
+      },
+      {
+        "id": "midland",
+        "label": "Midland"
+      },
+      {
+        "id": "baker",
+        "label": "Baker"
+      },
+      {
+        "id": "the-park",
+        "label": "The Park"
+      },
+      {
+        "id": "fort-benning",
+        "label": "Fort Benning",
+        "requiresCert": "base"
+      },
+      {
+        "id": "phenix-city",
+        "label": "Phenix City"
+      }
+    ],
+    "geocodeFallbackCities": [
+      "Columbus, GA",
+      "Phenix City, AL"
+    ],
+    "lease": {
+      "dailyCents": 7500,
+      "dueStart": "14:00",
+      "dueEnd": "16:00",
+      "exitPayoutPct": 50,
+      "includeTips": true
+    },
+    "offer": {
+      "pings": 3,
+      "pingIntervalSec": 15
+    },
+    "maxWarnings": 3,
+    "dropOffPlacement": "front",
+    "gps": {
+      "staleMin": 3,
+      "outOfZoneMin": 3,
+      "minMoveMeters": 50,
+      "maxIntervalSec": 45
+    }
+  }
 }

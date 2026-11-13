@@ -6,6 +6,8 @@ const initialRide = {
   guestFirstName: "",
   guestLastName: "",
   pickup: "",
+  pickupLat: null,
+  pickupLng: null,
   dropoff: "",
   passengers: 1,
   stops: [],
