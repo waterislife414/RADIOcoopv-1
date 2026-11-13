@@ -161,6 +161,9 @@ export default function RideCard({ ride, customerStatus, carFor, zones, onSetZon
         )}
       </div>
 
+      {ride.notes && <p className="text-sm text-slate-700">{"\u{1F4DD}"} {ride.notes}</p>}
+      {ride.source === "phone" && <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Phone call</p>}
+
       {ride.phone && (
         <a href={`tel:${ride.phone}`} className="text-blue-600 text-base font-semibold block">
           {ride.phone}

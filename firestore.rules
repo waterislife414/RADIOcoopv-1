@@ -142,6 +142,12 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // Repeat phone callers (name + usual places), for dispatcher Quick Entry.
+    match /phoneRiders/{phone} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     match /promo_codes/{codeId} {
       allow read: if true;
       allow write: if isAdmin();

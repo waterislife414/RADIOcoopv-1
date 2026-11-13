@@ -63,6 +63,7 @@ export default function CurrentRide({ ride }) {
           )}
         </div>
       )}
+      {ride.notes && <p className="text-amber-200">{"\u{1F4DD}"} {ride.notes}</p>}
       <div className="flex flex-wrap gap-2 text-sm">
         {ride.riderName && <span className="rounded-full bg-white/10 px-3 py-1">{ride.riderName}</span>}
         {ride.passengers > 1 && <span className="rounded-full bg-white/10 px-3 py-1">{ride.passengers} riders</span>}

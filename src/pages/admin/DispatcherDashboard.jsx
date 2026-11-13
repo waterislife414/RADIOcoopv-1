@@ -27,6 +27,7 @@ import DispatchModePanel from "../../components/admin/DispatchModePanel";
 import AssignCarModal from "../../components/admin/AssignCarModal";
 import CarActionsModal from "../../components/admin/CarActionsModal";
 import LeaseAlert from "../../components/admin/LeaseAlert";
+import QuickEntry from "../../components/admin/QuickEntry";
 import { useLiveBoard } from "../../hooks/useLiveBoard";
 import { OFFICE_ADDRESS, COMPANY_PHONE_DISPLAY, COPY } from "../../config/constants";
 
@@ -288,6 +289,7 @@ export default function DispatcherDashboard() {
 
       <div className="px-6 pt-6 max-w-6xl mx-auto space-y-4">
         <LeaseAlert />
+        <QuickEntry zones={liveBoard.zones} board={liveBoard.drivers} />
         <DispatchModePanel />
       </div>
 

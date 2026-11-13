@@ -17,26 +17,24 @@ exports.assignRideZone = onDocumentCreated("rides/{rideId}", async (event) => {
   if (!ride) return;
   const rideId = event.params.rideId;
   const dispatchFields = await dispatchFieldsFor(ride);
-  if (ride.zoneId) {
-    // Already placed (dispatcher quick entry).
-    await event.data.ref.update(dispatchFields);
-    if (dispatchFields.dispatchState === "new") await startDispatch(rideId);
-    return;
-  }
 
   const { zoneForPoint, requiredCertsForRide } = await core();
   const zones = await getZones();
   const byId = Object.fromEntries(zones.map((z) => [z.id, z]));
 
-  const pickup =
-    typeof ride.pickupLat === "number"
+  // Dispatcher may have picked the zone already (phone call); then only the
+  // drop-off needs looking up.
+  const preset = ride.zoneId && byId[ride.zoneId] ? ride.zoneId : null;
+  const pickup = preset
+    ? null
+    : typeof ride.pickupLat === "number"
       ? { lat: ride.pickupLat, lng: ride.pickupLng }
       : ride.outOfArea
         ? null
         : await geocode(ride.pickup);
   const drop = await geocode(ride.dropoff);
 
-  const zoneId = pickup ? zoneForPoint(zones, pickup.lng, pickup.lat) : null;
+  const zoneId = preset || (pickup ? zoneForPoint(zones, pickup.lng, pickup.lat) : null);
   const dropZoneId = drop ? zoneForPoint(zones, drop.lng, drop.lat) : null;
   const requiresCerts = requiredCertsForRide({
     pickupZone: byId[zoneId],
@@ -48,8 +46,7 @@ exports.assignRideZone = onDocumentCreated("rides/{rideId}", async (event) => {
     zoneId,
     zoneLabel: byId[zoneId]?.label || null,
     dropZoneId,
-    pickupLat: pickup?.lat ?? null,
-    pickupLng: pickup?.lng ?? null,
+    ...(preset ? {} : { pickupLat: pickup?.lat ?? null, pickupLng: pickup?.lng ?? null }),
     dropLat: drop?.lat ?? null,
     dropLng: drop?.lng ?? null,
     requiresCerts,
@@ -58,4 +55,3 @@ exports.assignRideZone = onDocumentCreated("rides/{rideId}", async (event) => {
   });
   if (dispatchFields.dispatchState === "new") await startDispatch(rideId);
 });
-

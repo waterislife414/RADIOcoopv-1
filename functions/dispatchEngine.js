@@ -62,6 +62,7 @@ function rideCard(rideId, ride, zones) {
     passengers: ride.passengers ?? null,
     wheelchair: !!ride.needsAccessibleVehicle,
     paymentMethod: ride.paymentMethod || null,
+    notes: ride.notes || null,
   };
 }
 

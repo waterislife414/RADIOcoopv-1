@@ -63,6 +63,7 @@ export default function OfferAlert({ offer, warnings = 0 }) {
             {offer.dropZoneLabel ? ` (${offer.dropZoneLabel})` : ""}
           </p>
         )}
+        {offer.notes && <p className="mt-3 text-amber-200">{"\u{1F4DD}"} {offer.notes}</p>}
         <div className="flex flex-wrap gap-2 mt-4 text-sm">
           {offer.wheelchair && <span className="rounded-full bg-sky-500/20 text-sky-200 px-3 py-1">{"♿"} Wheelchair</span>}
           {offer.passengers > 1 && <span className="rounded-full bg-white/10 px-3 py-1">{offer.passengers} riders</span>}
