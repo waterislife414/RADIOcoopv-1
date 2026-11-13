@@ -17,8 +17,10 @@ import { db, functions } from "../../config/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { CERT_LABELS } from "../../config/driverCerts";
 import { formatPhoneDisplay } from "../../utils/phone";
+import CloseOutModal from "../../components/admin/CloseOutModal";
+import { money } from "../../config/lease";
 
-const TABS = ["Drivers", "Certifications", "Fleet"];
+const TABS = ["Drivers", "Certifications", "Fleet", "Payouts"];
 
 function dateInputToMs(value) {
   if (!value) return null;
@@ -33,6 +35,7 @@ function msToDate(ms) {
 // ---------------------------------------------------------------- Drivers
 
 function DriverRow({ driver }) {
+  const [closing, setClosing] = useState(false);
   const [car, setCar] = useState(driver.carNumber || "");
   const [msg, setMsg] = useState("");
 
@@ -125,7 +128,11 @@ function DriverRow({ driver }) {
             Reinstate
           </button>
         )}
+        <button onClick={() => setClosing(true)} className="ml-auto px-3 py-1.5 rounded-lg text-red-700 font-semibold hover:bg-red-50">
+          Close out&hellip;
+        </button>
       </div>
+      {closing && <CloseOutModal driver={driver} onClose={() => setClosing(false)} />}
       {msg && <p className="text-sm text-slate-500">{msg}</p>}
     </div>
   );
@@ -151,6 +158,43 @@ function DriversTab() {
       )}
       {drivers.map((d) => (
         <DriverRow key={d.id} driver={d} />
+      ))}
+    </div>
+  );
+}
+
+function PayoutsTab() {
+  const [payouts, setPayouts] = useState([]);
+  useEffect(
+    () =>
+      onSnapshot(collection(db, "payouts"), (snap) =>
+        setPayouts(snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => b.createdAt - a.createdAt))
+      ),
+    []
+  );
+  const LABEL = { awaiting_check: "Check to write", paid: "Paid", no_payout: "No check" };
+  return (
+    <div className="space-y-2">
+      {payouts.length === 0 && <p className="text-slate-500">No close-outs yet.</p>}
+      {payouts.map((p) => (
+        <Link
+          key={p.id}
+          to={`/admin/payouts/${p.id}`}
+          className="flex items-center gap-3 bg-white rounded-xl border border-slate-200 p-3 hover:border-slate-400"
+        >
+          <span className="font-bold w-20">Car {p.carNumber}</span>
+          <span className="flex-1">{p.driverName}</span>
+          <span className="text-sm text-slate-500">{new Date(p.createdAt).toLocaleDateString()}</span>
+          <span className="font-semibold w-20 text-right">{money(p.payoutCents)}</span>
+          <span
+            className={`text-xs font-bold uppercase px-2.5 py-1 rounded-full ${
+              p.status === "awaiting_check" ? "bg-amber-100 text-amber-800" : p.status === "paid" ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"
+            }`}
+          >
+            {LABEL[p.status] || p.status}
+            {p.status === "paid" && p.checkNumber ? ` #${p.checkNumber}` : ""}
+          </span>
+        </Link>
       ))}
     </div>
   );
@@ -362,6 +406,7 @@ export default function DriversAdmin() {
         {tab === "Drivers" && <DriversTab />}
         {tab === "Certifications" && <CertificationsTab />}
         {tab === "Fleet" && <FleetTab />}
+        {tab === "Payouts" && <PayoutsTab />}
       </div>
     </div>
   );

@@ -98,6 +98,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Close-out payouts (check to a driver who left). Server-written.
+    match /payouts/{payoutId} {
+      allow read: if isAdmin() || (isDriver() && resource.data.driverId == request.auth.uid);
+      allow write: if false;
+    }
+
     // Dispatch mode (manual / auto / scheduled) and other office settings.
     match /settings/{docId} {
       allow read, write: if isAdmin();
