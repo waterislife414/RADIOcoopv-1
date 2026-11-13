@@ -11,6 +11,7 @@ const { onSchedule } = require("firebase-functions/v2/scheduler");
 const admin = require("firebase-admin");
 const BRANDING = require("./branding.json");
 const { getZones } = require("./zoneStore");
+const { requireDriver, blockReason } = require("./workRules");
 
 const DISPATCH = BRANDING.dispatch || {};
 const GPS = { staleMin: 3, outOfZoneMin: 3, ...(DISPATCH.gps || {}) };
@@ -25,14 +26,6 @@ const boardRef = (uid) => db().collection("board").doc(uid);
 const driverRef = (uid) => db().collection("drivers").doc(uid);
 const locationRef = (uid) => db().collection("driverLocations").doc(uid);
 
-function requireDriver(request) {
-  if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
-  if (request.auth.token.driver !== true) {
-    throw new HttpsError("permission-denied", "This needs an approved driver account.");
-  }
-  return request.auth.uid;
-}
-
 function readFix(data) {
   const lat = Number(data?.lat);
   const lng = Number(data?.lng);
@@ -41,14 +34,6 @@ function readFix(data) {
   }
   const acc = Number(data?.accuracy);
   return { lat, lng, accuracy: Number.isFinite(acc) ? Math.round(acc) : null };
-}
-
-// Why this driver can't work right now, or null. The lease lockout joins
-// this list when the lease ledger is built.
-function blockReason(driver) {
-  if (!driver || driver.active === false) return "Your driver account isn't active. See the office.";
-  if (driver.status === "suspended") return "You're suspended. Come back to the shop to get reinstated.";
-  return null;
 }
 
 /**
@@ -177,6 +162,8 @@ exports.driverDropOff = onCall(async (request) => {
     if (!b.exists || !d.exists) throw new HttpsError("failed-precondition", "You're not on the driver roster yet.");
     if (b.data().status !== c.STATUS.ON_CALL) throw new HttpsError("failed-precondition", "You're not on a call.");
     const driver = d.data();
+    const rideId = b.data().rideId || null;
+    const rideSnap = rideId ? await tx.get(db().collection("rides").doc(rideId)) : null;
 
     let patch;
     if (blockReason(driver)) {
@@ -193,6 +180,12 @@ exports.driverDropOff = onCall(async (request) => {
       patch = c.applyDropOff(line, uid, dropZoneId, DISPATCH.dropOffPlacement || "front", nowMs);
     }
     tx.update(boardRef(uid), { ...patch, rideId: null, updatedAt: serverNow() });
+    // The fare is settled the usual way (rider self-checkout or dispatcher).
+    const ride = rideSnap?.data();
+    if (ride && ride.driverId === uid && ["dispatched", "in_transit"].includes(ride.status)) {
+      tx.update(rideSnap.ref, { status: "finished", droppedOffAt: nowMs, dropZoneActualId: gpsZoneId });
+    }
+    tx.set(db().collection("driverInbox").doc(uid), { current: null }, { merge: true });
     tx.set(locationRef(uid), {
       ...fix,
       zoneId: gpsZoneId,

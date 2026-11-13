@@ -74,6 +74,23 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // A driver's own offer, "Need a car" broadcasts and current ride.
+    // Server-written; drivers never read the rides collection.
+    match /driverInbox/{uid} {
+      allow read: if isAdmin() || (isDriver() && request.auth.uid == uid);
+      allow write: if false;
+    }
+
+    // Push tokens: server only.
+    match /driverTokens/{uid} {
+      allow read, write: if false;
+    }
+
+    // Dispatch mode (manual / auto / scheduled) and other office settings.
+    match /settings/{docId} {
+      allow read, write: if isAdmin();
+    }
+
     // Driver asks for a certification (base pass, wheelchair van). Doc id is
     // "<uid>_<cert>" so each driver has one request per cert.
     match /certRequests/{reqId} {

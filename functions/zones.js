@@ -2,17 +2,27 @@
 // it, otherwise looks the typed address up with the free US Census
 // geocoder (no API key, no per-lookup charge). Rides that can't be placed
 // (landmarks, out-of-area) are left for the dispatcher to place by hand.
+// Then, if auto-dispatch is on, the ride goes straight to a driver.
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const admin = require("firebase-admin");
 const { geocode } = require("./geocode");
 const { getZones } = require("./zoneStore");
+const { dispatchFieldsFor, startDispatch } = require("./dispatchEngine");
 
 let corePromise = null;
 const core = () => (corePromise ||= import("./lib/dispatchCore.mjs"));
 
 exports.assignRideZone = onDocumentCreated("rides/{rideId}", async (event) => {
   const ride = event.data?.data();
-  if (!ride || ride.zoneId) return; // already placed (e.g. dispatcher quick entry)
+  if (!ride) return;
+  const rideId = event.params.rideId;
+  const dispatchFields = await dispatchFieldsFor(ride);
+  if (ride.zoneId) {
+    // Already placed (dispatcher quick entry).
+    await event.data.ref.update(dispatchFields);
+    if (dispatchFields.dispatchState === "new") await startDispatch(rideId);
+    return;
+  }
 
   const { zoneForPoint, requiredCertsForRide } = await core();
   const zones = await getZones();
@@ -44,6 +54,8 @@ exports.assignRideZone = onDocumentCreated("rides/{rideId}", async (event) => {
     dropLng: drop?.lng ?? null,
     requiresCerts,
     zoneAssignedAt: admin.firestore.FieldValue.serverTimestamp(),
+    ...dispatchFields,
   });
+  if (dispatchFields.dispatchState === "new") await startDispatch(rideId);
 });
 

@@ -33,7 +33,51 @@ function StatusBadge({ status }) {
   );
 }
 
-export default function RideCard({ ride, customerStatus, onDispatchAdvance, onDismiss, onCaptureFare, onChargeWallet, onArchive }) {
+// What auto-dispatch is doing with this ride, for the dispatcher.
+function AutoDispatchLine({ ride, carFor }) {
+  const car = (id) => (carFor?.(id) ? `Car ${carFor(id)}` : "a car");
+  const zone = ride.zoneLabel || (ride.zoneId ? ride.zoneId : null);
+  let text = null;
+  let tone = "bg-slate-100 text-slate-700";
+  if (ride.status === "pending") {
+    switch (ride.dispatchState) {
+      case "offering":
+        text = `\u{1F4DE} Offering to ${car(ride.offer?.driverId)}${ride.offer?.kind === "requested" ? " (requested)" : ""} \u00b7 ping ${ride.offer?.pings ?? 1}`;
+        tone = "bg-amber-100 text-amber-800";
+        break;
+      case "pending_next":
+        text = "Finding the next car\u2026";
+        break;
+      case "broadcast":
+        text = `\u{1F4E3} Need a car${zone ? ` in ${zone}` : ""} \u00b7 sent to ${ride.broadcastTo?.length || 0}`;
+        tone = "bg-amber-100 text-amber-800";
+        break;
+      case "escalated":
+        text = `\u26A0 No car took it${zone ? ` (${zone})` : ""} \u2014 dispatch by hand`;
+        tone = "bg-red-100 text-red-800 font-bold";
+        break;
+      case "scheduled":
+        text = ride.dispatchAt ? `Auto-dispatch at ${new Date(ride.dispatchAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : null;
+        break;
+      default:
+        break;
+    }
+  } else if (ride.carNumber) {
+    text = `\u{1F695} Car ${ride.carNumber}`;
+    tone = "bg-emerald-100 text-emerald-800 font-bold";
+  }
+  if (!text && !(ride.status === "pending" && ride.zoneAssignedAt && !ride.zoneId)) return null;
+  return (
+    <div className="flex flex-wrap gap-2 text-sm">
+      {text && <span className={`px-3 py-1 rounded-full ${tone}`}>{text}</span>}
+      {ride.status === "pending" && ride.zoneAssignedAt && !ride.zoneId && (
+        <span className="px-3 py-1 rounded-full bg-slate-200 text-slate-700">No zone found</span>
+      )}
+    </div>
+  );
+}
+
+export default function RideCard({ ride, customerStatus, carFor, onDispatchAdvance, onDismiss, onCaptureFare, onChargeWallet, onArchive }) {
   const isPending = ride.status === "pending";
   const isInTransit = ride.status === "in_transit";
   const isFinished = ride.status === "finished";
@@ -73,6 +117,8 @@ export default function RideCard({ ride, customerStatus, onDispatchAdvance, onDi
           {ride.paymentMethod}
         </span>
       </div>
+
+      <AutoDispatchLine ride={ride} carFor={carFor} />
 
       <div className="space-y-1.5">
         <p className="text-lg font-bold text-slate-900 leading-snug">

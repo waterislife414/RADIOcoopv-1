@@ -106,7 +106,9 @@
     ],
     "geocodeFallbackCities": ["Columbus, GA", "Phenix City, AL"],
     "lease": { "dailyCents": 7500, "dueStart": "14:00", "dueEnd": "16:00", "exitPayoutPct": 50, "includeTips": true },
-    "offer": { "pings": 3, "pingIntervalSec": 15 },
+    "offer": { "pings": 3, "pingIntervalSec": 15, "broadcastSec": 90 },
+    "scheduledLeadMin": 15,
+    "pushVapidKey": "",
     "maxWarnings": 3,
     "dropOffPlacement": "front",
     "gps": { "staleMin": 3, "outOfZoneMin": 3, "minMoveMeters": 50, "maxIntervalSec": 45 }

@@ -205,3 +205,32 @@ test('staleLocationPatch: drops ready/moving drivers whose phone went quiet', ()
   assert.equal(c.isLive('moving'), true);
   assert.equal(c.isLive('on_call'), false);
 });
+
+test('parseLocalDateTime: Columbus wall clock → UTC, across DST', () => {
+  assert.equal(new Date(c.parseLocalDateTime('2026-11-13T18:30')).toISOString(), '2026-11-13T23:30:00.000Z');
+  assert.equal(new Date(c.parseLocalDateTime('2026-07-04T09:00')).toISOString(), '2026-07-04T13:00:00.000Z');
+  assert.equal(c.parseLocalDateTime(''), null);
+});
+
+test('isAutoDispatch: manual / auto / overnight scheduled window', () => {
+  const at = (iso) => Date.parse(iso);
+  assert.equal(c.isAutoDispatch(null, at('2026-11-13T12:00:00Z')), false);
+  assert.equal(c.isAutoDispatch({ mode: 'auto' }, at('2026-11-13T12:00:00Z')), true);
+  const nights = { mode: 'scheduled', windows: [{ days: [5], start: '22:00', end: '06:00' }] }; // Friday night
+  assert.equal(c.isAutoDispatch(nights, at('2026-11-14T04:00:00Z')), true); // Fri 11 PM ET
+  assert.equal(c.isAutoDispatch(nights, at('2026-11-14T10:00:00Z')), true); // Sat 5 AM ET
+  assert.equal(c.isAutoDispatch(nights, at('2026-11-14T12:00:00Z')), false); // Sat 7 AM ET
+  assert.equal(c.isAutoDispatch(nights, at('2026-11-13T04:00:00Z')), false); // Thu 11 PM ET
+});
+
+test('missOutcome: requested = no penalty; zone call = off board + warning; 3rd = suspended', () => {
+  const r = c.missOutcome({ board: { status: 'offered', zoneId: 'east' }, driver: { warnings: 2 }, kind: 'requested' });
+  assert.deepEqual(r, { board: { status: 'ready' }, driver: null });
+  const m = c.missOutcome({ board: { status: 'offered', zoneId: 'east' }, driver: { warnings: 0 }, kind: 'zone', now: 5 });
+  assert.equal(m.board.status, 'offline');
+  assert.equal(m.board.lastEvent.type, 'missed_call');
+  assert.deepEqual(m.driver, { warnings: 1 });
+  const s = c.missOutcome({ board: { status: 'offered', zoneId: 'east' }, driver: { warnings: 2 }, kind: 'zone', reason: 'declined' });
+  assert.equal(s.board.lastEvent.type, 'declined');
+  assert.deepEqual(s.driver, { warnings: 3, status: 'suspended' });
+});

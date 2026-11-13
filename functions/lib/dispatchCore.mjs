@@ -342,6 +342,72 @@ function localParts(ms, timeZone) {
 }
 const toMin = (hhmm) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; };
 
+const WEEKDAY = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+function localWeekday(ms, timeZone) {
+  return WEEKDAY[new Intl.DateTimeFormat('en-US', { timeZone, weekday: 'short' }).format(new Date(ms))];
+}
+
+/**
+ * Wall-clock "YYYY-MM-DDTHH:mm" (an <input type="datetime-local"> value) in
+ * the company's time zone → epoch ms. Returns null if unparseable.
+ */
+export function parseLocalDateTime(value, timeZone = DEFAULTS.timeZone) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(String(value || ''));
+  if (!m) return null;
+  const wall = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+  let ms = wall;
+  for (let i = 0; i < 2; i++) {
+    const p = localParts(ms, timeZone);
+    const [y, mo, d] = p.date.split('-').map(Number);
+    const seen = Date.UTC(y, mo - 1, d, Math.floor(p.minutes / 60), p.minutes % 60);
+    ms += wall - seen;
+  }
+  return ms;
+}
+
+// ---------------------------------------------------------------------------
+// Dispatch mode: manual (dispatcher only), auto, or scheduled (auto during
+// windows, e.g. nights). Windows: [{ days:[0..6], start:'22:00', end:'06:00' }]
+// where days are the days the window STARTS on (0 = Sunday).
+
+export function isAutoDispatch(settings, now = Date.now(), timeZone = DEFAULTS.timeZone) {
+  const mode = settings?.mode ?? 'manual';
+  if (mode === 'auto') return true;
+  if (mode !== 'scheduled') return false;
+  const { minutes } = localParts(now, timeZone);
+  const day = localWeekday(now, timeZone);
+  const prev = (day + 6) % 7;
+  return (settings.windows || []).some((w) => {
+    const s = toMin(w.start);
+    const e = toMin(w.end);
+    const days = w.days ?? [0, 1, 2, 3, 4, 5, 6];
+    if (s < e) return days.includes(day) && minutes >= s && minutes < e;
+    return (days.includes(day) && minutes >= s) || (days.includes(prev) && minutes < e);
+  });
+}
+
+/**
+ * Outcome of a missed or declined offer for the board and driver records.
+ * Requested rides: no penalty, he keeps his spot. Otherwise off the board,
+ * +1 warning, suspended (come back to the shop) at maxWarnings.
+ */
+export function missOutcome({ board, driver, kind, reason = 'missed', now = Date.now(), maxWarnings = DEFAULTS.maxWarnings }) {
+  if (kind === 'requested') {
+    return { board: { status: board.zoneId ? STATUS.READY : STATUS.MOVING }, driver: null };
+  }
+  const p = applyMiss({ ...board, warnings: driver?.warnings ?? 0 }, {}, maxWarnings);
+  const suspended = p.status === STATUS.SUSPENDED;
+  return {
+    board: {
+      status: STATUS.OFFLINE,
+      zoneId: null,
+      lineKey: null,
+      lastEvent: { type: reason === 'declined' ? 'declined' : 'missed_call', at: now, warnings: p.warnings, suspended },
+    },
+    driver: { warnings: p.warnings, ...(suspended ? { status: STATUS.SUSPENDED } : {}) },
+  };
+}
+
 /**
  * Lease period key. A period runs from dueStart (2 PM) to the next day's 2 PM
  * and is keyed by the date it ends on (the day its lease is due).

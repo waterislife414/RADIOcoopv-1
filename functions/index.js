@@ -600,3 +600,4 @@ exports.purgeStaleGuestRides = onSchedule(
 Object.assign(exports, require("./drivers"));
 Object.assign(exports, require("./zones"));
 Object.assign(exports, require("./board"));
+Object.assign(exports, require("./dispatch"));

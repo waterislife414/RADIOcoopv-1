@@ -43,6 +43,7 @@ export default function DispatcherDashboard() {
   const [walletChargeRide, setWalletChargeRide] = useState(null);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
   const liveBoard = useLiveBoard();
+  const carFor = (uid) => liveBoard.drivers.find((d) => d.id === uid)?.carNumber;
   const boardCounts = liveBoard.drivers.reduce((m, d) => ({ ...m, [d.status]: (m[d.status] || 0) + 1 }), {});
   const [pendingIdVerifications, setPendingIdVerifications] = useState([]);
 
@@ -303,6 +304,7 @@ export default function DispatcherDashboard() {
                 key={ride.id}
                 ride={ride}
                 customerStatus={customerStatusMap[ride.customerId]}
+                carFor={carFor}
                 onDispatchAdvance={handleDispatchAdvance}
                 onDismiss={requestDismiss}
               />
@@ -323,6 +325,7 @@ export default function DispatcherDashboard() {
                 key={ride.id}
                 ride={ride}
                 customerStatus={customerStatusMap[ride.customerId]}
+                carFor={carFor}
                 onDispatchAdvance={handleDispatchAdvance}
                 onCaptureFare={requestCaptureFare}
                 onChargeWallet={setWalletChargeRide}

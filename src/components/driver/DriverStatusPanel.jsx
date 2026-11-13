@@ -4,9 +4,12 @@ import { functions } from "../../config/firebase";
 import { BRAND } from "../../config/constants";
 import { CERT_LABELS } from "../../config/driverCerts";
 import { useDriverGps } from "../../hooks/useDriverGps";
+import { unlockAudio } from "../../utils/alertSound";
+import { enableDriverPush, pushPermission } from "../../push/driverPush";
 import { hasCert, linePosition, ordinal, zoneLine } from "../../../functions/lib/dispatchCore.mjs";
 
 const OUT_OF_ZONE_MIN = BRAND.dispatch?.gps?.outOfZoneMin ?? 3;
+const MAX_WARNINGS = BRAND.dispatch?.maxWarnings ?? 3;
 const DROP_FRONT = (BRAND.dispatch?.dropOffPlacement ?? "front") === "front";
 const call = (name) => httpsCallable(functions, name);
 const goOnline = call("driverGoOnline");
@@ -39,12 +42,15 @@ function EventBanner({ event, uid, zoneLabel }) {
   const key = `rc.lastEventSeen.${uid}`;
   const [seen, setSeen] = useState(() => Number(localStorage.getItem(key) || 0));
   if (!event?.at || event.at <= seen || Date.now() - event.at > 12 * 3600_000) return null;
-  const text =
-    event.type === "gps_lost"
-      ? "You went off the board because your location stopped updating. Keep this app open on your screen while you work."
-      : event.type === "left_zone"
-        ? `You left ${zoneLabel(event.zoneId) || "your zone"}, so you were moved to Moving.`
-        : null;
+  const strike = event.warnings ? ` Warning ${event.warnings} of ${MAX_WARNINGS}.` : "";
+  const text = {
+    gps_lost:
+      "You went off the board because your location stopped updating. Keep this app open on your screen while you work.",
+    left_zone: `You left ${zoneLabel(event.zoneId) || "your zone"}, so you were moved to Moving.`,
+    missed_call: `You didn't answer a call, so you're off the board.${strike}`,
+    declined: `You turned down a call, so you're off the board.${strike}`,
+    ride_cancelled: "Your call was cancelled. You're back on the board.",
+  }[event.type];
   if (!text) return null;
   return (
     <div className="bg-amber-500/15 border border-amber-400/50 rounded-2xl p-4 text-amber-100">
@@ -84,6 +90,7 @@ export default function DriverStatusPanel({ driver, board, drivers, zones }) {
   const [starting, setStarting] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [push, setPush] = useState(() => pushPermission());
 
   const status = board?.status || "offline";
   const onBoard = status !== "offline";
@@ -118,6 +125,7 @@ export default function DriverStatusPanel({ driver, board, drivers, zones }) {
   // GPS starts on the tap (so the phone asks permission right away) and
   // stays on once the board shows the driver online.
   async function handleGoOnline() {
+    unlockAudio();
     setStarting(true);
     if (!(await run(goOnline))) setStarting(false);
   }
@@ -210,6 +218,15 @@ export default function DriverStatusPanel({ driver, board, drivers, zones }) {
       </div>
 
       {msg && <p className="text-red-300 text-sm">{msg}</p>}
+
+      {onBoard && push === "default" && (
+        <button
+          className="w-full rounded-xl py-3 font-semibold bg-white/5 border border-white/15 text-slate-200"
+          onClick={async () => setPush(await enableDriverPush().catch(() => "unsupported"))}
+        >
+          {"\u{1F514}"} Turn on call alerts for when your screen is off
+        </button>
+      )}
 
       {onBoard && (
         <p className="text-xs text-slate-500">

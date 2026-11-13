@@ -8,6 +8,11 @@ import DriverCerts from "./DriverCerts";
 import DriverStatusPanel from "./DriverStatusPanel";
 import ZoneBoard from "../board/ZoneBoard";
 import { useLiveBoard } from "../../hooks/useLiveBoard";
+import { useDriverInbox } from "../../hooks/useDriverInbox";
+import OfferAlert from "./OfferAlert";
+import BroadcastList from "./BroadcastList";
+import CurrentRide from "./CurrentRide";
+import { unlockAudio } from "../../utils/alertSound";
 
 function CertBadges({ certs }) {
   const approved = Object.entries(certs || {}).filter(([, c]) => c?.status === "approved");
@@ -34,6 +39,16 @@ export default function DriverDashboard() {
   const { drivers, zones } = useLiveBoard();
   const board = drivers.find((d) => d.id === currentUser.uid) || null;
   const canWork = driver && driver.status !== "suspended" && driver.active !== false;
+  const inbox = useDriverInbox(currentUser.uid);
+  const offer =
+    inbox.offer && board?.status === "offered" && board.offerRideId === inbox.offer.rideId ? inbox.offer : null;
+  const free = board?.status === "ready" || board?.status === "moving";
+
+  // Sound needs one tap on the page before a call can ring.
+  useEffect(() => {
+    window.addEventListener("pointerdown", unlockAudio, { once: true });
+    return () => window.removeEventListener("pointerdown", unlockAudio);
+  }, []);
 
   useEffect(() => {
     return onSnapshot(doc(db, "drivers", currentUser.uid), (snap) => {
@@ -73,7 +88,12 @@ export default function DriverDashboard() {
           </div>
         )}
 
+        {offer && <OfferAlert offer={offer} warnings={driver.warnings ?? 0} />}
+
         <DriverStatusPanel driver={driver} board={board} drivers={drivers} zones={zones} />
+
+        {board?.status === "on_call" && <CurrentRide ride={inbox.current} />}
+        {canWork && free && <BroadcastList broadcasts={inbox.broadcasts} />}
 
         {canWork && (
           <section className="glass-panel border border-white/10 rounded-2xl p-5">
