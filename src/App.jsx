@@ -1,0 +1,101 @@
+import { Suspense, lazy } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import { RideProvider } from "./context/RideContext";
+import { RequireAdmin, RequireAuth } from "./components/ProtectedRoute";
+
+import Home from "./pages/Home";
+import Careers from "./pages/Careers";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Contact from "./pages/Contact";
+import TripDetails from "./pages/TripDetails";
+import PaymentSelection from "./pages/PaymentSelection";
+import Success from "./pages/Success";
+import SignIn from "./pages/SignIn";
+import SignUp from "./pages/SignUp";
+import QRCode from "./pages/QRCode";
+import NotFound from "./pages/NotFound";
+import Profile from "./pages/Profile";
+import SubscriptionCheckout from "./pages/SubscriptionCheckout";
+import ChoosePlan from "./pages/ChoosePlan";
+import CompareRideshare from "./pages/CompareRideshare";
+import PostSignupUpsell from "./pages/PostSignupUpsell";
+
+// Dispatcher/admin code is only downloaded when someone actually navigates
+// there, so a customer booking a ride on their phone never fetches it.
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
+const DispatcherDashboard = lazy(() => import("./pages/admin/DispatcherDashboard"));
+
+function AdminLoadingFallback() {
+  return (
+    <div className="min-h-screen bg-navy-950 flex items-center justify-center">
+      <p className="text-slate-400 text-base">Loading dispatcher terminal...</p>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <RideProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/sign-in" element={<SignIn />} />
+            <Route path="/sign-up" element={<SignUp />} />
+            <Route path="/careers" element={<Careers />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/qr" element={<QRCode />} />
+            <Route path="/join" element={<ChoosePlan />} />
+            <Route path="/compare" element={<CompareRideshare />} />
+            <Route path="/welcome" element={<PostSignupUpsell />} />
+
+            <Route path="/trip-details" element={<TripDetails />} />
+            <Route path="/payment" element={<PaymentSelection />} />
+            <Route path="/success" element={<Success />} />
+            <Route
+              path="/profile"
+              element={
+                <RequireAuth>
+                  <Profile />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/subscribe/:tier"
+              element={
+                <RequireAuth>
+                  <SubscriptionCheckout />
+                </RequireAuth>
+              }
+            />
+
+            <Route
+              path="/admin/login"
+              element={
+                <Suspense fallback={<AdminLoadingFallback />}>
+                  <AdminLogin />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/admin/dashboard"
+              element={
+                <RequireAdmin>
+                  <Suspense fallback={<AdminLoadingFallback />}>
+                    <DispatcherDashboard />
+                  </Suspense>
+                </RequireAdmin>
+              }
+            />
+
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </RideProvider>
+    </AuthProvider>
+  );
+}

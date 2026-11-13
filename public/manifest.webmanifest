@@ -1,0 +1,21 @@
+{
+  "name": "Radio Co-op Taxi Service",
+  "short_name": "Radio Co-op",
+  "description": "Radio Co-op — 24/7 taxi service in Columbus, GA & Phenix City, AL. Call (706) 322-0700.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A1420",
+  "theme_color": "#0A1420",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

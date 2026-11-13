@@ -1,0 +1,12 @@
+{
+  "companyName": "Radio Co-op",
+  "tierMonthlyCents": {
+    "BASIC": 999,
+    "PREMIUM": 1499
+  },
+  "outOfAreaMinimumFareCents": 2500,
+  "cardAppFeeCents": 200,
+  "cardAppFeeMemberCents": 180,
+  "subscriptionTrialDays": 7,
+  "dataRetentionDays": 5
+}

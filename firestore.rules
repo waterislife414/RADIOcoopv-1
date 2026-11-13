@@ -1,0 +1,61 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.admin == true;
+    }
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+    function isNotBlacklisted() {
+      return request.resource.data.phone is string
+        && !exists(/databases/$(database)/documents/blacklist_phones/$(request.resource.data.phone));
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isAdmin()
+        || (isOwner(userId)
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['firstName', 'lastName', 'phone', 'address', 'dob',
+                           'idImageUrl', 'idSubmittedAt', 'rating', 'walletBalance', 'active']));
+      allow delete: if isAdmin();
+    }
+
+    match /rides/{rideId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.customerId == request.auth.uid);
+      allow create: if isNotBlacklisted();
+      allow update: if isAdmin()
+        || (isSignedIn() && resource.data.customerId == request.auth.uid && resource.data.status == 'pending')
+        || (isSignedIn() && resource.data.customerId == request.auth.uid
+            && resource.data.status in ['finished', 'archived']
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating']));
+      allow delete: if isAdmin();
+    }
+
+    match /driver_applications/{appId} {
+      allow create: if true;
+      allow read: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /blacklist/{entryId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /blacklist_phones/{phone} {
+      allow read, write: if isAdmin();
+    }
+
+    match /promo_codes/{codeId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

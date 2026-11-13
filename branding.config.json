@@ -1,0 +1,101 @@
+{
+  "_README": "THIS IS THE ONLY FILE YOU EDIT FOR A NEW CLIENT (plus swapping images in public/). Every company name, phone, color, city, price, and tagline in the app reads from here. After editing, run: npm run build (manifest + backend config regenerate automatically).",
+
+  "company": {
+    "name": "Radio Co-op",
+    "wordmark": "Radio Co\u2011op",
+    "tagline": "Taxi Service",
+    "hubName": "Radio Hub",
+    "phoneDisplay": "(706) 322-0700",
+    "phoneTel": "7063220700",
+    "email": "[INSERT_EMAIL]",
+    "address": "1795 Cusseta Rd, Columbus, GA 31901",
+    "mapLink": "https://maps.google.com/?q=1795+Cusseta+Rd+Columbus+GA+31901",
+    "hours": "Open 24/7",
+    "googleReviewLink": "[INSERT_GOOGLE_REVIEW_LINK]",
+    "appUrl": "https://radio-co-op-taxi-app.web.app",
+    "logoUrl": "/logo.svg"
+  },
+
+  "serviceArea": {
+    "summary": "Serving Columbus, Phenix City, and Surrounding Areas",
+    "localCities": ["Columbus", "Phenix City", "Ft. Benning"],
+    "surroundingCities": ["Smiths Station", "Ft. Mitchell", "Salem", "Waverly Hall", "Ellerslie", "Seale"],
+    "localAreaShortLabel": "Columbus / Phenix City",
+    "statsAreaLabel": "Columbus & Beyond"
+  },
+
+  "copy": {
+    "heroEyebrow": "Columbus, GA · Est.",
+    "heroHeadingLine1": "Your private ride,",
+    "heroHeadingLine2": "on call.",
+    "heroSubtext": "Columbus, Phenix City, and surrounding areas — round the clock. A real dispatcher answers, not an app.",
+    "aboutQuote": "Trust Radio for a safe drive.",
+    "aboutBody": "We love our customers and have proudly served the Columbus area for decades.",
+    "dispatcherFooterLabel": "Radio Co-op Dispatcher",
+    "dispatcherDashboardTitle": "Radio Co-op Dispatch",
+    "qrHook": "Gotta Go? Call Radio!",
+    "qrSubHook": "Scan to track your driver, pay instantly, and unlock exclusive ride credits & perks!",
+    "pickupPlaceholder": "123 Broadway, Columbus GA",
+    "dropoffPlaceholder": "456 14th St, Phenix City AL",
+    "metaTitle": "Radio Co-op | 24/7 Taxi Service",
+    "metaDescription": "Radio Co-op — 24/7 taxi service in Columbus, GA & Phenix City, AL. Call (706) 322-0700."
+  },
+
+  "colors": {
+    "themeColor": "#0A1420",
+    "glowRGB": "212, 185, 117",
+    "chromeGradient": ["#efe1b8", "#d4b975", "#fff6df", "#c9a227", "#efe1b8"],
+    "navy": { "950": "#0A1420", "900": "#0E1D2C" },
+    "gold": { "200": "#EFE1B8", "300": "#E4CD8C", "400": "#D4B975", "500": "#C9A227", "600": "#96791D" },
+    "blue": { "50": "#EAF3FB", "100": "#CDE3F4", "200": "#9BC7E9", "300": "#69AADD", "400": "#3D8CCB", "500": "#1F72B0", "600": "#155E96", "700": "#0F4A78", "800": "#0B3A5F", "900": "#082A45" },
+    "slate": { "50": "#F7F8F8", "100": "#EDEFF0", "200": "#DCE0E3", "300": "#C3C9CD", "400": "#A6ADB3", "500": "#8A9299", "600": "#6E767C", "700": "#565D62", "800": "#3A3F43", "900": "#212427" }
+  },
+
+  "pricing": {
+    "fare": {
+      "BASE_FARE": 2.16,
+      "PER_MILE": 1.98,
+      "FIRST_INCREMENT_MILES": 0.1667,
+      "EXTRA_PAX_FEE": 2.0,
+      "WAIT_TIME_PER_MINUTE": 0.35,
+      "CARD_APP_FEE": 2.0,
+      "CARD_APP_FEE_MEMBER": 1.80,
+      "HIGH_ESTIMATE_MULTIPLIER": 1.15
+    },
+    "outOfAreaMinimumFare": 25.0,
+    "outOfAreaEntryFee": 5.35,
+    "subscriptionTrialDays": 7,
+    "tiers": {
+      "BASIC": {
+        "name": "Basic",
+        "monthlyPrice": 9.99,
+        "ridesForFreeEntry": 10,
+        "perks": { "freeEntryPer10Rides": true, "freeMilePer10Rides": false }
+      },
+      "PREMIUM": {
+        "name": "Premium",
+        "monthlyPrice": 14.99,
+        "ridesForFreeEntry": 10,
+        "perks": { "freeEntryPer10Rides": true, "freeMilePer10Rides": true }
+      }
+    },
+    "promo": { "FIRST_RIDE": "WELCOME2", "REFERRAL_BONUS": 5.0 }
+  },
+
+  "infrastructure": {
+    "_note": "Per-client Firebase project + Stripe key. Also update .firebaserc projectId when switching clients.",
+    "stripePublishableKey": "[INSERT_STRIPE_PUBLISHABLE_KEY]",
+    "firebase": {
+      "apiKey": "AIzaSyC1EUILwCOt_vOH3uUfDX9xvACsorWCAtk",
+      "authDomain": "radio-co-op-taxi-app.firebaseapp.com",
+      "projectId": "radio-co-op-taxi-app",
+      "storageBucket": "radio-co-op-taxi-app.firebasestorage.app",
+      "messagingSenderId": "118672687747",
+      "appId": "1:118672687747:web:8b525304aa97c687d391b6",
+      "measurementId": "G-Z2NE52W8WW"
+    }
+  },
+
+  "policies": { "dataRetentionDays": 5, "mvrLookbackYears": 7 }
+}
