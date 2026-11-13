@@ -124,6 +124,30 @@ export default function Home() {
             Compare to Uber, Lyft &amp; Other Rideshare &rarr;
           </Link>
 
+          {/* Drivers: apply or sign in to the driver screen */}
+          <div
+            className="mt-4 glass-panel border-2 border-white/15 rounded-2xl p-5 animate-fade-up"
+            style={{ animationDelay: "350ms" }}
+          >
+            <p className="text-xs font-bold tracking-[0.25em] text-gold-400 uppercase text-center mb-3">
+              Drivers
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <Link
+                to="/become-a-driver"
+                className="text-center bg-white/10 hover:bg-white/15 text-white font-bold text-base py-3.5 rounded-full transition"
+              >
+                Become a Driver
+              </Link>
+              <Link
+                to="/driver/sign-in"
+                className="text-center border-2 border-gold-400/60 text-gold-300 font-bold text-base py-3 rounded-full transition hover:bg-gold-400/10"
+              >
+                Driver Sign In
+              </Link>
+            </div>
+          </div>
+
           <div
             className="mt-4 glass-panel border-2 border-blue-400/30 rounded-2xl p-5 text-center animate-fade-up"
             style={{ animationDelay: "360ms" }}

@@ -2,7 +2,7 @@ import { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { RideProvider } from "./context/RideContext";
-import { RequireAdmin, RequireAuth } from "./components/ProtectedRoute";
+import { RequireAdmin, RequireAuth, RequireDriverSignIn } from "./components/ProtectedRoute";
 
 import Home from "./pages/Home";
 import Careers from "./pages/Careers";
@@ -26,11 +26,14 @@ import PostSignupUpsell from "./pages/PostSignupUpsell";
 // there, so a customer booking a ride on their phone never fetches it.
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const DispatcherDashboard = lazy(() => import("./pages/admin/DispatcherDashboard"));
+// Driver screens load only for drivers, same as the dispatcher terminal.
+const DriverSignIn = lazy(() => import("./pages/driver/DriverSignIn"));
+const DriverHome = lazy(() => import("./pages/driver/DriverHome"));
 
 function AdminLoadingFallback() {
   return (
     <div className="min-h-screen bg-navy-950 flex items-center justify-center">
-      <p className="text-slate-400 text-base">Loading dispatcher terminal...</p>
+      <p className="text-slate-400 text-base">Loading...</p>
     </div>
   );
 }
@@ -45,6 +48,25 @@ export default function App() {
             <Route path="/sign-in" element={<SignIn />} />
             <Route path="/sign-up" element={<SignUp />} />
             <Route path="/careers" element={<Careers />} />
+            <Route path="/become-a-driver" element={<Careers />} />
+            <Route
+              path="/driver/sign-in"
+              element={
+                <Suspense fallback={<AdminLoadingFallback />}>
+                  <DriverSignIn />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/driver"
+              element={
+                <RequireDriverSignIn>
+                  <Suspense fallback={<AdminLoadingFallback />}>
+                    <DriverHome />
+                  </Suspense>
+                </RequireDriverSignIn>
+              }
+            />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/contact" element={<Contact />} />

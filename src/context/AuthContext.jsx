@@ -26,7 +26,20 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isDriver, setIsDriver] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Re-reads role claims from the server. Needed right after a driver is
+  // approved, since the old sign-in token doesn't have the new role yet.
+  async function refreshClaims() {
+    const user = auth.currentUser;
+    if (!user) return { admin: false, driver: false };
+    const tokenResult = await user.getIdTokenResult(true);
+    const claims = { admin: !!tokenResult.claims.admin, driver: !!tokenResult.claims.driver };
+    setIsAdmin(claims.admin);
+    setIsDriver(claims.driver);
+    return claims;
+  }
 
   async function refreshProfile(uid) {
     const snap = await getDoc(doc(db, "users", uid));
@@ -41,10 +54,12 @@ export function AuthProvider({ children }) {
       if (user) {
         const tokenResult = await user.getIdTokenResult();
         setIsAdmin(!!tokenResult.claims.admin);
+        setIsDriver(!!tokenResult.claims.driver);
         await refreshProfile(user.uid);
       } else {
         setUserProfile(null);
         setIsAdmin(false);
+        setIsDriver(false);
       }
       setLoading(false);
     });
@@ -143,6 +158,8 @@ export function AuthProvider({ children }) {
     currentUser,
     userProfile,
     isAdmin,
+    isDriver,
+    refreshClaims,
     loading,
     signup,
     login,

@@ -20,6 +20,7 @@ import ConfirmModal from "../../components/admin/ConfirmModal";
 import FareModal from "../../components/admin/FareModal";
 import WalletChargeModal from "../../components/admin/WalletChargeModal";
 import DispatcherAccountSettings from "../../components/admin/DispatcherAccountSettings";
+import DriverApplicationsPanel from "../../components/admin/DriverApplicationsPanel";
 import { OFFICE_ADDRESS, COMPANY_PHONE_DISPLAY, COPY } from "../../config/constants";
 
 const NEXT_STATUS = {
@@ -205,6 +206,10 @@ export default function DispatcherDashboard() {
       {showAccountSettings && (
         <DispatcherAccountSettings onClose={() => setShowAccountSettings(false)} />
       )}
+
+      <div className="px-6 pt-6 max-w-6xl mx-auto empty:hidden">
+        <DriverApplicationsPanel />
+      </div>
 
       {pendingIdVerifications.length > 0 && (
         <div className="px-6 pt-6 max-w-6xl mx-auto">

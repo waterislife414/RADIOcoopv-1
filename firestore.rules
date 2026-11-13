@@ -8,6 +8,9 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && request.auth.token.admin == true;
     }
+    function isDriver() {
+      return isSignedIn() && request.auth.token.driver == true;
+    }
     function isOwner(uid) {
       return isSignedIn() && request.auth.uid == uid;
     }
@@ -38,11 +41,30 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // One application per driver login, keyed by their uid.
     match /driver_applications/{appId} {
-      allow create: if true;
-      allow read: if isAdmin();
+      allow create: if isSignedIn()
+        && appId == request.auth.uid
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow read: if isAdmin() || isOwner(appId);
       allow update: if isAdmin();
       allow delete: if isAdmin();
+    }
+
+    // Driver profile: car #, certs, warnings, lease credit. Only the office
+    // (or Cloud Functions) can change it; drivers can read their own.
+    match /drivers/{uid} {
+      allow read: if isAdmin() || isOwner(uid);
+      allow write: if isAdmin();
+    }
+
+    // Public zone-board entry (car #, status, zone, place in line). Every
+    // driver can see the board; only Cloud Functions write it, so nobody
+    // can move themselves up the line.
+    match /board/{uid} {
+      allow read: if isAdmin() || isDriver();
+      allow write: if false;
     }
 
     match /blacklist/{entryId} {

@@ -35,7 +35,11 @@ export default function TripDetails() {
     if (userProfile.lastName && !ride.guestLastName)
       updates.guestLastName = userProfile.lastName;
     if (Object.keys(updates).length > 0) updateRide(updates);
-  }, [currentUser, userProfile, ride.phone, ride.guestFirstName, ride.guestLastName, updateRide]);
+    // Only re-run when the signed-in identity itself changes, not when the
+    // ride fields we're about to set change — otherwise this effect updates
+    // its own dependencies and loops forever, freezing the page.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser, userProfile]);
 
   function handleAddStop() {
     if (stopInput.trim()) {

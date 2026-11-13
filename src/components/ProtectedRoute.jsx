@@ -13,3 +13,12 @@ export function RequireAdmin({ children }) {
   if (!currentUser || !isAdmin) return <Navigate to="/admin/login" replace />;
   return children;
 }
+
+// Driver area: any signed-in account can open it — the page itself shows
+// "application pending" until Malcolm approves and the driver role is set.
+export function RequireDriverSignIn({ children }) {
+  const { currentUser, loading } = useAuth();
+  if (loading) return null;
+  if (!currentUser) return <Navigate to="/driver/sign-in" replace />;
+  return children;
+}

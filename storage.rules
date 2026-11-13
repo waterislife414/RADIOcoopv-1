@@ -9,10 +9,13 @@ service firebase.storage {
       return isSignedIn() && request.auth.token.admin == true;
     }
 
+    // Applicant uploads into their own folder (keyed by their login) and can
+    // read their own files back; only the office can see anyone else's.
     match /driver_applications/{applicantId}/{fileName} {
-      allow write: if fileName.matches('.*\\.(pdf|jpg|jpeg|png|doc|docx)$')
+      allow write: if isSignedIn() && request.auth.uid == applicantId
+                    && fileName.matches('.*\\.(pdf|jpg|jpeg|png|doc|docx)$')
                     && request.resource.size < 15 * 1024 * 1024;
-      allow read: if isAdmin();
+      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == applicantId);
       allow delete: if isAdmin();
     }
 
