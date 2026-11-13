@@ -20,6 +20,8 @@ const CARD_APP_FEE_MEMBER_CENTS = BRANDING.cardAppFeeMemberCents;
 const PRIORITY_PASS_FEE_CENTS = 500; // $5 VIP-for-a-day pass, fixed server-side
 const OUT_OF_AREA_MINIMUM_FARE_CENTS = BRANDING.outOfAreaMinimumFareCents;
 const SUBSCRIPTION_TRIAL_DAYS = BRANDING.subscriptionTrialDays;
+const BASE_FARE_CENTS = BRANDING.baseFareCents;
+const PER_MILE_CENTS = BRANDING.perMileCents;
 
 // Stripe client is created once per warm instance and reused across
 // invocations rather than per-request, so the function doesn't pay for a
@@ -480,12 +482,16 @@ exports.onSubscriptionRideComplete = onDocumentUpdated(
         const completedRides = countSnap.data().count;
 
         if (user.subscriptionTier && completedRides > 0 && completedRides % 10 === 0) {
-          let credit = 0;
+          // Every 10th ride: Basic gets a free entry (base fare); Premium gets
+          // a free entry + one free mile. Both come from the real meter rate
+          // in branding.json - never hardcode fare numbers here.
+          let creditCents = 0;
           if (user.subscriptionTier === "BASIC") {
-            credit = 2.16;
+            creditCents = BASE_FARE_CENTS;
           } else if (user.subscriptionTier === "PREMIUM") {
-            credit = 2.16 + 3.96;
+            creditCents = BASE_FARE_CENTS + PER_MILE_CENTS;
           }
+          const credit = creditCents / 100;
           if (credit > 0) {
             await userRef.update({
               walletBalance: admin.firestore.FieldValue.increment(credit),

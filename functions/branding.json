@@ -7,6 +7,8 @@
   "outOfAreaMinimumFareCents": 2500,
   "cardAppFeeCents": 200,
   "cardAppFeeMemberCents": 180,
+  "baseFareCents": 216,
+  "perMileCents": 198,
   "subscriptionTrialDays": 7,
   "dataRetentionDays": 5
 }

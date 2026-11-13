@@ -32,6 +32,8 @@ const backend = {
   outOfAreaMinimumFareCents: Math.round(branding.pricing.outOfAreaMinimumFare * 100),
   cardAppFeeCents: Math.round(branding.pricing.fare.CARD_APP_FEE * 100),
   cardAppFeeMemberCents: Math.round(branding.pricing.fare.CARD_APP_FEE_MEMBER * 100),
+  baseFareCents: Math.round(branding.pricing.fare.BASE_FARE * 100),
+  perMileCents: Math.round(branding.pricing.fare.PER_MILE * 100),
   subscriptionTrialDays: branding.pricing.subscriptionTrialDays,
   dataRetentionDays: branding.policies.dataRetentionDays,
 };

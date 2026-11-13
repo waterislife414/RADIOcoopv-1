@@ -254,7 +254,7 @@ export default function DispatcherDashboard() {
             {[...pending]
               .sort((a, b) => {
                 function priorityTier(ride) {
-                  if (customerStatusMap[ride.customerId] === "PREMIUM") return 0;
+                  if (customerStatusMap[ride.customerId]?.tier === "PREMIUM") return 0;
                   if (ride.wantsPriorityPass) return 1;
                   return 2;
                 }
