@@ -466,6 +466,33 @@ export function leaseLockout({ now, settlement, envelopeLogged }, cfg = DEFAULTS
   return leaseWindow(now, cfg) === 'after_window';
 }
 
+/** Local calendar date (YYYY-MM-DD) in the company's time zone. */
+export function localDateKey(ms, timeZone = DEFAULTS.timeZone) {
+  return localParts(ms, timeZone).date;
+}
+
+/**
+ * Locked out for an unpaid lease? owedPeriodKey is the due date of the
+ * oldest unpaid envelope. Locked once that day's window (2–4 PM) has passed.
+ */
+export function leaseLocked({ owedCents, owedPeriodKey, now }, cfg = DEFAULTS) {
+  if (!owedCents || owedCents <= 0) return false;
+  const today = localParts(now, cfg.timeZone).date;
+  if (!owedPeriodKey || owedPeriodKey < today) return true;
+  if (owedPeriodKey > today) return false;
+  return leaseWindow(now, cfg) === 'after_window';
+}
+
+/** Driver's share of a settled card ride: meter fare + tip (card fee and VIP pass stay with the company). */
+export function cardCreditCents(ride, leaseCfg = DEFAULTS.lease) {
+  if (!ride || ride.paymentMethod === 'cash' || ride.finalFare == null) return null;
+  if (!['succeeded', 'wallet_charge'].includes(ride.stripeStatus)) return null;
+  const fareCents = Math.round(Number(ride.finalFare) * 100);
+  const tipCents = leaseCfg.includeTips ? Math.round(Number(ride.tipAmount || 0) * 100) : 0;
+  if (!(fareCents > 0)) return null;
+  return { fareCents, tipCents };
+}
+
 /** Envelope counted at the safe: flag if amount differs from what was logged. */
 export function envelopeMismatch(loggedCents, receivedCents) {
   return loggedCents !== receivedCents ? receivedCents - loggedCents : 0;

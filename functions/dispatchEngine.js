@@ -110,7 +110,7 @@ async function startDispatch(rideId) {
     const drivers = [];
     boards.forEach((b, i) => {
       const d = driverSnaps[i].data();
-      if (d && !blockReason(d)) drivers.push({ ...d, ...b, id: b.id });
+      if (d && !blockReason(d, { c, nowMs })) drivers.push({ ...d, ...b, id: b.id });
     });
     let vehiclesByCar = {};
     if ((ride.requiresCerts || []).includes("wheelchair")) {

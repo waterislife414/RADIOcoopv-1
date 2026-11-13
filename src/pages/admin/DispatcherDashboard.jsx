@@ -26,6 +26,7 @@ import ZoneBoard from "../../components/board/ZoneBoard";
 import DispatchModePanel from "../../components/admin/DispatchModePanel";
 import AssignCarModal from "../../components/admin/AssignCarModal";
 import CarActionsModal from "../../components/admin/CarActionsModal";
+import LeaseAlert from "../../components/admin/LeaseAlert";
 import { useLiveBoard } from "../../hooks/useLiveBoard";
 import { OFFICE_ADDRESS, COMPANY_PHONE_DISPLAY, COPY } from "../../config/constants";
 
@@ -220,6 +221,9 @@ export default function DispatcherDashboard() {
           <Link to="/admin/map" className="text-base font-semibold text-gold-300 hover:text-gold-200">
             Live Map
           </Link>
+          <Link to="/admin/lease" className="text-base font-semibold text-gold-300 hover:text-gold-200">
+            Lease
+          </Link>
           <Link to="/admin/zones" className="text-base font-semibold text-gold-300 hover:text-gold-200">
             Zones
           </Link>
@@ -282,7 +286,8 @@ export default function DispatcherDashboard() {
         </div>
       )}
 
-      <div className="px-6 pt-6 max-w-6xl mx-auto">
+      <div className="px-6 pt-6 max-w-6xl mx-auto space-y-4">
+        <LeaseAlert />
         <DispatchModePanel />
       </div>
 

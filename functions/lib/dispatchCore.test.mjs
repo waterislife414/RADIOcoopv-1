@@ -243,3 +243,20 @@ test('dispatcherMove: back of line, front of line, moving, off', () => {
   assert.equal(c.dispatcherMove(ds, 'x', 'bogus', null, 50), null);
   assert.equal(c.applyAccept({ zoneId: 'east', lineKey: 3 }, { zoneId: null }).zoneId, 'east');
 });
+
+test('leaseLocked: owed today locks after 4 PM; older debt locks all day; nothing owed never locks', () => {
+  const at = (iso) => Date.parse(iso);
+  assert.equal(c.leaseLocked({ owedCents: 0, owedPeriodKey: '2026-11-13', now: at('2026-11-13T22:00:00Z') }), false);
+  assert.equal(c.leaseLocked({ owedCents: 4000, owedPeriodKey: '2026-11-13', now: at('2026-11-13T20:30:00Z') }), false); // 3:30 PM
+  assert.equal(c.leaseLocked({ owedCents: 4000, owedPeriodKey: '2026-11-13', now: at('2026-11-13T21:00:00Z') }), true); // 4:00 PM
+  assert.equal(c.leaseLocked({ owedCents: 4000, owedPeriodKey: '2026-11-12', now: at('2026-11-13T14:00:00Z') }), true);
+  assert.equal(c.localDateKey(at('2026-11-14T03:00:00Z')), '2026-11-13'); // 10 PM ET
+});
+
+test('cardCreditCents: card/wallet fares count, cash and unpaid overrides do not', () => {
+  assert.deepEqual(c.cardCreditCents({ paymentMethod: 'card', finalFare: 12.4, tipAmount: 2, stripeStatus: 'succeeded' }), { fareCents: 1240, tipCents: 200 });
+  assert.deepEqual(c.cardCreditCents({ paymentMethod: 'card', finalFare: 10, stripeStatus: 'wallet_charge' }), { fareCents: 1000, tipCents: 0 });
+  assert.equal(c.cardCreditCents({ paymentMethod: 'cash', finalFare: 10, stripeStatus: 'succeeded' }), null);
+  assert.equal(c.cardCreditCents({ paymentMethod: 'card', finalFare: 10, stripeStatus: 'manual_override' }), null);
+  assert.equal(c.cardCreditCents({ paymentMethod: 'card', finalFare: null, stripeStatus: 'succeeded' }), null);
+});

@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { COMPANY_WORDMARK } from "../../config/constants";
 import { CERT_LABELS } from "../../config/driverCerts";
 import DriverCerts from "./DriverCerts";
+import DriverLeaseCard from "./DriverLeaseCard";
 import DriverStatusPanel from "./DriverStatusPanel";
 import ZoneBoard from "../board/ZoneBoard";
 import { useLiveBoard } from "../../hooks/useLiveBoard";
@@ -101,6 +102,8 @@ export default function DriverDashboard() {
             <ZoneBoard drivers={drivers} zones={zones} viewer={driver} variant="driver" />
           </section>
         )}
+
+        {driver.active !== false && <DriverLeaseCard driver={driver} />}
 
         <section className="glass-panel border border-white/10 rounded-2xl p-5">
           <p className="text-xs font-bold tracking-widest text-slate-400 uppercase mb-1">Record</p>

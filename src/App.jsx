@@ -29,6 +29,7 @@ const DispatcherDashboard = lazy(() => import("./pages/admin/DispatcherDashboard
 const DriversAdmin = lazy(() => import("./pages/admin/DriversAdmin"));
 const ZoneEditor = lazy(() => import("./pages/admin/ZoneEditor"));
 const LiveMap = lazy(() => import("./pages/admin/LiveMap"));
+const LeaseAdmin = lazy(() => import("./pages/admin/LeaseAdmin"));
 // Driver screens load only for drivers, same as the dispatcher terminal.
 const DriverSignIn = lazy(() => import("./pages/driver/DriverSignIn"));
 const DriverHome = lazy(() => import("./pages/driver/DriverHome"));
@@ -145,6 +146,17 @@ export default function App() {
                 <RequireAdmin>
                   <Suspense fallback={<AdminLoadingFallback />}>
                     <LiveMap />
+                  </Suspense>
+                </RequireAdmin>
+              }
+            />
+
+            <Route
+              path="/admin/lease"
+              element={
+                <RequireAdmin>
+                  <Suspense fallback={<AdminLoadingFallback />}>
+                    <LeaseAdmin />
                   </Suspense>
                 </RequireAdmin>
               }

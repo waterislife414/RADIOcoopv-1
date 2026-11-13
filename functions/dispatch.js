@@ -71,7 +71,7 @@ exports.claimBroadcast = onCall(async (request) => {
     ) {
       return { gone: true };
     }
-    const blocked = blockReason(driver);
+    const blocked = blockReason(driver, { c, nowMs });
     if (blocked) throw new HttpsError("failed-precondition", blocked);
     if (!board || !["ready", "moving"].includes(board.status)) {
       throw new HttpsError("failed-precondition", "You need to be on the board and free to take a call.");

@@ -596,9 +596,8 @@ exports.purgeStaleGuestRides = onSchedule(
   }
 );
 
-// Driver accounts, auto-dispatch, lease ledger (see drivers.js etc.).
-Object.assign(exports, require("./drivers"));
-Object.assign(exports, require("./zones"));
-Object.assign(exports, require("./board"));
-Object.assign(exports, require("./dispatch"));
-Object.assign(exports, require("./dispatcher"));
+// Driver accounts, zones, board, auto-dispatch, dispatcher controls, lease.
+// Keys starting with "_" are internal helpers, not deployed functions.
+for (const mod of ["./drivers", "./zones", "./board", "./dispatch", "./dispatcher", "./lease"]) {
+  for (const [name, fn] of Object.entries(require(mod))) if (!name.startsWith("_")) exports[name] = fn;
+}

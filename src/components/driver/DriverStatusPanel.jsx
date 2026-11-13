@@ -50,6 +50,7 @@ function EventBanner({ event, uid, zoneLabel }) {
     missed_call: `You didn't answer a call, so you're off the board.${strike}`,
     declined: `You turned down a call, so you're off the board.${strike}`,
     ride_cancelled: "Your call was cancelled. You're back on the board.",
+    lease_lock: "Lease not paid, so you're off the board. Drop your envelope and log it below.",
   }[event.type];
   if (!text) return null;
   return (

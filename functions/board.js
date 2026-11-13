@@ -11,7 +11,7 @@ const { onSchedule } = require("firebase-functions/v2/scheduler");
 const admin = require("firebase-admin");
 const BRANDING = require("./branding.json");
 const { getZones } = require("./zoneStore");
-const { requireDriver, blockReason } = require("./workRules");
+const { requireDriver, blockReason, LEASE_CFG } = require("./workRules");
 
 const DISPATCH = BRANDING.dispatch || {};
 const GPS = { staleMin: 3, outOfZoneMin: 3, ...(DISPATCH.gps || {}) };
@@ -48,14 +48,20 @@ async function changeStatus(uid, data, decide, { needFix = true } = {}) {
   const gpsZoneId = fix ? c.zoneForPoint(zones, fix.lng, fix.lat) : null;
   const nowMs = Date.now();
 
+  const dayRef = db().collection("ledger").doc(uid).collection("days").doc(c.leasePeriodKey(nowMs, LEASE_CFG));
+
   return db().runTransaction(async (tx) => {
-    const [b, d] = await Promise.all([tx.get(boardRef(uid)), tx.get(driverRef(uid))]);
+    const [b, d, day] = await Promise.all([tx.get(boardRef(uid)), tx.get(driverRef(uid)), tx.get(dayRef)]);
     if (!b.exists || !d.exists) throw new HttpsError("failed-precondition", "You're not on the driver roster yet.");
     const board = b.data();
     const driver = d.data();
     const patch = decide({ c, board, driver, zones, gpsZoneId, nowMs }) || {};
     const next = { ...board, ...patch };
     if (Object.keys(patch).length) tx.update(boardRef(uid), { ...patch, updatedAt: serverNow() });
+    // Being on the board in a lease period means that period's lease is owed.
+    if (next.status !== c.STATUS.OFFLINE && !day.data()?.settledAt) {
+      tx.set(dayRef, { periodKey: dayRef.id, open: true, workedAt: day.data()?.workedAt ?? nowMs }, { merge: true });
+    }
     const loc = { live: c.isLive(next.status), outOfZoneSince: null };
     if (fix) Object.assign(loc, fix, { zoneId: gpsZoneId, at: nowMs });
     tx.set(locationRef(uid), loc, { merge: true });
@@ -103,8 +109,8 @@ exports.driverPing = onCall(async (request) => {
 // Off the board → Moving (on the board, not in a line yet).
 exports.driverGoOnline = onCall(async (request) => {
   const uid = requireDriver(request);
-  return changeStatus(uid, request.data, ({ c, board, driver }) => {
-    const blocked = blockReason(driver);
+  return changeStatus(uid, request.data, ({ c, board, driver, nowMs }) => {
+    const blocked = blockReason(driver, { c, nowMs });
     if (blocked) throw new HttpsError("failed-precondition", blocked);
     if (board.status !== c.STATUS.OFFLINE) return null; // already on the board
     return { status: c.STATUS.MOVING, zoneId: null, lineKey: null };
@@ -115,7 +121,7 @@ exports.driverGoOnline = onCall(async (request) => {
 exports.driverCheckReady = onCall(async (request) => {
   const uid = requireDriver(request);
   return changeStatus(uid, request.data, ({ c, board, driver, zones, gpsZoneId, nowMs }) => {
-    const blocked = blockReason(driver);
+    const blocked = blockReason(driver, { c, nowMs });
     if (blocked) throw new HttpsError("failed-precondition", blocked);
     if (board.status === c.STATUS.OFFERED) throw new HttpsError("failed-precondition", "Answer the call first.");
     if (board.status === c.STATUS.ON_CALL) throw new HttpsError("failed-precondition", "Drop off your fare first.");
@@ -135,8 +141,8 @@ exports.driverCheckReady = onCall(async (request) => {
 // Leaving the line on purpose: on the board, no zone.
 exports.driverGoMoving = onCall(async (request) => {
   const uid = requireDriver(request);
-  return changeStatus(uid, request.data, ({ c, board, driver }) => {
-    const blocked = blockReason(driver);
+  return changeStatus(uid, request.data, ({ c, board, driver, nowMs }) => {
+    const blocked = blockReason(driver, { c, nowMs });
     if (blocked) throw new HttpsError("failed-precondition", blocked);
     if (board.status === c.STATUS.OFFERED) throw new HttpsError("failed-precondition", "Answer the call first.");
     if (board.status === c.STATUS.ON_CALL) throw new HttpsError("failed-precondition", "Drop off your fare first.");
@@ -166,7 +172,7 @@ exports.driverDropOff = onCall(async (request) => {
     const rideSnap = rideId ? await tx.get(db().collection("rides").doc(rideId)) : null;
 
     let patch;
-    if (blockReason(driver)) {
+    if (blockReason(driver, { c, nowMs })) {
       patch = { status: c.STATUS.OFFLINE, zoneId: null, lineKey: null };
     } else {
       const certOk = !zone?.requiresCert || c.hasCert(driver, zone.requiresCert, nowMs);
