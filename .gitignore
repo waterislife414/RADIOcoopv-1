@@ -3,3 +3,4 @@ functions/node_modules/
 dist/
 .harness/
 tests/rules/node_modules/
+.project/
