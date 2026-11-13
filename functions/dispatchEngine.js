@@ -296,6 +296,7 @@ function assignInTx(tx, c, { rideId, ride, uid, board, driver, customer, how, zo
         dropLat: ride.dropLat ?? null,
         dropLng: ride.dropLng ?? null,
         assignedAt: nowMs,
+        how,
       },
     },
     { merge: true }

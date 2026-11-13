@@ -23,6 +23,9 @@ import WalletChargeModal from "../../components/admin/WalletChargeModal";
 import DispatcherAccountSettings from "../../components/admin/DispatcherAccountSettings";
 import DriverApplicationsPanel from "../../components/admin/DriverApplicationsPanel";
 import ZoneBoard from "../../components/board/ZoneBoard";
+import DispatchModePanel from "../../components/admin/DispatchModePanel";
+import AssignCarModal from "../../components/admin/AssignCarModal";
+import CarActionsModal from "../../components/admin/CarActionsModal";
 import { useLiveBoard } from "../../hooks/useLiveBoard";
 import { OFFICE_ADDRESS, COMPANY_PHONE_DISPLAY, COPY } from "../../config/constants";
 
@@ -43,6 +46,8 @@ export default function DispatcherDashboard() {
   const [walletChargeRide, setWalletChargeRide] = useState(null);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
   const liveBoard = useLiveBoard();
+  const [assignRide, setAssignRide] = useState(null);
+  const [carAction, setCarAction] = useState(null); // board entry, or "new" for a radio car
   const carFor = (uid) => liveBoard.drivers.find((d) => d.id === uid)?.carNumber;
   const boardCounts = liveBoard.drivers.reduce((m, d) => ({ ...m, [d.status]: (m[d.status] || 0) + 1 }), {});
   const [pendingIdVerifications, setPendingIdVerifications] = useState([]);
@@ -135,9 +140,21 @@ export default function DispatcherDashboard() {
   }, [pending, active]);
 
   async function handleDispatchAdvance(ride) {
+    if (ride.status === "pending") {
+      setAssignRide(ride);
+      return;
+    }
     const next = NEXT_STATUS[ride.status];
     if (!next) return;
     await updateDoc(doc(db, "rides", ride.id), { status: next });
+  }
+
+  async function handleSetZone(ride, zoneId) {
+    try {
+      await httpsCallable(functions, "dispatcherSetRideZone")({ rideId: ride.id, zoneId });
+    } catch (e) {
+      alert(e?.message || "Couldn't set the zone.");
+    }
   }
 
   function requestDismiss(ride) {
@@ -265,6 +282,10 @@ export default function DispatcherDashboard() {
         </div>
       )}
 
+      <div className="px-6 pt-6 max-w-6xl mx-auto">
+        <DispatchModePanel />
+      </div>
+
       <section className="px-6 pt-6 max-w-6xl mx-auto">
         <div className="flex items-baseline gap-4 mb-3 flex-wrap">
           <h2 className="font-bold text-xl text-slate-700">Board</h2>
@@ -272,13 +293,19 @@ export default function DispatcherDashboard() {
             {(boardCounts.ready || 0) + (boardCounts.offered || 0)} waiting &middot; {boardCounts.on_call || 0} on call
             &middot; {boardCounts.moving || 0} moving
           </p>
+          <p className="text-xs text-slate-400">Tap a car to move it.</p>
+          {liveBoard.zones.length > 0 && (
+            <button onClick={() => setCarAction("new")} className="ml-auto text-sm font-semibold text-blue-700">
+              + Radio car
+            </button>
+          )}
         </div>
         {liveBoard.zones.length === 0 ? (
           <p className="text-slate-500">
             No zones yet. Set them up in <Link to="/admin/zones" className="text-blue-600 underline">Zones</Link>.
           </p>
         ) : (
-          <ZoneBoard drivers={liveBoard.drivers} zones={liveBoard.zones} variant="dispatcher" />
+          <ZoneBoard drivers={liveBoard.drivers} zones={liveBoard.zones} variant="dispatcher" onCarClick={setCarAction} />
         )}
       </section>
 
@@ -305,6 +332,9 @@ export default function DispatcherDashboard() {
                 ride={ride}
                 customerStatus={customerStatusMap[ride.customerId]}
                 carFor={carFor}
+                zones={liveBoard.zones}
+                onSetZone={handleSetZone}
+                onChangeCar={setAssignRide}
                 onDispatchAdvance={handleDispatchAdvance}
                 onDismiss={requestDismiss}
               />
@@ -326,6 +356,9 @@ export default function DispatcherDashboard() {
                 ride={ride}
                 customerStatus={customerStatusMap[ride.customerId]}
                 carFor={carFor}
+                zones={liveBoard.zones}
+                onSetZone={handleSetZone}
+                onChangeCar={setAssignRide}
                 onDispatchAdvance={handleDispatchAdvance}
                 onCaptureFare={requestCaptureFare}
                 onChargeWallet={setWalletChargeRide}
@@ -338,6 +371,13 @@ export default function DispatcherDashboard() {
           </div>
         </section>
       </div>
+
+      {assignRide && (
+        <AssignCarModal ride={assignRide} board={liveBoard.drivers} zones={liveBoard.zones} onClose={() => setAssignRide(null)} />
+      )}
+      {carAction && (
+        <CarActionsModal car={carAction === "new" ? null : carAction} zones={liveBoard.zones} onClose={() => setCarAction(null)} />
+      )}
 
       {dismissTarget && (
         <ConfirmModal

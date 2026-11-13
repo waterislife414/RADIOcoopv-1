@@ -234,3 +234,12 @@ test('missOutcome: requested = no penalty; zone call = off board + warning; 3rd 
   assert.equal(s.board.lastEvent.type, 'declined');
   assert.deepEqual(s.driver, { warnings: 3, status: 'suspended' });
 });
+
+test('dispatcherMove: back of line, front of line, moving, off', () => {
+  const ds = [{ id: 'a', status: 'ready', zoneId: 'east', lineKey: 10 }, { id: 'b', status: 'on_call', zoneId: 'east', lineKey: 1 }];
+  assert.deepEqual(c.dispatcherMove(ds, 'x', 'ready', 'east', 50), { status: 'ready', zoneId: 'east', lineKey: 50 });
+  assert.equal(c.dispatcherMove(ds, 'x', 'front', 'east', 50).lineKey, 9);
+  assert.equal(c.dispatcherMove(ds, 'x', 'moving', null, 50).status, 'moving');
+  assert.equal(c.dispatcherMove(ds, 'x', 'bogus', null, 50), null);
+  assert.equal(c.applyAccept({ zoneId: 'east', lineKey: 3 }, { zoneId: null }).zoneId, 'east');
+});

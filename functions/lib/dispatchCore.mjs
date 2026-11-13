@@ -222,7 +222,20 @@ export function applyMiss(driver, { requested = false } = {}, maxWarnings = DEFA
 
 /** Driver accepted: green dot stays in the pickup zone until drop-off. */
 export function applyAccept(driver, ride) {
-  return { status: STATUS.ON_CALL, zoneId: ride.zoneId, lineKey: driver.lineKey ?? Date.now() };
+  return { status: STATUS.ON_CALL, zoneId: ride.zoneId ?? driver.zoneId ?? null, lineKey: driver.lineKey ?? Date.now() };
+}
+
+/**
+ * Dispatcher moves a car on the board by hand.
+ * 'ready' = back of zoneId's line, 'front' = next up in zoneId,
+ * 'moving' = on the board, no line, 'off' = off the board.
+ */
+export function dispatcherMove(drivers, driverId, action, zoneId, now = Date.now()) {
+  if (action === 'ready') return { status: STATUS.READY, zoneId, lineKey: now };
+  if (action === 'front') return applyDropOff(drivers, driverId, zoneId, 'front', now);
+  if (action === 'moving') return { status: STATUS.MOVING, zoneId: null, lineKey: null };
+  if (action === 'off') return { status: STATUS.OFFLINE, zoneId: null, lineKey: null };
+  return null;
 }
 
 /**

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../../config/firebase";
+import { ring } from "../../utils/alertSound";
 
 const pickedUp = httpsCallable(functions, "driverPickedUp");
 
@@ -13,6 +14,14 @@ function navUrl(lat, lng, address) {
 export default function CurrentRide({ ride }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const rung = useRef(null);
+  // Ring when dispatch hands him a call (he didn't tap Accept, so he may not be looking).
+  useEffect(() => {
+    if (ride?.how === "dispatcher" && rung.current !== ride.rideId && Date.now() - (ride.assignedAt || 0) < 60_000) {
+      rung.current = ride.rideId;
+      ring(3);
+    }
+  }, [ride?.rideId, ride?.how, ride?.assignedAt]);
   if (!ride) return null;
   const going = ride.status === "dispatched";
 
@@ -32,6 +41,7 @@ export default function CurrentRide({ ride }) {
     <section className="rounded-2xl border-2 border-emerald-500 bg-emerald-500/10 p-5 space-y-3">
       <p className="text-xs font-bold tracking-widest text-emerald-300 uppercase">
         {going ? "Pick up" : "Riding — drop off"}
+        {ride.how === "dispatcher" && <span className="ml-2 text-amber-300">from dispatch</span>}
       </p>
       <div>
         <p className="text-sm text-slate-400">From</p>

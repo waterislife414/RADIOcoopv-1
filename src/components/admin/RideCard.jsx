@@ -77,7 +77,7 @@ function AutoDispatchLine({ ride, carFor }) {
   );
 }
 
-export default function RideCard({ ride, customerStatus, carFor, onDispatchAdvance, onDismiss, onCaptureFare, onChargeWallet, onArchive }) {
+export default function RideCard({ ride, customerStatus, carFor, zones, onSetZone, onChangeCar, onDispatchAdvance, onDismiss, onCaptureFare, onChargeWallet, onArchive }) {
   const isPending = ride.status === "pending";
   const isInTransit = ride.status === "in_transit";
   const isFinished = ride.status === "finished";
@@ -119,6 +119,24 @@ export default function RideCard({ ride, customerStatus, carFor, onDispatchAdvan
       </div>
 
       <AutoDispatchLine ride={ride} carFor={carFor} />
+
+      {isPending && zones?.length > 0 && onSetZone && (
+        <label className="flex items-center gap-2 text-sm text-slate-600">
+          Zone
+          <select
+            value={ride.zoneId || ""}
+            onChange={(e) => e.target.value && onSetZone(ride, e.target.value)}
+            className="border border-slate-300 rounded-lg px-2 py-1 text-sm"
+          >
+            <option value="">{ride.zoneAssignedAt ? "\u2014 not found \u2014" : "Finding\u2026"}</option>
+            {zones.map((z) => (
+              <option key={z.id} value={z.id}>
+                {z.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       <div className="space-y-1.5">
         <p className="text-lg font-bold text-slate-900 leading-snug">
@@ -166,6 +184,11 @@ export default function RideCard({ ride, customerStatus, carFor, onDispatchAdvan
             {dispatchLabel}
           </button>
         </div>
+      )}
+      {ride.status === "dispatched" && onChangeCar && (
+        <button onClick={() => onChangeCar(ride)} className="w-full text-sm font-semibold text-blue-700">
+          {ride.carNumber ? "Change car" : "Pick a car"}
+        </button>
       )}
 
       {ride.paymentMethod === "cash" && (isInTransit || isFinished) && (
