@@ -106,3 +106,30 @@ exports.setDriverCar = onCall(async (request) => {
   await batch.commit();
   return { success: true };
 });
+
+// Once a day: certifications past their expiration date stop counting.
+// The driver's screen already warns them 14 days ahead to upload a renewal.
+const { onSchedule } = require("firebase-functions/v2/scheduler");
+exports.expireDriverCerts = onSchedule(
+  { schedule: "every day 05:00", timeZone: "America/New_York" },
+  async () => {
+    const nowMs = Date.now();
+    const snap = await db().collection("drivers").where("active", "==", true).get();
+    let expired = 0;
+    for (const d of snap.docs) {
+      const certs = d.data().certs || {};
+      const updates = {};
+      for (const [key, c] of Object.entries(certs)) {
+        if (c && c.status === "approved" && c.expiresAt && c.expiresAt <= nowMs) {
+          updates[`certs.${key}.status`] = "expired";
+        }
+      }
+      if (Object.keys(updates).length) {
+        await d.ref.update(updates);
+        expired += Object.keys(updates).length;
+      }
+    }
+    console.log(`Expired ${expired} certification(s).`);
+    return null;
+  }
+);

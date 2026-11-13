@@ -4,6 +4,7 @@ import { db } from "../../config/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { COMPANY_WORDMARK } from "../../config/constants";
 import { CERT_LABELS } from "../../config/driverCerts";
+import DriverCerts from "./DriverCerts";
 
 function CertBadges({ certs }) {
   const approved = Object.entries(certs || {}).filter(([, c]) => c?.status === "approved");
@@ -81,6 +82,8 @@ export default function DriverDashboard() {
             </div>
           </div>
         </section>
+
+        <DriverCerts driver={driver} />
       </main>
     </div>
   );

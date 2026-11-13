@@ -67,6 +67,25 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Driver asks for a certification (base pass, wheelchair van). Doc id is
+    // "<uid>_<cert>" so each driver has one request per cert.
+    match /certRequests/{reqId} {
+      allow read: if isAdmin() || (isSignedIn() && reqId.matches(request.auth.uid + '_.*'));
+      allow create, update: if isAdmin()
+        || (isDriver()
+            && reqId == request.auth.uid + '_' + request.resource.data.cert
+            && request.resource.data.uid == request.auth.uid
+            && request.resource.data.status == 'pending'
+            && request.resource.data.cert in ['base', 'wheelchair']);
+      allow delete: if isAdmin();
+    }
+
+    // Fleet: car #, plate, wheelchair van flag.
+    match /vehicles/{carNumber} {
+      allow read: if isAdmin() || isDriver();
+      allow write: if isAdmin();
+    }
+
     match /blacklist/{entryId} {
       allow read, write: if isAdmin();
     }

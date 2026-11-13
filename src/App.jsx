@@ -26,6 +26,7 @@ import PostSignupUpsell from "./pages/PostSignupUpsell";
 // there, so a customer booking a ride on their phone never fetches it.
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const DispatcherDashboard = lazy(() => import("./pages/admin/DispatcherDashboard"));
+const DriversAdmin = lazy(() => import("./pages/admin/DriversAdmin"));
 // Driver screens load only for drivers, same as the dispatcher terminal.
 const DriverSignIn = lazy(() => import("./pages/driver/DriverSignIn"));
 const DriverHome = lazy(() => import("./pages/driver/DriverHome"));
@@ -109,6 +110,17 @@ export default function App() {
                 <RequireAdmin>
                   <Suspense fallback={<AdminLoadingFallback />}>
                     <DispatcherDashboard />
+                  </Suspense>
+                </RequireAdmin>
+              }
+            />
+
+            <Route
+              path="/admin/drivers"
+              element={
+                <RequireAdmin>
+                  <Suspense fallback={<AdminLoadingFallback />}>
+                    <DriversAdmin />
                   </Suspense>
                 </RequireAdmin>
               }

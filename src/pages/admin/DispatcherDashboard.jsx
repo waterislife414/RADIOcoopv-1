@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   collection,
   query,
@@ -191,6 +192,9 @@ export default function DispatcherDashboard() {
             </p>
             <p className="font-bold text-xl text-gold-300">${dailyGross.toFixed(2)}</p>
           </div>
+          <Link to="/admin/drivers" className="text-base font-semibold text-gold-300 hover:text-gold-200">
+            Drivers &amp; Fleet
+          </Link>
           <button
             onClick={() => setShowAccountSettings(true)}
             className="text-base text-slate-300 hover:text-white"
