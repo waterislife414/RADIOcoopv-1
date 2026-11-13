@@ -35,4 +35,16 @@ function blockReason(driver, ctx = null) {
   return null;
 }
 
-module.exports = { requireDriver, blockReason, LEASE_CFG };
+// Score + clean-period bonus settings (see dispatchCore INCENTIVE_DEFAULTS).
+const INCENTIVES = {
+  bonusCents: 500,
+  bonusPeriodDays: 14,
+  bonusAnchor: "2026-11-02",
+  strikesToForfeit: 2,
+  bonusMinDays: 5,
+  scoreStrikePoints: 10,
+  scoreWindowDays: 30,
+  ...(D.incentives || {}),
+};
+
+module.exports = { requireDriver, blockReason, LEASE_CFG, INCENTIVES };

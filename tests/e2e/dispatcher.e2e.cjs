@@ -17,10 +17,7 @@ async function rejects(p, re) { await assert.rejects(p, (e) => (assert.match(e.m
 const sq = (lat, lng, r = 0.01) => [{ lat: lat - r, lng: lng - r }, { lat: lat - r, lng: lng + r }, { lat: lat + r, lng: lng + r }, { lat: lat + r, lng: lng - r }];
 
 (async () => {
-  for (const c of ["rides", "board", "drivers", "driverInbox", "settings", "zones", "vehicles"]) {
-    const s = await db.collection(c).get();
-    await Promise.all(s.docs.map((d) => d.ref.delete()));
-  }
+  await require("./reset.cjs")(db);
   E._resetSettingsCache();
   await db.doc("zones/rose-hill").set({ label: "Rose Hill", points: sq(32.48, -84.95) });
   await db.doc("zones/east").set({ label: "East", points: sq(32.48, -84.9) });

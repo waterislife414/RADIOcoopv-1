@@ -6,6 +6,7 @@ import { COMPANY_WORDMARK } from "../../config/constants";
 import { CERT_LABELS } from "../../config/driverCerts";
 import DriverCerts from "./DriverCerts";
 import DriverLeaseCard from "./DriverLeaseCard";
+import DriverRecord from "./DriverRecord";
 import DriverStatusPanel from "./DriverStatusPanel";
 import ZoneBoard from "../board/ZoneBoard";
 import { useLiveBoard } from "../../hooks/useLiveBoard";
@@ -105,21 +106,7 @@ export default function DriverDashboard() {
 
         {driver.active !== false && <DriverLeaseCard driver={driver} />}
 
-        <section className="glass-panel border border-white/10 rounded-2xl p-5">
-          <p className="text-xs font-bold tracking-widest text-slate-400 uppercase mb-1">Record</p>
-          <div className="flex gap-6">
-            <div>
-              <p className="text-2xl font-bold tabular-nums">{driver.score ?? 100}</p>
-              <p className="text-sm text-slate-400">Score</p>
-            </div>
-            <div>
-              <p className={`text-2xl font-bold tabular-nums ${driver.warnings ? "text-amber-300" : ""}`}>
-                {driver.warnings ?? 0}
-              </p>
-              <p className="text-sm text-slate-400">Warnings</p>
-            </div>
-          </div>
-        </section>
+        <DriverRecord driver={driver} />
 
         <DriverCerts driver={driver} />
       </main>

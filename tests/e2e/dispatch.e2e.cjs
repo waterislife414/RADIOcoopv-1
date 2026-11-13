@@ -48,6 +48,7 @@ async function boardChanged(uid, before) {
 }
 
 (async () => {
+  await require("./reset.cjs")(db);
   await db.doc("settings/dispatch").set({ mode: "auto" });
   await db.doc("zones/rose-hill").set({ label: "Rose Hill", order: 1, points: sq(RH.lat, RH.lng) });
   await db.doc("zones/east").set({ label: "East", order: 2, points: sq(EAST.lat, EAST.lng) });

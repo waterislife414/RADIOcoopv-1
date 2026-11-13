@@ -260,3 +260,19 @@ test('cardCreditCents: card/wallet fares count, cash and unpaid overrides do not
   assert.equal(c.cardCreditCents({ paymentMethod: 'card', finalFare: 10, stripeStatus: 'manual_override' }), null);
   assert.equal(c.cardCreditCents({ paymentMethod: 'card', finalFare: null, stripeStatus: 'succeeded' }), null);
 });
+
+test('incentives: 14-day periods, score from 30-day strikes, bonus rules', () => {
+  const at = (iso) => Date.parse(iso);
+  assert.deepEqual(c.incentivePeriod(at('2026-11-13T15:00:00Z')), { index: 0, startKey: '2026-11-02', endKey: '2026-11-16' });
+  assert.deepEqual(c.incentivePeriod(at('2026-11-16T15:00:00Z')).startKey, '2026-11-16');
+  assert.equal(c.incentivePeriod(at('2026-11-16T03:00:00Z')).startKey, '2026-11-02'); // 10 PM Sunday ET
+  const now = at('2026-11-13T15:00:00Z');
+  const s1 = c.recordStrike([at('2026-10-01T12:00:00Z')], now);
+  assert.equal(s1.recentStrikes.length, 1); // October strike aged out
+  assert.equal(s1.score, 90);
+  assert.equal(c.recordStrike(s1.recentStrikes, now + 1).score, 80);
+  assert.equal(c.strikesBetween([at('2026-11-02T04:59:00Z'), at('2026-11-02T05:01:00Z'), at('2026-11-15T12:00:00Z')], '2026-11-02', '2026-11-16'), 2);
+  assert.deepEqual(c.bonusOutcome({ strikes: 1, workedDays: 9 }), { award: true, cents: 500 });
+  assert.equal(c.bonusOutcome({ strikes: 2, workedDays: 9 }).reason, 'strikes');
+  assert.equal(c.bonusOutcome({ strikes: 0, workedDays: 3 }).reason, 'not_enough_days');
+});

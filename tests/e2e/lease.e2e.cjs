@@ -23,10 +23,7 @@ async function rideUpdate(id, before, after) {
 }
 
 (async () => {
-  for (const c of ["rides", "board", "drivers", "driverInbox", "settings", "zones", "envelopes", "ledger"]) {
-    const s = await db.collection(c).get();
-    await Promise.all(s.docs.map((d) => db.recursiveDelete(d.ref)));
-  }
+  await require("./reset.cjs")(db);
   E._resetSettingsCache();
   const core = await import(ROOT + "/lib/dispatchCore.mjs");
   await db.doc("zones/rose-hill").set({ label: "Rose Hill", points: sq(RH.lat, RH.lng) });

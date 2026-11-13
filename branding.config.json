@@ -110,6 +110,7 @@
     "scheduledLeadMin": 15,
     "pushVapidKey": "",
     "maxWarnings": 3,
+    "incentives": { "bonusCents": 500, "bonusPeriodDays": 14, "bonusAnchor": "2026-11-02", "strikesToForfeit": 2, "bonusMinDays": 5, "scoreStrikePoints": 10, "scoreWindowDays": 30 },
     "dropOffPlacement": "front",
     "gps": { "staleMin": 3, "outOfZoneMin": 3, "minMoveMeters": 50, "maxIntervalSec": 45 }
   },

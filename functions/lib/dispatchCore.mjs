@@ -493,6 +493,64 @@ export function cardCreditCents(ride, leaseCfg = DEFAULTS.lease) {
   return { fareCents, tipCents };
 }
 
+// ---------------------------------------------------------------------------
+// Score + clean-period bonus. A strike = a missed or declined call when he
+// was next up (requested calls never count). Score = 100 minus points per
+// strike in the last scoreWindowDays. Bonus: every bonusPeriodDays, a driver
+// who worked at least bonusMinDays and stayed under strikesToForfeit gets
+// bonusCents of lease credit ("$5 off the lick").
+
+export const INCENTIVE_DEFAULTS = Object.freeze({
+  bonusCents: 500,
+  bonusPeriodDays: 14,
+  bonusAnchor: '2026-11-02',
+  strikesToForfeit: 2,
+  bonusMinDays: 5,
+  scoreStrikePoints: 10,
+  scoreWindowDays: 30,
+});
+
+const dayNumber = (key) => {
+  const [y, m, d] = key.split('-').map(Number);
+  return Math.round(Date.UTC(y, m - 1, d) / 86400000);
+};
+const keyFromDayNumber = (n) => new Date(n * 86400000).toISOString().slice(0, 10);
+
+/** The bonus period containing `now`: { startKey, endKey (exclusive), index }. */
+export function incentivePeriod(now, inc = INCENTIVE_DEFAULTS, timeZone = DEFAULTS.timeZone) {
+  const today = dayNumber(localParts(now, timeZone).date);
+  const anchor = dayNumber(inc.bonusAnchor);
+  const index = Math.floor((today - anchor) / inc.bonusPeriodDays);
+  const start = anchor + index * inc.bonusPeriodDays;
+  return { index, startKey: keyFromDayNumber(start), endKey: keyFromDayNumber(start + inc.bonusPeriodDays) };
+}
+
+/** Add a strike; keep only the score window. Returns { recentStrikes, score }. */
+export function recordStrike(recentStrikes = [], now, inc = INCENTIVE_DEFAULTS) {
+  return scoreFrom([...recentStrikes, now], now, inc);
+}
+
+/** Drop strikes older than the score window and score what's left. */
+export function scoreFrom(recentStrikes = [], now, inc = INCENTIVE_DEFAULTS) {
+  const cutoff = now - inc.scoreWindowDays * 86400000;
+  const kept = recentStrikes.filter((t) => t > cutoff).sort((a, b) => a - b);
+  return { recentStrikes: kept, score: Math.max(0, 100 - kept.length * inc.scoreStrikePoints) };
+}
+
+/** Strikes between two local date keys [startKey, endKey). */
+export function strikesBetween(recentStrikes = [], startKey, endKey, timeZone = DEFAULTS.timeZone) {
+  const from = parseLocalDateTime(`${startKey}T00:00`, timeZone);
+  const to = parseLocalDateTime(`${endKey}T00:00`, timeZone);
+  return recentStrikes.filter((t) => t >= from && t < to).length;
+}
+
+/** Bonus decision for one finished period. */
+export function bonusOutcome({ strikes, workedDays }, inc = INCENTIVE_DEFAULTS) {
+  if (workedDays < inc.bonusMinDays) return { award: false, reason: 'not_enough_days' };
+  if (strikes >= inc.strikesToForfeit) return { award: false, reason: 'strikes' };
+  return { award: true, cents: inc.bonusCents };
+}
+
 /** Envelope counted at the safe: flag if amount differs from what was logged. */
 export function envelopeMismatch(loggedCents, receivedCents) {
   return loggedCents !== receivedCents ? receivedCents - loggedCents : 0;

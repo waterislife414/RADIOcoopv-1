@@ -10,10 +10,7 @@ const get = async (p) => (await db.doc(p).get()).data();
 async function rejects(p, re) { await assert.rejects(p, (e) => (assert.match(e.message, re), true)); }
 
 (async () => {
-  for (const c of ["board", "drivers", "ledger", "payouts", "driverLocations"]) {
-    const s = await db.collection(c).get();
-    await Promise.all(s.docs.map((d) => db.recursiveDelete(d.ref)));
-  }
+  await require("./reset.cjs")(db);
   const core = await import(ROOT + "/lib/dispatchCore.mjs");
   const key = core.leasePeriodKey(Date.now(), { timeZone: "America/New_York", lease: { dueStart: "14:00" } });
   const mk = async (uid, car, extra = {}, board = { status: "offline" }) => {

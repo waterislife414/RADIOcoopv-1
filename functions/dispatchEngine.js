@@ -13,7 +13,7 @@
 const admin = require("firebase-admin");
 const BRANDING = require("./branding.json");
 const { getZones } = require("./zoneStore");
-const { blockReason } = require("./workRules");
+const { blockReason, INCENTIVES } = require("./workRules");
 const timers = require("./timers");
 const push = require("./push");
 
@@ -236,7 +236,9 @@ async function resolveOffer(rideId, { seq = null, byDriver = null, reason = "mis
     const uid = offer.driverId;
     const [bs, ds] = await Promise.all([tx.get(boardRef(uid)), tx.get(driverRef(uid))]);
     const board = bs.data();
-    const result = c.missOutcome({ board: board || {}, driver: ds.data(), kind: offer.kind, reason, now: nowMs, maxWarnings: MAX_WARNINGS });
+    const driverDoc = ds.data() || {};
+    const result = c.missOutcome({ board: board || {}, driver: driverDoc, kind: offer.kind, reason, now: nowMs, maxWarnings: MAX_WARNINGS });
+    if (result.driver) Object.assign(result.driver, c.recordStrike(driverDoc.recentStrikes, nowMs, INCENTIVES));
     if (board?.status === c.STATUS.OFFERED && board.offerRideId === rideId) {
       tx.update(boardRef(uid), { ...result.board, offerRideId: null, updatedAt: serverNow() });
     }

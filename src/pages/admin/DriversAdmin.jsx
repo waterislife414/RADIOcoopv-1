@@ -117,6 +117,7 @@ function DriverRow({ driver }) {
         <button onClick={saveCar} className="px-3 py-1.5 rounded-lg bg-slate-800 text-white font-semibold">
           Change car
         </button>
+        <span className="text-slate-500">Score: {driver.score ?? 100}</span>
         <span className="text-slate-500">Warnings: {driver.warnings || 0}</span>
         {driver.warnings > 0 && driver.status !== "suspended" && (
           <button onClick={clearWarnings} className="px-3 py-1.5 rounded-lg bg-slate-100 font-semibold">

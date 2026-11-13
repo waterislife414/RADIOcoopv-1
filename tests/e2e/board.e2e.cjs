@@ -15,6 +15,7 @@ const loc = async (uid) => (await db.doc(`driverLocations/${uid}`).get()).data()
 async function rejects(p, re) { await assert.rejects(p, (e) => { assert.match(e.message, re); return true; }); }
 
 (async () => {
+  await require("./reset.cjs")(db);
   await db.doc("zones/rose-hill").set({ label: "Rose Hill", points: sq(RH.lat, RH.lng) });
   await db.doc("zones/fort-benning").set({ label: "Fort Benning", requiresCert: "base", points: sq(FB.lat, FB.lng) });
   for (const [uid, car] of [["d1", "44"], ["d2", "12"], ["d3", "7"]]) {

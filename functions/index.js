@@ -598,6 +598,6 @@ exports.purgeStaleGuestRides = onSchedule(
 
 // Driver accounts, zones, board, auto-dispatch, dispatcher controls, lease.
 // Keys starting with "_" are internal helpers, not deployed functions.
-for (const mod of ["./drivers", "./zones", "./board", "./dispatch", "./dispatcher", "./lease", "./closeout"]) {
+for (const mod of ["./drivers", "./zones", "./board", "./dispatch", "./dispatcher", "./lease", "./closeout", "./incentives"]) {
   for (const [name, fn] of Object.entries(require(mod))) if (!name.startsWith("_")) exports[name] = fn;
 }
