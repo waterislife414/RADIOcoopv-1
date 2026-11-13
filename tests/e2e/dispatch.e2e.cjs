@@ -37,7 +37,7 @@ async function runTimer(match) {
   return t;
 }
 async function newRide(id, extra) {
-  const data = { status: "pending", pickup: "100 Test St", dropoff: "Mall", customerId: "guest", firstName: "Pat", phone: "7065550100", paymentMethod: "cash", timestamp: admin.firestore.Timestamp.now(), ...extra };
+  const data = { status: "pending", pickup: "100 Test St", dropoff: "", customerId: "guest", firstName: "Pat", phone: "7065550100", paymentMethod: "cash", timestamp: admin.firestore.Timestamp.now(), ...extra };
   await db.doc(`rides/${id}`).set(data);
   // assignRideZone with a preset zone (no geocoding)
   await f.assignRideZone.run({ data: { data: () => data, ref: db.doc(`rides/${id}`) }, params: { rideId: id } });
@@ -162,7 +162,7 @@ async function boardChanged(uid, before) {
   assert.equal((await inbox(offeredTo)).offer, null);
 
   // 10. Fort Benning ride: only base-certified drivers
-  await newRide("r4", { zoneId: "fort-benning", zoneLabel: "Fort Benning", requiresCerts: ["base"] });
+  await newRide("r4", { zoneId: "fort-benning", zoneLabel: "Fort Benning" });
   r = await ride("r4");
   assert.equal(r.dispatchState, "broadcast"); assert.deepEqual(r.broadcastTo, []);
   await db.doc("drivers/d4").update({ "certs.base": { status: "approved", expiresAt: Date.now() + 864e5 } });
@@ -176,11 +176,11 @@ async function boardChanged(uid, before) {
 
   // 11. Wheelchair: needs cert + a van
   await mk("d5", "30", "ready", "east", 9, { certs: { wheelchair: { status: "approved" } } });
-  await newRide("r5", { zoneId: "east", zoneLabel: "East", requiresCerts: ["wheelchair"] });
+  await newRide("r5", { zoneId: "east", zoneLabel: "East", needsAccessibleVehicle: true });
   assert.equal((await ride("r5")).dispatchState, "broadcast"); // d5 has the cert but no van on file
   await db.doc("rides/r5").delete();
   await db.doc("vehicles/30").set({ carNumber: "30", isVan: true, active: true });
-  await newRide("r6", { zoneId: "east", zoneLabel: "East", requiresCerts: ["wheelchair"] });
+  await newRide("r6", { zoneId: "east", zoneLabel: "East", needsAccessibleVehicle: true });
   assert.equal((await ride("r6")).offer.driverId, "d5");
 
   // 12. Sweep catches an offer whose timer was lost
