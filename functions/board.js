@@ -160,6 +160,50 @@ exports.driverGoMoving = onCall(async (request) => {
   });
 });
 
+// Drop Off: the green dot leaves the pickup zone and the driver goes into
+// the line where he dropped (front by default: "next up"). Outside every
+// zone, or in a zone he isn't certified for, he goes to Moving.
+exports.driverDropOff = onCall(async (request) => {
+  const uid = requireDriver(request);
+  const fix = readFix(request.data);
+  const c = await core();
+  const zones = await getZones();
+  const gpsZoneId = c.zoneForPoint(zones, fix.lng, fix.lat);
+  const zone = zones.find((z) => z.id === gpsZoneId);
+  const nowMs = Date.now();
+
+  return db().runTransaction(async (tx) => {
+    const [b, d] = await Promise.all([tx.get(boardRef(uid)), tx.get(driverRef(uid))]);
+    if (!b.exists || !d.exists) throw new HttpsError("failed-precondition", "You're not on the driver roster yet.");
+    if (b.data().status !== c.STATUS.ON_CALL) throw new HttpsError("failed-precondition", "You're not on a call.");
+    const driver = d.data();
+
+    let patch;
+    if (blockReason(driver)) {
+      patch = { status: c.STATUS.OFFLINE, zoneId: null, lineKey: null };
+    } else {
+      const certOk = !zone?.requiresCert || c.hasCert(driver, zone.requiresCert, nowMs);
+      const dropZoneId = certOk ? gpsZoneId : null;
+      const line = dropZoneId
+        ? (await tx.get(db().collection("board").where("zoneId", "==", dropZoneId))).docs.map((x) => ({
+            id: x.id,
+            ...x.data(),
+          }))
+        : [];
+      patch = c.applyDropOff(line, uid, dropZoneId, DISPATCH.dropOffPlacement || "front", nowMs);
+    }
+    tx.update(boardRef(uid), { ...patch, rideId: null, updatedAt: serverNow() });
+    tx.set(locationRef(uid), {
+      ...fix,
+      zoneId: gpsZoneId,
+      at: nowMs,
+      live: c.isLive(patch.status),
+      outOfZoneSince: null,
+    });
+    return { status: patch.status, zoneId: patch.zoneId, gpsZoneId };
+  });
+});
+
 exports.driverGoOffline = onCall(async (request) => {
   const uid = requireDriver(request);
   return changeStatus(

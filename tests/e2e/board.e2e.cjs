@@ -80,6 +80,24 @@ async function rejects(p, re) { await assert.rejects(p, (e) => { assert.match(e.
   r = await call("driverGoOffline", "d1", {});
   assert.equal(r.status, "offline"); assert.equal((await loc("d1")).live, false);
 
+  // Drop Off: d3 on call (Fort Benning pickup) drops in Rose Hill → front of Rose Hill line
+  await db.doc("board/d3").update({ status: "on_call", zoneId: "fort-benning" });
+  await call("driverCheckReady", "d2", RH); // d2 waiting in Rose Hill
+  await rejects(call("driverDropOff", "d2", RH), /not on a call/);
+  r = await call("driverDropOff", "d3", RH);
+  assert.deepEqual([r.status, r.zoneId], ["ready", "rose-hill"]);
+  assert.ok((await board("d3")).lineKey < (await board("d2")).lineKey, "drop-off is next up");
+  assert.equal((await loc("d3")).live, true);
+  // drop outside every zone → Moving
+  await db.doc("board/d3").update({ status: "on_call", zoneId: "rose-hill" });
+  r = await call("driverDropOff", "d3", NOWHERE);
+  assert.equal(r.status, "moving");
+  // drop in Fort Benning without cert → Moving
+  await db.doc("drivers/d2").update({ certs: {} });
+  await db.doc("board/d2").update({ status: "on_call" });
+  r = await call("driverDropOff", "d2", FB);
+  assert.deepEqual([r.status, r.gpsZoneId], ["moving", "fort-benning"]);
+
   await db.doc("drivers/d1").update({ status: "suspended" });
   await rejects(call("driverGoOnline", "d1", RH), /suspended/);
   console.log("BOARD E2E: all assertions passed");

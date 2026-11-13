@@ -1,18 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
-import { collection, doc, onSnapshot } from "firebase/firestore";
+import { useMemo, useState } from "react";
 import { httpsCallable } from "firebase/functions";
-import { db, functions } from "../../config/firebase";
+import { functions } from "../../config/firebase";
 import { BRAND } from "../../config/constants";
 import { CERT_LABELS } from "../../config/driverCerts";
 import { useDriverGps } from "../../hooks/useDriverGps";
-import { hasCert } from "../../../functions/lib/dispatchCore.mjs";
+import { hasCert, linePosition, ordinal, zoneLine } from "../../../functions/lib/dispatchCore.mjs";
 
 const OUT_OF_ZONE_MIN = BRAND.dispatch?.gps?.outOfZoneMin ?? 3;
+const DROP_FRONT = (BRAND.dispatch?.dropOffPlacement ?? "front") === "front";
 const call = (name) => httpsCallable(functions, name);
 const goOnline = call("driverGoOnline");
 const checkReady = call("driverCheckReady");
 const goMoving = call("driverGoMoving");
 const goOffline = call("driverGoOffline");
+const dropOff = call("driverDropOff");
 
 const BIG = "w-full rounded-2xl py-4 text-lg font-bold transition disabled:opacity-50";
 const PRIMARY = `${BIG} bg-gold-400 text-navy-950 hover:bg-gold-300`;
@@ -61,20 +62,28 @@ function EventBanner({ event, uid, zoneLabel }) {
   );
 }
 
-/** Online / Check Ready / Moving / Offline, driven by the phone's GPS. */
-export default function DriverStatusPanel({ driver }) {
+function PositionLine({ drivers, uid, zoneId }) {
+  const pos = linePosition(zoneLine(drivers, zoneId), uid);
+  if (!pos || pos.onCall) return null;
+  const onCallAhead = pos.position - 1 - pos.callsUntilYou;
+  return (
+    <p className="text-lg text-slate-200 mt-1">
+      <span className="font-bold text-white">{ordinal(pos.position)} out</span>
+      {" \u00b7 "}
+      {pos.callsUntilYou === 0
+        ? "you're next up"
+        : `${pos.callsUntilYou} call${pos.callsUntilYou === 1 ? "" : "s"} until you`}
+      {onCallAhead > 0 && <span className="text-slate-400">{` \u00b7 ${onCallAhead} on call`}</span>}
+    </p>
+  );
+}
+
+/** Online / Check Ready / Moving / Drop Off / Offline, driven by the phone's GPS. */
+export default function DriverStatusPanel({ driver, board, drivers, zones }) {
   const uid = driver.id;
-  const [board, setBoard] = useState(null);
-  const [zones, setZones] = useState([]);
   const [starting, setStarting] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
-
-  useEffect(() => onSnapshot(doc(db, "board", uid), (s) => setBoard(s.exists() ? s.data() : null)), [uid]);
-  useEffect(
-    () => onSnapshot(collection(db, "zones"), (s) => setZones(s.docs.map((d) => ({ id: d.id, ...d.data() })))),
-    []
-  );
 
   const status = board?.status || "offline";
   const onBoard = status !== "offline";
@@ -122,9 +131,12 @@ export default function DriverStatusPanel({ driver }) {
         {status === "offline" && <p className="text-2xl font-bold">Off the board</p>}
         {status === "moving" && <p className="text-2xl font-bold">{"\u{1F695}"} Moving</p>}
         {status === "ready" && (
-          <p className="text-2xl font-bold">
-            Checked ready in <span className="text-gold-300">{zoneLabel(board.zoneId)}</span>
-          </p>
+          <>
+            <p className="text-2xl font-bold">
+              Checked ready in <span className="text-gold-300">{zoneLabel(board.zoneId)}</span>
+            </p>
+            <PositionLine drivers={drivers} uid={uid} zoneId={board.zoneId} />
+          </>
         )}
         {status === "offered" && <p className="text-2xl font-bold text-amber-300">Call coming in&hellip;</p>}
         {status === "on_call" && (
@@ -161,6 +173,23 @@ export default function DriverStatusPanel({ driver }) {
                 ? `${gpsZone.label}: ${CERT_LABELS[certNeeded]?.label || "certification"} needed`
                 : `Check Ready in ${gpsZone.label}`}
           </button>
+        )}
+
+        {status === "on_call" && (
+          <>
+            <button className={PRIMARY} disabled={busy} onClick={() => run(dropOff)}>
+              Drop Off
+            </button>
+            <p className="text-sm text-slate-400">
+              {!gpsZone
+                ? "You're outside every zone, so you'll go to Moving."
+                : certNeeded
+                  ? `${gpsZone.label} needs certification, so you'll go to Moving.`
+                  : DROP_FRONT
+                    ? `You'll be next up in ${gpsZone.label}.`
+                    : `You'll go to the back of the ${gpsZone.label} line.`}
+            </p>
+          </>
         )}
 
         {status === "ready" && (

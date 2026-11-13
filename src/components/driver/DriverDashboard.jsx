@@ -6,6 +6,8 @@ import { COMPANY_WORDMARK } from "../../config/constants";
 import { CERT_LABELS } from "../../config/driverCerts";
 import DriverCerts from "./DriverCerts";
 import DriverStatusPanel from "./DriverStatusPanel";
+import ZoneBoard from "../board/ZoneBoard";
+import { useLiveBoard } from "../../hooks/useLiveBoard";
 
 function CertBadges({ certs }) {
   const approved = Object.entries(certs || {}).filter(([, c]) => c?.status === "approved");
@@ -29,6 +31,9 @@ function CertBadges({ certs }) {
 export default function DriverDashboard() {
   const { currentUser, logout } = useAuth();
   const [driver, setDriver] = useState(null);
+  const { drivers, zones } = useLiveBoard();
+  const board = drivers.find((d) => d.id === currentUser.uid) || null;
+  const canWork = driver && driver.status !== "suspended" && driver.active !== false;
 
   useEffect(() => {
     return onSnapshot(doc(db, "drivers", currentUser.uid), (snap) => {
@@ -68,7 +73,14 @@ export default function DriverDashboard() {
           </div>
         )}
 
-        <DriverStatusPanel driver={driver} />
+        <DriverStatusPanel driver={driver} board={board} drivers={drivers} zones={zones} />
+
+        {canWork && (
+          <section className="glass-panel border border-white/10 rounded-2xl p-5">
+            <p className="text-xs font-bold tracking-widest text-slate-400 uppercase mb-1">Board</p>
+            <ZoneBoard drivers={drivers} zones={zones} viewer={driver} variant="driver" />
+          </section>
+        )}
 
         <section className="glass-panel border border-white/10 rounded-2xl p-5">
           <p className="text-xs font-bold tracking-widest text-slate-400 uppercase mb-1">Record</p>

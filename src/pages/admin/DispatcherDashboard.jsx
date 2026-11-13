@@ -22,6 +22,8 @@ import FareModal from "../../components/admin/FareModal";
 import WalletChargeModal from "../../components/admin/WalletChargeModal";
 import DispatcherAccountSettings from "../../components/admin/DispatcherAccountSettings";
 import DriverApplicationsPanel from "../../components/admin/DriverApplicationsPanel";
+import ZoneBoard from "../../components/board/ZoneBoard";
+import { useLiveBoard } from "../../hooks/useLiveBoard";
 import { OFFICE_ADDRESS, COMPANY_PHONE_DISPLAY, COPY } from "../../config/constants";
 
 const NEXT_STATUS = {
@@ -40,6 +42,8 @@ export default function DispatcherDashboard() {
   const [fareModalRide, setFareModalRide] = useState(null);
   const [walletChargeRide, setWalletChargeRide] = useState(null);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
+  const liveBoard = useLiveBoard();
+  const boardCounts = liveBoard.drivers.reduce((m, d) => ({ ...m, [d.status]: (m[d.status] || 0) + 1 }), {});
   const [pendingIdVerifications, setPendingIdVerifications] = useState([]);
 
   useEffect(() => {
@@ -259,6 +263,23 @@ export default function DispatcherDashboard() {
           </div>
         </div>
       )}
+
+      <section className="px-6 pt-6 max-w-6xl mx-auto">
+        <div className="flex items-baseline gap-4 mb-3 flex-wrap">
+          <h2 className="font-bold text-xl text-slate-700">Board</h2>
+          <p className="text-sm text-slate-500">
+            {(boardCounts.ready || 0) + (boardCounts.offered || 0)} waiting &middot; {boardCounts.on_call || 0} on call
+            &middot; {boardCounts.moving || 0} moving
+          </p>
+        </div>
+        {liveBoard.zones.length === 0 ? (
+          <p className="text-slate-500">
+            No zones yet. Set them up in <Link to="/admin/zones" className="text-blue-600 underline">Zones</Link>.
+          </p>
+        ) : (
+          <ZoneBoard drivers={liveBoard.drivers} zones={liveBoard.zones} variant="dispatcher" />
+        )}
+      </section>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 max-w-6xl mx-auto">
         <section>
