@@ -195,6 +195,9 @@ export default function DispatcherDashboard() {
           <Link to="/admin/drivers" className="text-base font-semibold text-gold-300 hover:text-gold-200">
             Drivers &amp; Fleet
           </Link>
+          <Link to="/admin/map" className="text-base font-semibold text-gold-300 hover:text-gold-200">
+            Live Map
+          </Link>
           <Link to="/admin/zones" className="text-base font-semibold text-gold-300 hover:text-gold-200">
             Zones
           </Link>

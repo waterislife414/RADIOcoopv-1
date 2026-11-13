@@ -67,6 +67,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Exact GPS position: the dispatcher's map and the driver himself only.
+    // Written by the driverPing callable, never by the app directly.
+    match /driverLocations/{uid} {
+      allow read: if isAdmin() || (isDriver() && request.auth.uid == uid);
+      allow write: if false;
+    }
+
     // Driver asks for a certification (base pass, wheelchair van). Doc id is
     // "<uid>_<cert>" so each driver has one request per cert.
     match /certRequests/{reqId} {

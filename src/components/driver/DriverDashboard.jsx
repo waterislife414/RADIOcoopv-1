@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { COMPANY_WORDMARK } from "../../config/constants";
 import { CERT_LABELS } from "../../config/driverCerts";
 import DriverCerts from "./DriverCerts";
+import DriverStatusPanel from "./DriverStatusPanel";
 
 function CertBadges({ certs }) {
   const approved = Object.entries(certs || {}).filter(([, c]) => c?.status === "approved");
@@ -66,6 +67,8 @@ export default function DriverDashboard() {
             <p className="text-slate-200 mt-1">Come back to the shop to get reinstated.</p>
           </div>
         )}
+
+        <DriverStatusPanel driver={driver} />
 
         <section className="glass-panel border border-white/10 rounded-2xl p-5">
           <p className="text-xs font-bold tracking-widest text-slate-400 uppercase mb-1">Record</p>

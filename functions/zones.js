@@ -4,21 +4,11 @@
 // (landmarks, out-of-area) are left for the dispatcher to place by hand.
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const admin = require("firebase-admin");
-const BRANDING = require("./branding.json");
 const { geocode } = require("./geocode");
+const { getZones } = require("./zoneStore");
 
-const DISPATCH = BRANDING.dispatch || {};
-const db = () => admin.firestore();
 let corePromise = null;
 const core = () => (corePromise ||= import("./lib/dispatchCore.mjs"));
-
-let zoneCache = { at: 0, zones: [] };
-async function getZones() {
-  if (Date.now() - zoneCache.at < 5 * 60 * 1000) return zoneCache.zones;
-  const snap = await db().collection("zones").get();
-  zoneCache = { at: Date.now(), zones: snap.docs.map((d) => ({ id: d.id, ...d.data() })) };
-  return zoneCache.zones;
-}
 
 exports.assignRideZone = onDocumentCreated("rides/{rideId}", async (event) => {
   const ride = event.data?.data();

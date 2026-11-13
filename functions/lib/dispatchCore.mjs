@@ -295,6 +295,34 @@ export function metersBetween(a, b) {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
+/**
+ * One GPS fix against a driver's board state. A waiting (red) driver who
+ * stays outside his zone for outOfZoneMin goes to Moving. On-call drivers
+ * are left alone: they leave the zone to run the call.
+ * Returns { outOfZoneSince, board } where board is a patch or null.
+ */
+export function applyLocation({ status, zoneId, outOfZoneSince = null }, gpsZoneId, now, outOfZoneMin = 3) {
+  if (!WAITING.has(status) || (gpsZoneId && gpsZoneId === zoneId)) return { outOfZoneSince: null, board: null };
+  const since = outOfZoneSince ?? now;
+  if (status === STATUS.READY && now - since >= outOfZoneMin * 60 * 1000) {
+    return {
+      outOfZoneSince: null,
+      board: { status: STATUS.MOVING, zoneId: null, lineKey: null, lastEvent: { type: 'left_zone', zoneId, at: now } },
+    };
+  }
+  return { outOfZoneSince: since, board: null };
+}
+
+/** Sweep: a waiting or moving driver whose phone stopped reporting falls off the board. */
+export function staleLocationPatch({ status, zoneId = null }, lastLocationAt, now, staleMin = 3) {
+  if (status !== STATUS.READY && status !== STATUS.MOVING) return null;
+  if (!isLocationStale({ at: lastLocationAt }, now, staleMin)) return null;
+  return { status: STATUS.OFFLINE, zoneId: null, lineKey: null, lastEvent: { type: 'gps_lost', zoneId, at: now } };
+}
+
+/** Statuses that keep the phone's location "live" for the stale sweep. */
+export const isLive = (status) => AVAILABLE.has(status);
+
 /** Location older than staleMin → driver falls off the board. */
 export function isLocationStale(lastLocation, now, staleMin = 3) {
   if (lastLocation?.at == null) return true;

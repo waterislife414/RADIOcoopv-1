@@ -170,3 +170,38 @@ test('close out: $300 credit → $112.50 check; under $75 → owes difference', 
   assert.deepEqual(c.closeOut({ creditCents: 5000 }), { afterFinalDayCents: -2500, payoutCents: 0, owedCents: 2500 });
   assert.equal(c.closeOut({ creditCents: 7501 }).payoutCents, 1); // rounds half-cent
 });
+
+test('applyLocation: ready driver keeps spot inside zone, timer starts outside, moves after grace', () => {
+  const t0 = 1_000_000;
+  const inZone = c.applyLocation({ status: 'ready', zoneId: 'rose-hill', outOfZoneSince: t0 }, 'rose-hill', t0 + 1000);
+  assert.deepEqual(inZone, { outOfZoneSince: null, board: null });
+  const out = c.applyLocation({ status: 'ready', zoneId: 'rose-hill' }, 'east', t0);
+  assert.deepEqual(out, { outOfZoneSince: t0, board: null });
+  const stillOut = c.applyLocation({ status: 'ready', zoneId: 'rose-hill', outOfZoneSince: t0 }, null, t0 + 2 * 60_000);
+  assert.equal(stillOut.board, null);
+  const moved = c.applyLocation({ status: 'ready', zoneId: 'rose-hill', outOfZoneSince: t0 }, 'east', t0 + 3 * 60_000);
+  assert.equal(moved.board.status, 'moving');
+  assert.equal(moved.board.lineKey, null);
+  assert.equal(moved.board.lastEvent.type, 'left_zone');
+  assert.equal(moved.board.lastEvent.zoneId, 'rose-hill');
+});
+
+test('applyLocation: on-call and offered drivers are never moved', () => {
+  const t0 = 1_000_000;
+  assert.equal(c.applyLocation({ status: 'on_call', zoneId: 'east' }, null, t0 + 1e7).board, null);
+  const offered = c.applyLocation({ status: 'offered', zoneId: 'east', outOfZoneSince: t0 }, null, t0 + 1e7);
+  assert.equal(offered.board, null);
+  assert.equal(offered.outOfZoneSince, t0);
+});
+
+test('staleLocationPatch: drops ready/moving drivers whose phone went quiet', () => {
+  const now = 10_000_000;
+  assert.equal(c.staleLocationPatch({ status: 'ready', zoneId: 'east' }, now - 60_000, now), null);
+  const p = c.staleLocationPatch({ status: 'ready', zoneId: 'east' }, now - 4 * 60_000, now);
+  assert.equal(p.status, 'offline');
+  assert.equal(p.lastEvent.type, 'gps_lost');
+  assert.equal(c.staleLocationPatch({ status: 'on_call' }, 0, now), null);
+  assert.equal(c.staleLocationPatch({ status: 'moving' }, undefined, now).status, 'offline');
+  assert.equal(c.isLive('moving'), true);
+  assert.equal(c.isLive('on_call'), false);
+});
