@@ -14,7 +14,6 @@ export default function Profile() {
     currentUser,
     userProfile,
     getRideCountAndPerk,
-    addFundsDemo,
     resetPassword,
     deactivateAccount,
   } = useAuth();
@@ -66,19 +65,6 @@ export default function Profile() {
 
   const tierKey = userProfile.subscriptionTier;
   const tierInfo = tierKey ? SUBSCRIPTION_TIERS[tierKey] : null;
-
-  async function handleAddFunds(amount) {
-    setBusy(true);
-    setStatus("");
-    try {
-      await addFundsDemo(amount);
-      setStatus(`$${amount.toFixed(2)} added to your wallet.`);
-    } catch (err) {
-      setStatus("Could not add funds. Please try again.");
-    } finally {
-      setBusy(false);
-    }
-  }
 
   async function handlePasswordReset() {
     setBusy(true);
@@ -255,18 +241,9 @@ export default function Profile() {
             <p className="text-3xl font-display font-bold text-slate-900 mb-4">
               ${(userProfile.walletBalance || 0).toFixed(2)}
             </p>
-            <div className="grid grid-cols-3 gap-2">
-              {[10, 20, 50].map((amt) => (
-                <button
-                  key={amt}
-                  onClick={() => handleAddFunds(amt)}
-                  disabled={busy}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl disabled:opacity-50"
-                >
-                  +${amt}
-                </button>
-              ))}
-            </div>
+            <p className="text-sm text-slate-500">
+              To add money to your wallet, call or stop by the office. Your balance can pay for rides.
+            </p>
           </div>
 
           {/* Account settings */}

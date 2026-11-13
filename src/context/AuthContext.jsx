@@ -112,18 +112,6 @@ export function AuthProvider({ children }) {
     await refreshProfile(currentUser.uid);
   }
 
-  // Demo-mode wallet credit: writes directly to Firestore.
-  // Once Stripe is live on the Blaze plan, this should be replaced
-  // with a Cloud Function call that charges the card first, then credits.
-  async function addFundsDemo(amount) {
-    if (!currentUser) throw new Error("Not signed in.");
-    const { increment } = await import("firebase/firestore");
-    await updateDoc(doc(db, "users", currentUser.uid), {
-      walletBalance: increment(amount),
-    });
-    await refreshProfile(currentUser.uid);
-  }
-
   async function deactivateAccount() {
     if (!currentUser) throw new Error("Not signed in.");
     await updateDoc(doc(db, "users", currentUser.uid), {
@@ -166,7 +154,6 @@ export function AuthProvider({ children }) {
     logout,
     resetPassword,
     updateSubscriptionTier,
-    addFundsDemo,
     deactivateAccount,
     getRideCountAndPerk,
     refreshProfile: () => currentUser && refreshProfile(currentUser.uid),

@@ -19,22 +19,52 @@ service cloud.firestore {
         && !exists(/databases/$(database)/documents/blacklist_phones/$(request.resource.data.phone));
     }
 
+    // Money and membership on a user record are set by the server only
+    // (Stripe webhooks / Cloud Functions), never by the rider's own app.
+    function userServerKeys() {
+      return ['walletBalance', 'subscriptionTier', 'subscriptionStatus', 'stripeCustomerId',
+              'stripeSubscriptionId', 'smsAddonStatus', 'birthdayCredits'];
+    }
+
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && request.resource.data.get('walletBalance', 0) == 0
+        && request.resource.data.get('subscriptionTier', null) == null
+        && !request.resource.data.keys().hasAny(userServerKeys().removeAll(['walletBalance', 'subscriptionTier']));
       allow update: if isAdmin()
         || (isOwner(userId)
             && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['firstName', 'lastName', 'phone', 'address', 'dob',
-                           'idImageUrl', 'idSubmittedAt', 'rating', 'walletBalance', 'active']));
+                           'idImageUrl', 'idSubmittedAt', 'idVerified', 'rating', 'active'])
+            // A new ID photo resets verification; only the dispatcher can verify.
+            && request.resource.data.get('idVerified', false) == false);
       allow delete: if isAdmin();
+    }
+
+    // Ride fields only dispatch (Cloud Functions / dispatcher) may set.
+    function rideServerKeys() {
+      return ['driverId', 'carNumber', 'dispatchState', 'offer', 'offerSeq', 'offerDriverId',
+              'triedDriverIds', 'broadcastTo', 'broadcastAt', 'escalatedAt', 'escalateReason',
+              'assignedAt', 'assignedHow', 'zoneId', 'zoneLabel', 'dropZoneId', 'requiresCerts',
+              'priority', 'dispatchAt', 'zoneAssignedAt', 'lastMiss', 'requestedDriverId',
+              'pickedUpAt', 'droppedOffAt', 'source', 'enteredBy', 'zoneSetBy',
+              'tipAmount', 'capturedAmountCents', 'stripeStatus', 'cardFeeCents', 'settledBy',
+              'memberDiscountApplied', 'ledgerCreditedAt'];
     }
 
     match /rides/{rideId} {
       allow read: if isAdmin() || (isSignedIn() && resource.data.customerId == request.auth.uid);
-      allow create: if isNotBlacklisted();
+      allow create: if isNotBlacklisted()
+        && request.resource.data.status == 'pending'
+        && request.resource.data.get('finalFare', null) == null
+        && (request.resource.data.customerId == 'guest'
+            || (isSignedIn() && request.resource.data.customerId == request.auth.uid))
+        && !request.resource.data.keys().hasAny(rideServerKeys());
       allow update: if isAdmin()
-        || (isSignedIn() && resource.data.customerId == request.auth.uid && resource.data.status == 'pending')
+        || (isSignedIn() && resource.data.customerId == request.auth.uid && resource.data.status == 'pending'
+            && !request.resource.data.diff(resource.data).affectedKeys()
+                  .hasAny(rideServerKeys().concat(['status', 'customerId', 'finalFare', 'paymentIntentId'])))
         || (isSignedIn() && resource.data.customerId == request.auth.uid
             && resource.data.status in ['finished', 'archived']
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating']));
