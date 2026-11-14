@@ -52,7 +52,12 @@ const QA = [
   },
   {
     q: "Can I book ahead of time?",
-    a: <p>Yes. When you book, tap <strong>Schedule Later</strong> and pick the day and time. Daily rides to work? Call and ask about weekly rates.</p>,
+    a: (
+      <p>
+        Yes. Log in (a free account), and when you book tap <strong>Schedule Later</strong> and pick the day and time. Or call us.
+        Daily rides to work? Ask about weekly rates.
+      </p>
+    ),
   },
   {
     q: "How do I cancel?",

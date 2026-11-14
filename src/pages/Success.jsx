@@ -5,6 +5,7 @@ import { useRide } from "../context/RideContext";
 import BrandHeader from "../components/BrandHeader";
 import CurrentRideStatus from "../components/CurrentRideStatus";
 import {
+  COMPANY_PHONE_DISPLAY,
   COMPANY_PHONE_TEL,
   COMPANY_EMAIL,
   GOOGLE_REVIEW_LINK,

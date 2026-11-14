@@ -1,8 +1,63 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "oxc"],
+  "plugins": [
+    "react",
+    "oxc"
+  ],
   "rules": {
     "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
+    "react/only-export-components": [
+      "warn",
+      {
+        "allowConstantExport": true
+      }
+    ],
+    "no-undef": "error",
+    "react/jsx-no-undef": "error"
+  },
+  "env": {
+    "browser": true,
+    "es2024": true
+  },
+  "overrides": [
+    {
+      "files": [
+        "functions/**/*.js",
+        "scripts/**",
+        "tests/**",
+        "*.config.js",
+        "*.cjs"
+      ],
+      "env": {
+        "node": true,
+        "browser": false
+      },
+      "globals": {
+        "exports": "writable",
+        "module": "writable",
+        "require": "readonly"
+      }
+    },
+    {
+      "files": [
+        "public/**/*.js",
+        "dist/**",
+        "dist-demo/**"
+      ],
+      "env": {
+        "serviceworker": true,
+        "browser": true
+      },
+      "globals": {
+        "firebase": "readonly",
+        "importScripts": "readonly"
+      }
+    }
+  ],
+  "ignorePatterns": [
+    "dist/**",
+    "dist-demo/**",
+    "functions/node_modules/**",
+    "tests/**/node_modules/**"
+  ]
 }

@@ -1,8 +1,11 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import BrandHeader from "../components/BrandHeader";
 import { SUBSCRIPTION_TIERS } from "../config/constants";
 
 function PlanCard({ tierKey, tier, highlight }) {
+  // Signed-in riders go straight to checkout; everyone else signs up first.
+  const { currentUser } = useAuth();
   return (
     <div
       className={`rounded-2xl p-6 border-2 ${
@@ -60,7 +63,7 @@ function PlanCard({ tierKey, tier, highlight }) {
       </ul>
 
       <Link
-        to={`/sign-up?tier=${tierKey}`}
+        to={currentUser ? `/subscribe/${tierKey}` : `/sign-up?tier=${tierKey}`}
         className={`shine-sweep block w-full text-center font-bold text-lg py-4 rounded-full transition hover:-translate-y-0.5 duration-200 relative ${
           highlight
             ? "bg-gradient-to-b from-gold-300 to-gold-500 text-navy-950 shadow-luxury"
