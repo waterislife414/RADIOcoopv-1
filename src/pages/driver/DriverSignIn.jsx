@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { httpsCallable } from "firebase/functions";
+import { functions } from "../../config/firebase";
 import BrandHeader from "../../components/BrandHeader";
+import ConsentModal from "../../components/legal/ConsentModal";
+
+const acceptAgreement = httpsCallable(functions, "acceptDriverAgreement");
 
 const inputClass =
   "w-full border-2 border-slate-300 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600";
@@ -14,22 +19,32 @@ export default function DriverSignIn() {
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
+  const [askConsent, setAskConsent] = useState(false);
 
   if (currentUser && isDriver) return <Navigate to="/driver" replace />;
 
-  async function handleSubmit(e) {
+  // Drivers accept the Driver Agreement + Privacy Policy as they sign in.
+  function handleSubmit(e) {
     e.preventDefault();
     setError("");
     setStatus("");
+    setAskConsent(true);
+  }
+
+  async function signIn(record) {
     setLoading(true);
     try {
       await login(email.trim(), password);
-      navigate("/driver");
     } catch {
+      setAskConsent(false);
       setError("Wrong email or password.");
-    } finally {
       setLoading(false);
+      return;
     }
+    // Only approved drivers have a driver record; applicants agreed when they applied.
+    await acceptAgreement({ version: record.version, docs: record.docs, marketingOptIn: record.marketingOptIn }).catch(() => {});
+    setLoading(false);
+    navigate("/driver");
   }
 
   async function handleForgot() {
@@ -90,6 +105,16 @@ export default function DriverSignIn() {
               {loading ? "Signing in..." : "Sign In"}
             </button>
           </form>
+          <ConsentModal
+            open={askConsent}
+            docIds={["driver-agreement", "privacy"]}
+            busy={loading}
+            confirmLabel="Agree & Sign In"
+            contactLabel="I agree to be contacted by phone call, text message, email and app alerts about calls, my lease and my account."
+            promoLabel="Yes, send me company offers and news by text and email."
+            onClose={() => setAskConsent(false)}
+            onAccept={signIn}
+          />
 
           <p className="text-center text-base text-slate-500 mt-6">
             Not a driver yet?{" "}

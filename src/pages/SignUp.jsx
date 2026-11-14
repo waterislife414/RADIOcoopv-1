@@ -1,5 +1,5 @@
 import { useState } from "react";
-import LegalConsent from "../components/legal/LegalConsent";
+import ConsentModal from "../components/legal/ConsentModal";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import BrandHeader from "../components/BrandHeader";
@@ -23,25 +23,31 @@ export default function SignUp() {
     referredBy: "",
   });
   const [error, setError] = useState("");
-  const [consent, setConsent] = useState(null);
+  const [askConsent, setAskConsent] = useState(false);
   const [loading, setLoading] = useState(false);
 
   function update(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
-  async function handleSubmit(e) {
+  // The form's own checks run first; then the agreement pop-up opens.
+  function handleSubmit(e) {
     e.preventDefault();
     setError("");
+    setAskConsent(true);
+  }
+
+  async function createAccount(legal) {
     setLoading(true);
     try {
-      await signup({ ...form, legal: consent });
+      await signup({ ...form, legal });
       if (tierInfo) {
         navigate(`/subscribe/${chosenTier}`);
       } else {
         navigate("/welcome");
       }
-    } catch (err) {
+    } catch {
+      setAskConsent(false);
       setError("Could not create account. Try a different email.");
     } finally {
       setLoading(false);
@@ -148,16 +154,23 @@ export default function SignUp() {
               onChange={(e) => update("referredBy", e.target.value)}
             />
 
-            <LegalConsent docIds={["rider-terms", "privacy"]} onChange={setConsent} />
-
             <button
               type="submit"
-              disabled={loading || !consent}
+              disabled={loading}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4.5 rounded-2xl shadow-md transition disabled:opacity-50"
             >
               {loading ? "Creating..." : "Create Account"}
             </button>
           </form>
+
+          <ConsentModal
+            open={askConsent}
+            docIds={["rider-terms", "privacy"]}
+            busy={loading}
+            confirmLabel="Agree & Create Account"
+            onClose={() => setAskConsent(false)}
+            onAccept={createAccount}
+          />
 
           <p className="text-center text-base text-slate-500 mt-6">
             Already have an account?{" "}

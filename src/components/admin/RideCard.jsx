@@ -104,7 +104,7 @@ export default function RideCard({ ride, customerStatus, carFor, zones, onSetZon
             <StatusBadge status={customerStatus} />
             {ride.wantsPriorityPass && (
               <span className="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-gold-400 text-navy-950">
-                &#9733; VIP Pass
+                &#9733; Fast Pass{ride.fastPassId ? " \u00b7 paid" : ""}
               </span>
             )}
           </div>

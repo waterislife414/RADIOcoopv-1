@@ -13,6 +13,7 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Contact from "./pages/Contact";
 import TripDetails from "./pages/TripDetails";
+import FastPass from "./pages/FastPass";
 import PaymentSelection from "./pages/PaymentSelection";
 import Success from "./pages/Success";
 import SignIn from "./pages/SignIn";
@@ -96,6 +97,7 @@ export default function App() {
             <Route path="/welcome" element={<PostSignupUpsell />} />
 
             <Route path="/trip-details" element={<TripDetails />} />
+            <Route path="/fast-pass" element={<FastPass />} />
             <Route path="/payment" element={<PaymentSelection />} />
             <Route path="/success" element={<Success />} />
             <Route

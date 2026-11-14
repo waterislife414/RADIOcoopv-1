@@ -14,6 +14,7 @@ const initialRide = {
   roundTrip: false,
   needsAccessibleVehicle: false,
   wantsPriorityPass: false,
+  fastPassId: null,
   estMiles: 0,
   outOfArea: false,
   outOfAreaCity: "",

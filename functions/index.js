@@ -84,6 +84,62 @@ async function getOrCreateStripeCustomer(uid, email) {
   return customer.id;
 }
 
+// ---------- VIP Fast Pass ($5, paid on its own before checkout) ----------
+// Charged right away, separately from the ride fare. The ride then carries
+// fastPassId; captureFare skips the $5 when that pass is paid.
+async function recordFastPass(intent, uid) {
+  await db.collection("fast_passes").doc(intent.id).set({
+    uid,
+    amountCents: intent.amount,
+    status: intent.status,
+    rideId: null,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+}
+
+exports.payFastPass = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
+  const { paymentMethodId } = request.data || {};
+  if (typeof paymentMethodId !== "string" || !paymentMethodId) {
+    throw new HttpsError("invalid-argument", "A card is required.");
+  }
+  const uid = request.auth ? request.auth.uid : "guest";
+  const stripe = getStripe();
+  const intent = await stripe.paymentIntents.create({
+    amount: PRIORITY_PASS_FEE_CENTS,
+    currency: "usd",
+    payment_method: paymentMethodId,
+    payment_method_types: ["card"],
+    confirm: true,
+    description: "VIP Fast Pass",
+    metadata: { kind: "fast-pass", uid },
+  });
+  if (intent.status === "succeeded") await recordFastPass(intent, uid);
+  return { id: intent.id, status: intent.status, clientSecret: intent.status === "requires_action" ? intent.client_secret : null };
+});
+
+// After the bank's extra check (3-D Secure), record the pass once Stripe says it's paid.
+exports.confirmFastPass = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
+  const { id } = request.data || {};
+  if (typeof id !== "string" || !id) throw new HttpsError("invalid-argument", "Missing payment.");
+  const intent = await getStripe().paymentIntents.retrieve(id);
+  if (intent.status !== "succeeded" || intent.amount !== PRIORITY_PASS_FEE_CENTS || intent.metadata?.kind !== "fast-pass") {
+    throw new HttpsError("failed-precondition", "That Fast Pass payment didn't go through.");
+  }
+  await recordFastPass(intent, intent.metadata.uid || "guest");
+  return { id: intent.id, status: intent.status };
+});
+
+/** True when the ride's Fast Pass was already paid on its own (claims it for this ride). */
+async function fastPassPaid(ride, rideId) {
+  if (!ride.fastPassId) return false;
+  const ref = db.collection("fast_passes").doc(String(ride.fastPassId));
+  const snap = await ref.get();
+  const pass = snap.exists ? snap.data() : null;
+  if (!pass || pass.status !== "succeeded" || (pass.rideId && pass.rideId !== rideId)) return false;
+  if (!pass.rideId) await ref.update({ rideId });
+  return true;
+}
+
 exports.createSubscriptionSetupIntent = onCall(
   { secrets: [STRIPE_SECRET_KEY] },
   async (request) => {
@@ -296,7 +352,8 @@ exports.captureFare = onCall(
     // of $2.00 on the card fee - guests and dispatcher overrides pay full price.
     const cardFeeCents = requesterIsRider ? CARD_APP_FEE_MEMBER_CENTS : CARD_APP_FEE_CENTS;
     const memberDiscountApplied = requesterIsRider;
-    const priorityPassCents = ride.wantsPriorityPass ? PRIORITY_PASS_FEE_CENTS : 0;
+    const priorityPassCents =
+      ride.wantsPriorityPass && !(await fastPassPaid(ride, rideId)) ? PRIORITY_PASS_FEE_CENTS : 0;
 
     const totalCents =
       Math.round(effectiveMeterFare * 100) + Math.round(tip * 100) + cardFeeCents + priorityPassCents;

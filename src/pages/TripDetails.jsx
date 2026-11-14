@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import LegalConsent from "../components/legal/LegalConsent";
+import ConsentModal from "../components/legal/ConsentModal";
 import { consentIsCurrent } from "../legal/documents";
 
 const RIDER_DOCS = ["rider-terms", "privacy"];
@@ -24,7 +24,7 @@ export default function TripDetails() {
   const { currentUser, userProfile, saveLegalConsent } = useAuth();
   // Guests agree on every booking. Signed-in riders agree once per version.
   const alreadyAgreed = !!currentUser && consentIsCurrent(userProfile?.legal, RIDER_DOCS);
-  const [consent, setConsent] = useState(null);
+  const [askConsent, setAskConsent] = useState(false);
   const { ride, updateRide, addStop, removeStop } = useRide();
   const navigate = useNavigate();
 
@@ -100,13 +100,17 @@ export default function TripDetails() {
       setError("Please choose a date/time for your scheduled ride.");
       return;
     }
-    if (!alreadyAgreed && !consent) {
-      setError("Please open, read and agree to the Terms of Service and Privacy Policy to continue.");
+    if (!alreadyAgreed) {
+      setAskConsent(true);
       return;
     }
+    proceed(userProfile.legal);
+  }
+
+  function proceed(consent) {
     if (!alreadyAgreed && currentUser) saveLegalConsent(consent).catch(() => {});
-    updateRide({ scheduleType, consent: alreadyAgreed ? userProfile.legal : consent });
-    navigate("/payment");
+    updateRide({ scheduleType, consent });
+    navigate(ride.wantsPriorityPass ? "/fast-pass" : "/payment");
   }
 
   return (
@@ -384,7 +388,7 @@ export default function TripDetails() {
 
             <div className="flex items-center justify-between border-2 border-gold-400/50 bg-gold-50 rounded-xl px-4 py-3.5">
               <span className="text-base font-semibold text-slate-700">
-                &#9733; VIP for a Day &mdash; $5 Priority Dispatch
+                &#9733; VIP for a Day &mdash; $5 Fast Pass
               </span>
               <button
                 type="button"
@@ -401,8 +405,8 @@ export default function TripDetails() {
               </button>
             </div>
             <p className="text-xs text-slate-400 -mt-2">
-              Moves you up the dispatcher's queue for this ride. Added to
-              your fare at checkout. (Premium members still dispatch first.)
+              Moves you up the dispatcher's queue for this ride. The $5 is
+              paid on its own before checkout. (Premium members still dispatch first.)
             </p>
 
             {currentUser && (
@@ -454,18 +458,22 @@ export default function TripDetails() {
             )}
           </div>
 
-          {!alreadyAgreed && (
-            <div className="mt-8">
-              <LegalConsent docIds={RIDER_DOCS} onChange={setConsent} />
-            </div>
-          )}
-
           <button
             onClick={handleContinue}
             className="w-full mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4.5 rounded-full shadow-luxury transition hover:-translate-y-0.5 duration-200"
           >
             Continue to Payment
           </button>
+          <ConsentModal
+            open={askConsent}
+            docIds={RIDER_DOCS}
+            confirmLabel="Agree & Continue"
+            onClose={() => setAskConsent(false)}
+            onAccept={(record) => {
+              setAskConsent(false);
+              proceed(record);
+            }}
+          />
         </div>
       </div>
     </div>

@@ -33,7 +33,7 @@ function SettleFareForm({ ride, rideId }) {
     ? parseFloat(customTip) || 0
     : meterNum * (tipPercent / 100);
   const cardFee = FARE_CONFIG.CARD_APP_FEE_MEMBER; // self-checkout is member-only
-  const priorityPassFee = ride.wantsPriorityPass ? 5 : 0;
+  const priorityPassFee = ride.wantsPriorityPass && !ride.fastPassId ? 5 : 0;
   const total = meterNum + tipAmount + cardFee + priorityPassFee;
 
   async function handlePay(e) {

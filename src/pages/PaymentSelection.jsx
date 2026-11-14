@@ -53,6 +53,7 @@ export default function PaymentSelection() {
         stops: ride.stops,
         needsAccessibleVehicle: ride.needsAccessibleVehicle,
         wantsPriorityPass: ride.wantsPriorityPass,
+        fastPassId: ride.wantsPriorityPass ? ride.fastPassId || null : null,
         roundTrip: ride.roundTrip,
         estMiles: ride.estMiles,
         scheduleType: ride.scheduleType,
@@ -95,6 +96,11 @@ export default function PaymentSelection() {
           <h1 className="text-3xl font-display font-semibold text-slate-800 mb-6">
             Payment Method
           </h1>
+          {ride.wantsPriorityPass && ride.fastPassId && (
+            <div className="bg-emerald-50 border-2 border-emerald-500 text-emerald-800 rounded-2xl px-4 py-3 mb-5 font-semibold">
+              &#10003; Fast Pass paid ($5.00). Now choose how you&rsquo;ll pay for the ride.
+            </div>
+          )}
 
           {error && (
             <div className="bg-red-50 text-red-700 text-base rounded-lg p-3 mb-4">
