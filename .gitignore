@@ -4,3 +4,6 @@ dist/
 .harness/
 tests/rules/node_modules/
 .project/
+*-debug.log
+tests/rules/package-lock.json
+.firebase/
