@@ -6,6 +6,7 @@ import { RequireAdmin, RequireAuth, RequireDriverSignIn } from "./components/Pro
 
 import About from "./pages/About";
 import DriverAgreement from "./pages/DriverAgreement";
+import AdStrip from "./components/AdStrip";
 import SiteMenu from "./components/SiteMenu";
 import Home from "./pages/Home";
 import Careers from "./pages/Careers";
@@ -13,6 +14,7 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Contact from "./pages/Contact";
 import TripDetails from "./pages/TripDetails";
+import Promotions from "./pages/Promotions";
 import FastPass from "./pages/FastPass";
 import PaymentSelection from "./pages/PaymentSelection";
 import Success from "./pages/Success";
@@ -53,6 +55,7 @@ export default function App() {
     <AuthProvider>
       <RideProvider>
         <BrowserRouter>
+          <AdStrip position="top" />
           <SiteMenu />
           <Routes>
             <Route path="/" element={<Home />} />
@@ -93,6 +96,7 @@ export default function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/qr" element={<QRCode />} />
             <Route path="/join" element={<ChoosePlan />} />
+            <Route path="/promotions" element={<Promotions />} />
             <Route path="/compare" element={<CompareRideshare />} />
             <Route path="/welcome" element={<PostSignupUpsell />} />
 
@@ -193,6 +197,7 @@ export default function App() {
 
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <AdStrip position="bottom" />
         </BrowserRouter>
       </RideProvider>
     </AuthProvider>

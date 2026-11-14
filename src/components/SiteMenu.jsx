@@ -28,10 +28,12 @@ function sectionsFor({ signedIn, isDriver, isAdmin }) {
           { to: "/profile", label: "My Profile" },
           { to: "/join", label: "Membership" },
           { to: "/compare", label: "Compare Rates" },
+          { to: "/promotions", label: "Promotions" },
         ],
       },
       { title: "Company", items: [{ to: "/about", label: "About Us" }, { to: "/contact", label: "Contact Us" }, ...(isAdmin ? [{ to: "/admin/dashboard", label: "Dispatch Desk" }] : [])] },
       { title: "Legal", items: LEGAL.slice(0, 2) },
+      { title: "Drivers", items: [{ to: "/driver/sign-in", label: "Driver Sign In" }, { to: "/become-a-driver", label: "Come Join Our Team" }] },
     ];
   }
   return [
@@ -45,9 +47,9 @@ function sectionsFor({ signedIn, isDriver, isAdmin }) {
         { to: "/compare", label: "Compare Rates" },
       ],
     },
-    { title: "Company", items: [{ to: "/about", label: "About Us" }, { to: "/contact", label: "Contact Us" }] },
-    { title: "Drivers", items: [{ to: "/driver/sign-in", label: "Driver Sign In" }, { to: "/become-a-driver", label: "Apply to Drive" }] },
+    { title: "Company", items: [{ to: "/about", label: "About Us" }, { to: "/contact", label: "Contact Us" }, { to: "/promotions", label: "Promotions" }] },
     { title: "Legal", items: LEGAL },
+    { title: "Drivers", items: [{ to: "/driver/sign-in", label: "Driver Sign In" }, { to: "/become-a-driver", label: "Come Join Our Team" }] },
   ];
 }
 
@@ -76,7 +78,7 @@ export default function SiteMenu() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Open menu"
-        className="fixed top-3 right-3 z-40 h-11 w-11 rounded-full bg-navy-950/90 border border-gold-400/50 shadow-lg flex flex-col items-center justify-center gap-[5px] backdrop-blur"
+        className="fixed top-10 right-3 z-40 h-11 w-11 rounded-full bg-navy-950/90 border border-gold-400/50 shadow-lg flex flex-col items-center justify-center gap-[5px] backdrop-blur"
       >
         <span className="block h-0.5 w-5 bg-gold-300 rounded" />
         <span className="block h-0.5 w-5 bg-gold-300 rounded" />

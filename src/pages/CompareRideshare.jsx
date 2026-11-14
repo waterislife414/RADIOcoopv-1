@@ -1,85 +1,137 @@
+import { Link } from "react-router-dom";
 import BrandHeader from "../components/BrandHeader";
 import ContactFooter from "../components/ContactFooter";
-import { COMPANY_NAME } from "../config/constants";
-import { calcSavings, RIDESHARE_BENCHMARK } from "../config/fareCalc";
+import { COMPANY_NAME, FARE_CONFIG } from "../config/constants";
+import {
+  calcSavings,
+  RIDESHARE_MEDIAN,
+  RIDESHARE_SOURCES,
+  RIDESHARE_SURGE,
+  MINUTES_PER_MILE,
+} from "../config/fareCalc";
 
 const TRIP_EXAMPLES = [
-  { label: "Short Trip", miles: 3 },
+  { label: "Quick Hop", miles: 2 },
+  { label: "Across Town", miles: 3 },
   { label: "Medium Trip", miles: 10 },
   { label: "Long Trip", miles: 25 },
 ];
 
+const money = (n) => `$${n.toFixed(2)}`;
+
+function Bar({ label, amount, max, tone }) {
+  return (
+    <div>
+      <div className="flex justify-between text-sm font-semibold mb-1">
+        <span className={tone === "us" ? "text-navy-950" : "text-slate-600"}>{label}</span>
+        <span className={tone === "us" ? "text-emerald-700 font-bold" : "text-slate-700"}>{money(amount)}</span>
+      </div>
+      <div className="h-3.5 rounded-full bg-slate-100 overflow-hidden">
+        <div
+          className={`h-full rounded-full ${tone === "us" ? "bg-gradient-to-r from-gold-400 to-gold-500" : tone === "busy" ? "bg-rose-400" : "bg-slate-400"}`}
+          style={{ width: `${Math.max(6, (amount / max) * 100)}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function TripCard({ label, miles }) {
+  const r = calcSavings(miles);
+  const max = Math.max(r.ours, r.theirsBusy);
+  const badge =
+    r.savings > 0.005
+      ? { text: `Save ${money(r.savings)}`, cls: "bg-emerald-600 text-white" }
+      : r.busySavings > 0.005
+        ? { text: `Save ${money(r.busySavings)} at busy times`, cls: "bg-amber-500 text-navy-950" }
+        : null;
+  return (
+    <div className="rounded-3xl border-2 border-slate-200 p-5 shadow-sm">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <p className="font-display font-bold text-xl text-slate-800">{label}</p>
+          <p className="text-sm text-slate-500">{miles} miles &middot; about {miles * MINUTES_PER_MILE} min</p>
+        </div>
+        {badge && <span className={`text-xs font-extrabold rounded-full px-3 py-1.5 ${badge.cls}`}>{badge.text}</span>}
+      </div>
+      <div className="space-y-3">
+        <Bar label={COMPANY_NAME} amount={r.ours} max={max} tone="us" />
+        <Bar label="Uber/Lyft average" amount={r.theirs} max={max} tone="them" />
+        <Bar label={`Uber/Lyft busy times (${RIDESHARE_SURGE.multiplier}×)`} amount={r.theirsBusy} max={max} tone="busy" />
+      </div>
+    </div>
+  );
+}
+
 export default function CompareRideshare() {
+  const m = RIDESHARE_MEDIAN;
   return (
     <div className="min-h-screen bg-white">
-      <BrandHeader />
-      <div className="px-6 py-10">
-        <div className="max-w-md mx-auto">
-          <h1 className="text-3xl font-display font-semibold text-slate-800 mb-2">
-            {COMPANY_NAME} vs. Rideshare
+      <BrandHeader tagline="Compare Rates" />
+
+      <div className="bg-navy-950 text-white px-6 pb-10 pt-2">
+        <div className="max-w-md mx-auto text-center">
+          <p className="text-xs font-bold tracking-[0.3em] text-gold-400 uppercase">{COMPANY_NAME} vs. Uber &amp; Lyft</p>
+          <h1 className="font-display text-4xl font-bold mt-2 leading-tight">
+            No surge.
+            <span className="block text-gold-300 italic">No booking fee. Ever.</span>
           </h1>
-          <p className="text-slate-600 text-base leading-relaxed mb-6">
-            Real meter rates, compared honestly against national rideshare
-            averages &mdash; no surge, no booking fee, no commission hidden
-            in the price.
-          </p>
-
-          <div className="space-y-4 mb-8">
-            {TRIP_EXAMPLES.map(({ label, miles }) => {
-              const { ours, theirs, savings, percent } = calcSavings(miles);
-              return (
-                <div
-                  key={label}
-                  className="border-2 border-slate-200 rounded-2xl p-5"
-                >
-                  <p className="text-xs font-bold tracking-widest text-slate-400 uppercase mb-3">
-                    {label} &middot; ~{miles} miles
-                  </p>
-                  <div className="flex items-end justify-between mb-3">
-                    <div>
-                      <p className="text-xs text-slate-400 mb-0.5">{COMPANY_NAME}</p>
-                      <p className="text-2xl font-bold text-emerald-600">
-                        ${ours.toFixed(2)}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-slate-400 mb-0.5">Rideshare Avg. (Uber/Lyft)</p>
-                      <p className="text-2xl font-bold text-slate-400 line-through">
-                        ${theirs.toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="bg-emerald-50 text-emerald-700 text-center font-bold text-base rounded-xl py-2.5">
-                    Save ${Math.abs(savings).toFixed(2)} ({Math.abs(percent).toFixed(0)}%)
-                  </div>
-                </div>
-              );
-            })}
+          <div className="grid grid-cols-2 gap-3 mt-7 text-left">
+            <div className="rounded-2xl bg-gradient-to-b from-gold-300 to-gold-500 text-navy-950 p-4">
+              <p className="text-[11px] font-extrabold tracking-widest uppercase">Our meter</p>
+              <p className="font-mono text-2xl font-bold mt-1">{money(FARE_CONFIG.PER_MILE)}<span className="text-sm">/mi</span></p>
+              <p className="text-xs mt-1 font-semibold">{money(FARE_CONFIG.BASE_FARE)} to start &middot; $0 booking fee &middot; same rate at 3 AM or rush hour</p>
+            </div>
+            <div className="rounded-2xl bg-white/[0.08] border border-white/15 p-4">
+              <p className="text-[11px] font-extrabold tracking-widest uppercase text-slate-300">Uber/Lyft central average</p>
+              <p className="font-mono text-2xl font-bold mt-1">{money(m.perMile)}<span className="text-sm">/mi</span></p>
+              <p className="text-xs mt-1 text-slate-300">+ {money(m.perMin)}/min + {money(m.base)} base + {money(m.booking)} booking fee &middot; then surge on top</p>
+            </div>
           </div>
+        </div>
+      </div>
 
-          <div className="border-2 border-slate-200 rounded-2xl p-5 mb-8">
-            <p className="text-base font-bold text-slate-800 mb-2">
-              Where these numbers come from
+      <div className="px-6 py-8">
+        <div className="max-w-md mx-auto space-y-4">
+          {TRIP_EXAMPLES.map((t) => (
+            <TripCard key={t.miles} {...t} />
+          ))}
+
+          <Link
+            to="/trip-details"
+            className="block text-center bg-gradient-to-b from-gold-300 to-gold-500 text-navy-950 font-extrabold text-lg py-4 rounded-full shadow-luxury"
+          >
+            Book a Ride &rarr;
+          </Link>
+
+          <div className="rounded-2xl bg-slate-50 p-5 text-sm text-slate-600 space-y-3">
+            <p className="font-bold text-slate-800">How we got these numbers</p>
+            <p>
+              The Uber/Lyft &ldquo;central average&rdquo; is the <strong>median</strong> of each part of the fare
+              (base, per mile, per minute, booking fee) across the published national averages below, at normal
+              (no-surge) prices, assuming about {MINUTES_PER_MILE} minutes per mile. &ldquo;Busy times&rdquo; applies a{" "}
+              {RIDESHARE_SURGE.multiplier}&times; surge, typical for rain, rush hour and events.
             </p>
-            <p className="text-slate-600 text-sm leading-relaxed mb-3">
-              Our side is the real, regulated meter rate: $2.16 for the first
-              1/6 mile, then $0.33 for each additional 1/6 mile ($1.98 per
-              mile after that), no commission and no surge, ever.
+            <p>
+              {COMPANY_NAME} prices are cash meter fares for one passenger. Card payments add a {money(FARE_CONFIG.CARD_APP_FEE)} app fee
+              ({money(FARE_CONFIG.CARD_APP_FEE_MEMBER)} for members). Your actual fare is set by the cab meter; Uber and
+              Lyft prices vary by city, time and demand, and are not Columbus quotes.
             </p>
-            <p className="text-slate-600 text-sm leading-relaxed mb-3">
-              The rideshare side uses a conservative national average of
-              about ${RIDESHARE_BENCHMARK.perMile.toFixed(2)}/mile plus a
-              ${RIDESHARE_BENCHMARK.bookingFee.toFixed(2)} booking fee &mdash;
-              standard, non-surge pricing. During surge pricing (bad weather,
-              graduations, weekend nights), rideshare prices commonly run
-              1.5&times;&ndash;2.5&times; higher than shown here, while our
-              rate never changes.
-            </p>
-            <p className="text-slate-500 text-xs">
-              Estimates only &mdash; your actual fare is set by the cab
-              meter. Rideshare pricing varies by market and changes over
-              time.
-            </p>
+            <ul className="space-y-1.5">
+              {RIDESHARE_SOURCES.map((s) => (
+                <li key={s.name}>
+                  <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-blue-700 underline">
+                    {s.name}
+                  </a>
+                </li>
+              ))}
+              <li>
+                <a href={RIDESHARE_SURGE.source} target="_blank" rel="noopener noreferrer" className="text-blue-700 underline">
+                  RideWise: How Uber &amp; Lyft surge pricing works (2026)
+                </a>
+              </li>
+            </ul>
+            <p className="text-xs text-slate-400">Sources checked November 2026.</p>
           </div>
 
           <ContactFooter />

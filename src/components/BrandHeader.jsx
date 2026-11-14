@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { COMPANY_WORDMARK } from "../config/constants";
+import { COMPANY_WORDMARK, COMPANY_PHONE_DISPLAY, COMPANY_PHONE_TEL } from "../config/constants";
 
 export default function BrandHeader({ tagline }) {
   return (
@@ -21,6 +21,9 @@ export default function BrandHeader({ tagline }) {
         <p className="mt-1.5 text-[11px] sm:text-xs font-semibold tracking-[0.35em] text-gold-400 uppercase">
           Taxi Service
         </p>
+        <a href={`tel:${COMPANY_PHONE_TEL}`} className="mt-1 inline-block text-xs font-mono text-slate-300 hover:text-gold-300">
+          {COMPANY_PHONE_DISPLAY}
+        </a>
         {tagline && (
           <p className="mt-2 text-sm text-slate-400">{tagline}</p>
         )}

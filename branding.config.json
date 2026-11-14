@@ -1,9 +1,8 @@
 {
   "_README": "THIS IS THE ONLY FILE YOU EDIT FOR A NEW CLIENT (plus swapping images in public/). Every company name, phone, color, city, price, and tagline in the app reads from here. After editing, run: npm run build (manifest + backend config regenerate automatically).",
-
   "company": {
     "name": "Radio Co-op",
-    "wordmark": "Radio Co\u2011op",
+    "wordmark": "Radio Co‑op",
     "tagline": "Taxi Service",
     "hubName": "Radio Hub",
     "phoneDisplay": "(706) 322-0700",
@@ -16,21 +15,28 @@
     "appUrl": "https://radio-co-op-taxi-app.web.app",
     "logoUrl": "/logo.svg"
   },
-
   "serviceArea": {
-    "summary": "Serving Columbus, Phenix City, and Surrounding Areas",
-    "localCities": ["Columbus", "Phenix City", "Ft. Benning"],
-    "surroundingCities": ["Smiths Station", "Ft. Mitchell", "Salem", "Waverly Hall", "Ellerslie", "Seale"],
+    "summary": "Serving Columbus, Phenix City, Fort Benning, Midland and Surrounding Areas",
+    "localCities": [
+      "Columbus",
+      "Phenix City",
+      "Fort Benning",
+      "Midland"
+    ],
+    "surroundingCities": [
+      "Smiths Station",
+      "Salem",
+      "Waverly Hall",
+      "Ellerslie",
+      "Seale"
+    ],
     "localAreaShortLabel": "Columbus / Phenix City",
     "statsAreaLabel": "Columbus & Beyond"
   },
-
   "copy": {
-    "heroEyebrow": "Columbus, GA · Est.",
-    "heroHeadingLine1": "Your private ride,",
-    "heroHeadingLine2": "on call.",
-    "heroSubtext": "Columbus, Phenix City, and surrounding areas — round the clock. A real dispatcher answers, not an app.",
-    "aboutQuote": "Trust Radio for a safe drive.",
+    "heroEyebrow": "Columbus · Phenix City · Fort Benning · Midland",
+    "heroSubtext": "Round the clock, every day. A real dispatcher answers — not an app.",
+    "aboutQuote": "Gotta Go? Call Radio!",
     "aboutBody": "We love our customers and have proudly served the Columbus area for decades.",
     "dispatcherFooterLabel": "Radio Co-op Dispatcher",
     "dispatcherDashboardTitle": "Radio Co-op Dispatch",
@@ -39,19 +45,63 @@
     "pickupPlaceholder": "123 Broadway, Columbus GA",
     "dropoffPlaceholder": "456 14th St, Phenix City AL",
     "metaTitle": "Radio Co-op | 24/7 Taxi Service",
-    "metaDescription": "Radio Co-op — 24/7 taxi service in Columbus, GA & Phenix City, AL. Call (706) 322-0700."
+    "metaDescription": "Radio Co-op — 24/7 taxi service in Columbus, GA & Phenix City, AL. Call (706) 322-0700.",
+    "outOfAreaNote": "Going outside Columbus, Phenix City, Fort Benning or Midland? Call for pricing and availability.",
+    "adStripText": "Advertise your business here — Call us today",
+    "memberPitchHeading": "Become a member and unlock perks",
+    "memberPerks": [
+      "Free account: $1.80 card fee instead of $2.00",
+      "Members: 1 free entry fee every 10 completed rides",
+      "Premium: plus 1 free mile on that same ride, and first in line for dispatch",
+      "$5 credit when a friend you refer becomes a member"
+    ]
   },
-
   "colors": {
     "themeColor": "#0A1420",
     "glowRGB": "212, 185, 117",
-    "chromeGradient": ["#efe1b8", "#d4b975", "#fff6df", "#c9a227", "#efe1b8"],
-    "navy": { "950": "#0A1420", "900": "#0E1D2C" },
-    "gold": { "200": "#EFE1B8", "300": "#E4CD8C", "400": "#D4B975", "500": "#C9A227", "600": "#96791D" },
-    "blue": { "50": "#EAF3FB", "100": "#CDE3F4", "200": "#9BC7E9", "300": "#69AADD", "400": "#3D8CCB", "500": "#1F72B0", "600": "#155E96", "700": "#0F4A78", "800": "#0B3A5F", "900": "#082A45" },
-    "slate": { "50": "#F7F8F8", "100": "#EDEFF0", "200": "#DCE0E3", "300": "#C3C9CD", "400": "#A6ADB3", "500": "#8A9299", "600": "#6E767C", "700": "#565D62", "800": "#3A3F43", "900": "#212427" }
+    "chromeGradient": [
+      "#efe1b8",
+      "#d4b975",
+      "#fff6df",
+      "#c9a227",
+      "#efe1b8"
+    ],
+    "navy": {
+      "950": "#0A1420",
+      "900": "#0E1D2C"
+    },
+    "gold": {
+      "200": "#EFE1B8",
+      "300": "#E4CD8C",
+      "400": "#D4B975",
+      "500": "#C9A227",
+      "600": "#96791D"
+    },
+    "blue": {
+      "50": "#EAF3FB",
+      "100": "#CDE3F4",
+      "200": "#9BC7E9",
+      "300": "#69AADD",
+      "400": "#3D8CCB",
+      "500": "#1F72B0",
+      "600": "#155E96",
+      "700": "#0F4A78",
+      "800": "#0B3A5F",
+      "900": "#082A45"
+    },
+    "slate": {
+      "50": "#F7F8F8",
+      "100": "#EDEFF0",
+      "200": "#DCE0E3",
+      "300": "#C3C9CD",
+      "400": "#A6ADB3",
+      "500": "#8A9299",
+      "600": "#6E767C",
+      "700": "#565D62",
+      "800": "#3A3F43",
+      "900": "#212427"
+    }
   },
-
   "pricing": {
     "fare": {
       "BASE_FARE": 2.16,
@@ -60,7 +110,7 @@
       "EXTRA_PAX_FEE": 2.0,
       "WAIT_TIME_PER_MINUTE": 0.35,
       "CARD_APP_FEE": 2.0,
-      "CARD_APP_FEE_MEMBER": 1.80,
+      "CARD_APP_FEE_MEMBER": 1.8,
       "HIGH_ESTIMATE_MULTIPLIER": 1.15
     },
     "outOfAreaMinimumFare": 25.0,
@@ -71,50 +121,139 @@
         "name": "Basic",
         "monthlyPrice": 9.99,
         "ridesForFreeEntry": 10,
-        "perks": { "freeEntryPer10Rides": true, "freeMilePer10Rides": false }
+        "perks": {
+          "freeEntryPer10Rides": true,
+          "freeMilePer10Rides": false
+        }
       },
       "PREMIUM": {
         "name": "Premium",
         "monthlyPrice": 14.99,
         "ridesForFreeEntry": 10,
-        "perks": { "freeEntryPer10Rides": true, "freeMilePer10Rides": true }
+        "perks": {
+          "freeEntryPer10Rides": true,
+          "freeMilePer10Rides": true
+        }
       }
     },
-    "promo": { "FIRST_RIDE": "WELCOME2", "REFERRAL_BONUS": 5.0 }
+    "promo": {
+      "FIRST_RIDE": "WELCOME2",
+      "REFERRAL_BONUS": 5.0
+    }
   },
-
   "dispatch": {
     "_note": "Zone board + auto-dispatch defaults for this client. Zone shapes are drawn in the admin Zone Editor; this list only seeds names and order.",
     "timeZone": "America/New_York",
-    "mapCenter": { "lat": 32.44, "lng": -84.96 },
+    "mapCenter": {
+      "lat": 32.44,
+      "lng": -84.96
+    },
     "mapZoom": 11,
     "zones": [
-      { "id": "downtown", "label": "Downtown" },
-      { "id": "north-highland", "label": "North Highland" },
-      { "id": "beallwood", "label": "Beallwood" },
-      { "id": "rose-hill", "label": "Rose Hill" },
-      { "id": "peachtree", "label": "Peachtree" },
-      { "id": "airport", "label": "Airport" },
-      { "id": "wynnton", "label": "Wynnton" },
-      { "id": "east-wynnton", "label": "East Wynnton" },
-      { "id": "east", "label": "East" },
-      { "id": "midland", "label": "Midland" },
-      { "id": "baker", "label": "Baker" },
-      { "id": "the-park", "label": "The Park" },
-      { "id": "fort-benning", "label": "Fort Benning", "requiresCert": "base" },
-      { "id": "phenix-city", "label": "Phenix City" }
+      {
+        "id": "downtown",
+        "label": "Downtown"
+      },
+      {
+        "id": "north-highland",
+        "label": "North Highland"
+      },
+      {
+        "id": "beallwood",
+        "label": "Beallwood"
+      },
+      {
+        "id": "rose-hill",
+        "label": "Rose Hill"
+      },
+      {
+        "id": "peachtree",
+        "label": "Peachtree"
+      },
+      {
+        "id": "airport",
+        "label": "Airport"
+      },
+      {
+        "id": "wynnton",
+        "label": "Wynnton"
+      },
+      {
+        "id": "east-wynnton",
+        "label": "East Wynnton"
+      },
+      {
+        "id": "east",
+        "label": "East"
+      },
+      {
+        "id": "midland",
+        "label": "Midland"
+      },
+      {
+        "id": "baker",
+        "label": "Baker"
+      },
+      {
+        "id": "the-park",
+        "label": "The Park"
+      },
+      {
+        "id": "fort-benning",
+        "label": "Fort Benning",
+        "requiresCert": "base"
+      },
+      {
+        "id": "phenix-city",
+        "label": "Phenix City"
+      }
     ],
-    "geocodeFallbackCities": ["Columbus, GA", "Phenix City, AL"],
-    "lease": { "dailyCents": 7500, "dueStart": "14:00", "dueEnd": "16:00", "exitPayoutPct": 50, "includeTips": true },
-    "offer": { "pings": 3, "pingIntervalSec": 15, "broadcastSec": 90 },
+    "geocodeFallbackCities": [
+      "Columbus, GA",
+      "Phenix City, AL"
+    ],
+    "lease": {
+      "dailyCents": 7500,
+      "dueStart": "14:00",
+      "dueEnd": "16:00",
+      "exitPayoutPct": 50,
+      "includeTips": true
+    },
+    "offer": {
+      "pings": 3,
+      "pingIntervalSec": 15,
+      "broadcastSec": 90
+    },
     "scheduledLeadMin": 15,
     "pushVapidKey": "",
     "maxWarnings": 3,
-    "incentives": { "bonusCents": 500, "bonusPeriodDays": 14, "bonusAnchor": "2026-11-02", "strikesToForfeit": 2, "bonusMinDays": 5, "scoreStrikePoints": 10, "scoreWindowDays": 60, "lowScore": 70, "lowScoreHoldHours": 12, "holdCreditAfterDays": 60, "penaltyPoints": { "accident": 30, "no_show": 15, "complaint": 10, "write_up": 20, "other": 5 } },
+    "incentives": {
+      "bonusCents": 500,
+      "bonusPeriodDays": 14,
+      "bonusAnchor": "2026-11-02",
+      "strikesToForfeit": 2,
+      "bonusMinDays": 5,
+      "scoreStrikePoints": 10,
+      "scoreWindowDays": 60,
+      "lowScore": 70,
+      "lowScoreHoldHours": 12,
+      "holdCreditAfterDays": 60,
+      "penaltyPoints": {
+        "accident": 30,
+        "no_show": 15,
+        "complaint": 10,
+        "write_up": 20,
+        "other": 5
+      }
+    },
     "dropOffPlacement": "front",
-    "gps": { "staleMin": 3, "outOfZoneMin": 3, "minMoveMeters": 50, "maxIntervalSec": 45 }
+    "gps": {
+      "staleMin": 3,
+      "outOfZoneMin": 3,
+      "minMoveMeters": 50,
+      "maxIntervalSec": 45
+    }
   },
-
   "infrastructure": {
     "_note": "Per-client Firebase project + Stripe key. Also update .firebaserc projectId when switching clients.",
     "stripePublishableKey": "[INSERT_STRIPE_PUBLISHABLE_KEY]",
@@ -128,6 +267,8 @@
       "measurementId": "G-Z2NE52W8WW"
     }
   },
-
-  "policies": { "dataRetentionDays": 5, "mvrLookbackYears": 7 }
+  "policies": {
+    "dataRetentionDays": 5,
+    "mvrLookbackYears": 7
+  }
 }

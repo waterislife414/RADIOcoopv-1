@@ -141,6 +141,14 @@ export default function Profile() {
             )}
           </div>
 
+          {userProfile.referralCode && (
+            <div className="border-2 border-emerald-500 bg-emerald-50 rounded-2xl p-5 mb-5 text-center">
+              <h2 className="font-bold text-lg text-slate-800">Your Referral Code</h2>
+              <p className="font-mono text-3xl font-bold tracking-widest text-emerald-700 my-2">{userProfile.referralCode}</p>
+              <p className="text-sm text-slate-600">Give it to a friend. When they become a member, you get a ride credit.</p>
+            </div>
+          )}
+
           {/* Perk tracker */}
           <div className="border-2 border-slate-200 rounded-2xl p-5 mb-5">
             <h2 className="font-bold text-lg text-slate-800 mb-3">Ride Perks</h2>

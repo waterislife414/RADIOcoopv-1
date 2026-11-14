@@ -114,3 +114,11 @@ html, body, #root {
 }
 .animate-pulse-slow { animation: pulse-slow 2s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .animate-pulse-slow { animation: none; } }
+
+/* Advertising strip: scrolls left to right, loops seamlessly (two equal halves). */
+@keyframes ad-marquee {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
+.ad-marquee { animation: ad-marquee 28s linear infinite; will-change: transform; }
+@media (prefers-reduced-motion: reduce) { .ad-marquee { animation-duration: 90s; } }

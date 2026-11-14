@@ -41,24 +41,56 @@ export function calcMeterFareOnly(miles, passengers = 1) {
   return BASE_FARE + billableMiles * PER_MILE + extraPax * EXTRA_PAX_FEE;
 }
 
-// Rough current national rideshare averages (UberX/Lyft standard, non-surge,
-// no promo) used only for the savings comparison - update these periodically
-// since rideshare pricing drifts. Sourced from published per-mile cost
-// ranges; kept conservative (low end of published ranges) so the "you
-// saved" claim is defensible, not exaggerated.
-export const RIDESHARE_BENCHMARK = {
-  perMile: 2.10,
-  bookingFee: 4.50,
+// National rideshare averages (UberX / Lyft standard, no surge, no promo).
+// Each source's published rate card is listed; the comparison uses the
+// MEDIAN of every source for each part of the fare. Checked Nov 14, 2026 -
+// re-check a few times a year, rideshare prices drift.
+export const RIDESHARE_SOURCES = [
+  { name: "RideWise rate-card analysis, 300 US cities (UberX)", url: "https://getridewise.com/blog/rideshare-rate-card-analysis-300-cities", base: 1.15, perMile: 0.97, perMin: 0.22, booking: 2.65, minimum: 5.5 },
+  { name: "RideWise rate-card analysis, 300 US cities (Lyft)", url: "https://getridewise.com/blog/rideshare-rate-card-analysis-300-cities", base: 1.05, perMile: 0.92, perMin: 0.21, booking: 2.55, minimum: 5.25 },
+  { name: "RideWise Uber fare calculator 2026", url: "https://getridewise.com/blog/uber-fare-calculator-2026", base: 1.0, perMile: 0.97, perMin: 0.32, booking: 3.2 },
+  { name: "RideWise: How much does Lyft cost", url: "https://getridewise.com/blog/how-much-does-lyft-cost", base: 3.0, perMile: 1.2, perMin: 0.25, booking: 2.85, minimum: 7.5 },
+  { name: "RideWise: Lyft price per mile (June 2026)", url: "https://getridewise.com/blog/how-much-is-lyft-per-mile", perMile: 1.15, perMin: 0.2 },
+  { name: "DealNews: How much does Uber cost (midpoint of range)", url: "https://www.dealnews.com/features/uber/cost", base: 2.0, perMile: 1.425, perMin: 0.275 },
+  { name: "Ridester: Uber rates (midpoint of range)", url: "https://www.ridester.com/uber-rates-cost/", perMile: 1.5, perMin: 0.4 },
+  { name: "MyCarCalc Lyft calculator, medium cities", url: "https://mycarcalc.com", base: 1.15, perMile: 0.9, perMin: 0.15, booking: 2.75 },
+];
+
+/** Typical busy-time multiplier (rain, rush hour, events) - RideWise surge data, 2026. */
+export const RIDESHARE_SURGE = { multiplier: 1.5, source: "https://getridewise.com/blog/how-surge-pricing-works-uber-lyft-algorithm" };
+
+/** Average city trip speed assumed for the per-minute part (30 mph = 2 min/mile). */
+export const MINUTES_PER_MILE = 2;
+
+export function median(values) {
+  const v = values.filter((x) => typeof x === "number").sort((a, b) => a - b);
+  if (!v.length) return 0;
+  const mid = Math.floor(v.length / 2);
+  return v.length % 2 ? v[mid] : (v[mid - 1] + v[mid]) / 2;
+}
+
+const pick = (key) => median(RIDESHARE_SOURCES.map((s) => s[key]));
+export const RIDESHARE_MEDIAN = {
+  base: pick("base"),
+  perMile: pick("perMile"),
+  perMin: pick("perMin"),
+  booking: pick("booking"),
+  minimum: pick("minimum"),
 };
 
-export function calcRideshareEstimate(miles) {
-  return miles * RIDESHARE_BENCHMARK.perMile + RIDESHARE_BENCHMARK.bookingFee;
+/** Median national rideshare fare for a trip, at normal (non-surge) rates. */
+export function calcRideshareEstimate(miles, surge = 1) {
+  const m = RIDESHARE_MEDIAN;
+  const fare = m.base + miles * m.perMile + miles * MINUTES_PER_MILE * m.perMin + m.booking;
+  return Math.max(m.minimum, fare) * surge;
 }
 
 export function calcSavings(miles, passengers = 1) {
   const ours = calcMeterFareOnly(miles, passengers);
   const theirs = calcRideshareEstimate(miles);
+  const theirsBusy = calcRideshareEstimate(miles, RIDESHARE_SURGE.multiplier);
   const savings = Math.max(0, theirs - ours);
   const percent = theirs > 0 ? (savings / theirs) * 100 : 0;
-  return { ours, theirs, savings, percent };
+  const busySavings = Math.max(0, theirsBusy - ours);
+  return { ours, theirs, savings, percent, theirsBusy, busySavings };
 }
