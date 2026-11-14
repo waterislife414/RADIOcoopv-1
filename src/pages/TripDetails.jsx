@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import LegalConsent from "../components/legal/LegalConsent";
+import { consentIsCurrent } from "../legal/documents";
+
+const RIDER_DOCS = ["rider-terms", "privacy"];
 import { useRide } from "../context/RideContext";
 import BrandHeader from "../components/BrandHeader";
 import {
@@ -17,7 +21,10 @@ const includedMiles = Math.floor(
 );
 
 export default function TripDetails() {
-  const { currentUser, userProfile } = useAuth();
+  const { currentUser, userProfile, saveLegalConsent } = useAuth();
+  // Guests agree on every booking. Signed-in riders agree once per version.
+  const alreadyAgreed = !!currentUser && consentIsCurrent(userProfile?.legal, RIDER_DOCS);
+  const [consent, setConsent] = useState(null);
   const { ride, updateRide, addStop, removeStop } = useRide();
   const navigate = useNavigate();
 
@@ -93,7 +100,12 @@ export default function TripDetails() {
       setError("Please choose a date/time for your scheduled ride.");
       return;
     }
-    updateRide({ scheduleType });
+    if (!alreadyAgreed && !consent) {
+      setError("Please open, read and agree to the Terms of Service and Privacy Policy to continue.");
+      return;
+    }
+    if (!alreadyAgreed && currentUser) saveLegalConsent(consent).catch(() => {});
+    updateRide({ scheduleType, consent: alreadyAgreed ? userProfile.legal : consent });
     navigate("/payment");
   }
 
@@ -441,6 +453,12 @@ export default function TripDetails() {
               </div>
             )}
           </div>
+
+          {!alreadyAgreed && (
+            <div className="mt-8">
+              <LegalConsent docIds={RIDER_DOCS} onChange={setConsent} />
+            </div>
+          )}
 
           <button
             onClick={handleContinue}

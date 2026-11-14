@@ -7,6 +7,8 @@ import { CERT_LABELS } from "../../config/driverCerts";
 import DriverCerts from "./DriverCerts";
 import DriverLeaseCard from "./DriverLeaseCard";
 import DriverRecord from "./DriverRecord";
+import DriverAgreementGate from "./DriverAgreementGate";
+import { consentIsCurrent } from "../../legal/documents";
 import DriverStatusPanel from "./DriverStatusPanel";
 import ZoneBoard from "../board/ZoneBoard";
 import { useLiveBoard } from "../../hooks/useLiveBoard";
@@ -64,6 +66,9 @@ export default function DriverDashboard() {
         <p className="text-slate-400 text-base">Loading your driver profile&hellip;</p>
       </div>
     );
+  }
+  if (driver.active !== false && !consentIsCurrent(driver.agreement, ["driver-agreement", "privacy"])) {
+    return <DriverAgreementGate driver={driver} onSignOut={logout} />;
   }
 
   return (

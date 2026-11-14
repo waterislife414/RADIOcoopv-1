@@ -36,7 +36,8 @@ service cloud.firestore {
         || (isOwner(userId)
             && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['firstName', 'lastName', 'phone', 'address', 'dob',
-                           'idImageUrl', 'idSubmittedAt', 'idVerified', 'rating', 'active'])
+                           'idImageUrl', 'idSubmittedAt', 'idVerified', 'rating', 'active',
+                           'legal', 'marketingOptIn', 'photoUrl'])
             // A new ID photo resets verification; only the dispatcher can verify.
             && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['idVerified'])
                 || request.resource.data.idVerified == false));

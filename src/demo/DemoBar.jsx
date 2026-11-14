@@ -49,10 +49,11 @@ export default function DemoBar() {
     }
   }
 
-  const box = { position: "fixed", left: 12, bottom: 12, zIndex: 9999, fontFamily: "system-ui, sans-serif" };
+  // Tab on the left edge, clear of the app's own buttons.
+  const box = { position: "fixed", left: 0, top: "42%", zIndex: 9999, fontFamily: "system-ui, sans-serif" };
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} style={{ ...box, background: "#0f172a", color: "#fbbf24", border: "2px solid #fbbf24", borderRadius: 999, padding: "8px 14px", fontWeight: 800, fontSize: 13, letterSpacing: 1, boxShadow: "0 4px 14px rgba(0,0,0,.35)" }}>
+      <button onClick={() => setOpen(true)} style={{ ...box, background: "#0f172a", color: "#fbbf24", border: "2px solid #fbbf24", borderLeft: 0, borderRadius: "0 10px 10px 0", padding: "10px 6px", writingMode: "vertical-rl", fontWeight: 800, fontSize: 11, letterSpacing: 2, boxShadow: "0 4px 14px rgba(0,0,0,.35)" }}>
         DEMO
       </button>
     );
@@ -60,7 +61,7 @@ export default function DemoBar() {
   const btn = { display: "block", width: "100%", textAlign: "left", padding: "9px 10px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", fontSize: 14, cursor: "pointer" };
   const h = { fontSize: 11, fontWeight: 800, letterSpacing: 1, color: "#64748b", textTransform: "uppercase", margin: "12px 0 6px" };
   return (
-    <div style={{ ...box, width: 300, maxHeight: "86vh", overflowY: "auto", background: "#f8fafc", color: "#0f172a", borderRadius: 16, padding: 14, boxShadow: "0 10px 30px rgba(0,0,0,.4)", border: "2px solid #fbbf24" }}>
+    <div style={{ ...box, top: 12, left: 12, width: 300, maxHeight: "86vh", overflowY: "auto", background: "#f8fafc", color: "#0f172a", borderRadius: 16, padding: 14, boxShadow: "0 10px 30px rgba(0,0,0,.4)", border: "2px solid #fbbf24" }}>
       <div style={{ display: "flex", alignItems: "center" }}>
         <strong style={{ flex: 1 }}>Demo &mdash; example data</strong>
         <button onClick={() => setOpen(false)} style={{ border: 0, background: "none", fontSize: 20, cursor: "pointer" }} aria-label="Close">

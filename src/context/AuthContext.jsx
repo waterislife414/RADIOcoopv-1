@@ -66,7 +66,7 @@ export function AuthProvider({ children }) {
     return unsub;
   }, []);
 
-  async function signup({ email, password, firstName, lastName, phone, address, dob, referredBy }) {
+  async function signup({ email, password, firstName, lastName, phone, address, dob, referredBy, legal }) {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     const referralCode = cred.user.uid.slice(0, 8).toUpperCase();
 
@@ -83,6 +83,8 @@ export function AuthProvider({ children }) {
       active: true,
       referralCode,
       referredBy: referredBy || null,
+      legal: legal || null,
+      marketingOptIn: !!legal?.marketingOptIn,
       createdAt: serverTimestamp(),
     });
 
@@ -109,6 +111,13 @@ export function AuthProvider({ children }) {
     await updateDoc(doc(db, "users", currentUser.uid), {
       subscriptionTier: tierKey,
     });
+    await refreshProfile(currentUser.uid);
+  }
+
+  // Records that this rider read and accepted the current Terms + Privacy.
+  async function saveLegalConsent(record) {
+    if (!currentUser) return;
+    await updateDoc(doc(db, "users", currentUser.uid), { legal: record, marketingOptIn: !!record.marketingOptIn });
     await refreshProfile(currentUser.uid);
   }
 
@@ -150,6 +159,7 @@ export function AuthProvider({ children }) {
     refreshClaims,
     loading,
     signup,
+    saveLegalConsent,
     login,
     logout,
     resetPassword,

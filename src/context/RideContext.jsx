@@ -25,6 +25,7 @@ const initialRide = {
   promoCode: "",
   estimatedFare: null,
   lastRideId: null,
+  consent: null,
 };
 
 export function RideProvider({ children }) {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
@@ -61,6 +61,7 @@ export default function PaymentSelection() {
         paymentMethod,
         paymentIntentId,
         promoCode: ride.promoCode || null,
+        consent: ride.consent || null,
         status: "pending",
         finalFare: null,
         timestamp: serverTimestamp(),
@@ -83,6 +84,9 @@ export default function PaymentSelection() {
     submitRide(method);
   }
 
+
+  // No booking without the agreed terms (covers someone opening this page directly).
+  if (!ride.consent && !submitting) return <Navigate to="/trip-details" replace />;
   return (
     <div className="min-h-screen bg-white">
       <BrandHeader />

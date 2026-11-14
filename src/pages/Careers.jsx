@@ -8,6 +8,7 @@ import { useAuth } from "../context/AuthContext";
 import BrandHeader from "../components/BrandHeader";
 import ContactFooter from "../components/ContactFooter";
 import { normalizePhone } from "../utils/phone";
+import LegalConsent from "../components/legal/LegalConsent";
 
 const inputClass =
   "w-full border-2 border-slate-300 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600";
@@ -33,6 +34,7 @@ export default function Careers() {
   const [resumeFile, setResumeFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [agreement, setAgreement] = useState(null);
 
   function update(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -49,6 +51,10 @@ export default function Careers() {
     e.preventDefault();
     setError("");
 
+    if (!agreement) {
+      setError("Please open, read and agree to the Driver Agreement and Privacy Policy.");
+      return;
+    }
     if (!form.consentSigned) {
       setError("You must sign the consent checkbox to continue.");
       return;
@@ -94,6 +100,7 @@ export default function Careers() {
         existingDriver: form.existingDriver,
         existingCarNumber: form.existingDriver ? form.existingCarNumber.trim() : "",
         consentSigned: true,
+        agreement,
         status: "pending",
         dlImageUrl,
         mvrDocumentUrl,
@@ -283,6 +290,12 @@ export default function Careers() {
                 my electronic signature.
               </span>
             </label>
+
+            <LegalConsent
+              docIds={["driver-agreement", "privacy"]}
+              onChange={setAgreement}
+              promoLabel="Send me company offers and news by text and email."
+            />
 
             <button
               type="submit"

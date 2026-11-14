@@ -1,4 +1,5 @@
 import { useState } from "react";
+import LegalConsent from "../components/legal/LegalConsent";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import BrandHeader from "../components/BrandHeader";
@@ -22,6 +23,7 @@ export default function SignUp() {
     referredBy: "",
   });
   const [error, setError] = useState("");
+  const [consent, setConsent] = useState(null);
   const [loading, setLoading] = useState(false);
 
   function update(field, value) {
@@ -33,7 +35,7 @@ export default function SignUp() {
     setError("");
     setLoading(true);
     try {
-      await signup(form);
+      await signup({ ...form, legal: consent });
       if (tierInfo) {
         navigate(`/subscribe/${chosenTier}`);
       } else {
@@ -146,9 +148,11 @@ export default function SignUp() {
               onChange={(e) => update("referredBy", e.target.value)}
             />
 
+            <LegalConsent docIds={["rider-terms", "privacy"]} onChange={setConsent} />
+
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !consent}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4.5 rounded-2xl shadow-md transition disabled:opacity-50"
             >
               {loading ? "Creating..." : "Create Account"}

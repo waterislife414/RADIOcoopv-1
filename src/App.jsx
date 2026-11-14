@@ -4,6 +4,9 @@ import { AuthProvider } from "./context/AuthContext";
 import { RideProvider } from "./context/RideContext";
 import { RequireAdmin, RequireAuth, RequireDriverSignIn } from "./components/ProtectedRoute";
 
+import About from "./pages/About";
+import DriverAgreement from "./pages/DriverAgreement";
+import SiteMenu from "./components/SiteMenu";
 import Home from "./pages/Home";
 import Careers from "./pages/Careers";
 import Terms from "./pages/Terms";
@@ -48,8 +51,11 @@ export default function App() {
     <AuthProvider>
       <RideProvider>
         <BrowserRouter>
+          <SiteMenu />
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/driver-agreement" element={<DriverAgreement />} />
             <Route path="/sign-in" element={<SignIn />} />
             <Route path="/sign-up" element={<SignUp />} />
             <Route path="/careers" element={<Careers />} />

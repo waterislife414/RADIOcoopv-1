@@ -48,6 +48,7 @@ exports.approveDriver = onCall(async (request) => {
     active: true,
     approvedAt: now(),
     approvedBy: request.auth.uid,
+    ...(app.agreement ? { agreement: app.agreement } : {}),
   };
 
   const batch = db().batch();
@@ -133,3 +134,17 @@ exports.expireDriverCerts = onSchedule(
     return null;
   }
 );
+
+// A driver accepts the current Driver Agreement + Privacy Policy in the app.
+// Kept on his record: which version, when, and whether he wants promotions.
+exports.acceptDriverAgreement = onCall(async (request) => {
+  if (!request.auth || request.auth.token.driver !== true) {
+    throw new HttpsError("permission-denied", "This needs an approved driver account.");
+  }
+  const version = String(request.data?.version || "").slice(0, 20);
+  const docs = (Array.isArray(request.data?.docs) ? request.data.docs : []).filter((d) => ["driver-agreement", "privacy"].includes(d));
+  if (!version || docs.length !== 2) throw new HttpsError("invalid-argument", "Agreement not accepted.");
+  const agreement = { version, docs, acceptedAt: Date.now(), marketingOptIn: request.data?.marketingOptIn === true };
+  await db().collection("drivers").doc(request.auth.uid).update({ agreement, agreementHistory: admin.firestore.FieldValue.arrayUnion(agreement) });
+  return { ok: true };
+});

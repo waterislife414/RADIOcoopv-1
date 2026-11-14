@@ -94,12 +94,20 @@ export default function Home() {
       <div className="relative overflow-hidden bg-navy-950 bg-grain">
         <div className="relative px-6 pb-10 max-w-md mx-auto">
           <div className="mt-10 space-y-3.5 animate-fade-up" style={{ animationDelay: "260ms" }}>
-            <Link
-              to="/sign-in"
-              className="shine-sweep block w-full text-center bg-gradient-to-b from-gold-300 to-gold-500 hover:from-gold-300 hover:to-gold-400 text-navy-950 font-bold text-lg py-4.5 rounded-full shadow-luxury transition hover:-translate-y-0.5 duration-200"
-            >
-              Create Account / Sign In
-            </Link>
+            <div className="grid grid-cols-2 gap-3">
+              <Link
+                to="/sign-in"
+                className="shine-sweep block text-center bg-gradient-to-b from-gold-300 to-gold-500 hover:to-gold-400 text-navy-950 font-bold text-lg py-4 rounded-full shadow-luxury transition hover:-translate-y-0.5 duration-200"
+              >
+                Log In
+              </Link>
+              <Link
+                to="/sign-up"
+                className="block text-center border-2 border-gold-400/70 text-gold-200 hover:bg-gold-400/10 font-bold text-lg py-4 rounded-full transition hover:-translate-y-0.5 duration-200"
+              >
+                Sign Up
+              </Link>
+            </div>
             <Link
               to="/trip-details"
               className="block w-full text-center border-2 border-white/20 hover:border-white/40 hover:bg-white/[0.05] text-white font-semibold text-lg py-4.5 rounded-full transition hover:-translate-y-0.5 duration-200"
@@ -137,7 +145,7 @@ export default function Home() {
                 to="/become-a-driver"
                 className="text-center bg-white/10 hover:bg-white/15 text-white font-bold text-base py-3.5 rounded-full transition"
               >
-                Become a Driver
+                Apply to Drive
               </Link>
               <Link
                 to="/driver/sign-in"

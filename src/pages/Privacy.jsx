@@ -1,5 +1,5 @@
-import { Navigate } from "react-router-dom";
+import LegalPage from "./LegalPage";
 
 export default function Privacy() {
-  return <Navigate to="/terms" replace />;
+  return <LegalPage docId="privacy" />;
 }
