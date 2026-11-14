@@ -1,12 +1,15 @@
 # Driver mode + auto-dispatch: setup and operations
 
 ## Deploy (Cloud Shell)
-1. Back up: `tar czf ~/radio-coop-backup-$(date +%F).tgz --exclude=node_modules -C ~/radio-coop-v12 radio-coop`
-2. Upload `rc-dispatch.tgz` to Cloud Shell, then:
-   `cd ~/radio-coop-v12/radio-coop && tar xzf ~/rc-dispatch.tgz && bash scripts/deploy-dispatch.sh`
-3. If the functions deploy asks to delete functions, answer **N**.
+Not deployed yet: the project has no billing or Stripe keys. See HANDOVER.md for the settings and keys needed, then:
 
-Rollback: Firebase console → Hosting → Release history → Roll back; re-extract the backup and redeploy functions.
+    cd ~/radio-coop-v12/radio-coop && bash scripts/deploy-dispatch.sh
+
+If the functions deploy asks to delete functions, answer **N**.
+
+Rollback: Firebase console → Hosting → Release history → Roll back.
+
+Until then, show the demo build (HANDOVER.md → The demo).
 
 ## First-time setup (dispatcher login)
 1. **Zones** (`/admin/zones`): Load starter zones, then trace each zone by tapping its corners. Rides and drivers can't be placed until zones have shapes.
