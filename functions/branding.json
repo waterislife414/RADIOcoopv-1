@@ -104,7 +104,17 @@
       "strikesToForfeit": 2,
       "bonusMinDays": 5,
       "scoreStrikePoints": 10,
-      "scoreWindowDays": 30
+      "scoreWindowDays": 60,
+      "lowScore": 70,
+      "lowScoreHoldHours": 12,
+      "holdCreditAfterDays": 60,
+      "penaltyPoints": {
+        "accident": 30,
+        "no_show": 15,
+        "complaint": 10,
+        "write_up": 20,
+        "other": 5
+      }
     },
     "dropOffPlacement": "front",
     "gps": {

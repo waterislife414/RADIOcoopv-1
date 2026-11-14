@@ -49,8 +49,8 @@ const at = (iso) => Date.parse(iso);
   assert.deepEqual([a.leaseCreditCents, a.lastBonus.award], [1500, true]);
   assert.deepEqual([(await get("drivers/b")).lastBonus.reason, (await get("drivers/cc")).lastBonus.reason], ["strikes", "not_enough_days"]);
   assert.equal((await get("ledger/a/entries/bonus_2026-11-02")).cents, 500);
-  // Mid-period: no awards; strikes older than 30 days age out of the score
-  await mk("old", "4", { score: 90, recentStrikes: [at("2026-10-01T12:00:00Z")] });
+  // Mid-period: no awards; strikes older than 60 days age out of the score
+  await mk("old", "4", { score: 90, recentStrikes: [at("2026-09-01T12:00:00Z")] });
   await I.runIncentives(at("2026-11-20T11:00:00Z"));
   const o = await get("drivers/old");
   assert.deepEqual([o.score, o.recentStrikes.length, o.lastBonus], [100, 0, undefined]);

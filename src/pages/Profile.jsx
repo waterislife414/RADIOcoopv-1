@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ProfilePhoto from "../components/ProfilePhoto";
 import { useNavigate, Link } from "react-router-dom";
 import { doc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -108,6 +109,8 @@ export default function Profile() {
           )}
 
           {/* Plan */}
+          <ProfilePhoto />
+
           <div className="border-2 border-slate-200 rounded-2xl p-5 mb-5">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-bold text-lg text-slate-800">Your Plan</h2>

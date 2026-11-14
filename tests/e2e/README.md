@@ -4,7 +4,7 @@ push are captured in-process.
 
     npx firebase-tools emulators:exec --config tests/e2e/firebase.emulators.json \
       --only firestore,auth --project demo-radio \
-      'for t in board dispatch dispatcher lease closeout incentives phone; do node tests/e2e/$t.e2e.cjs || exit 1; done'
+      'for t in board dispatch dispatcher lease closeout incentives phone profile; do node tests/e2e/$t.e2e.cjs || exit 1; done'
 
 Each suite wipes the emulator database first (reset.cjs).
 

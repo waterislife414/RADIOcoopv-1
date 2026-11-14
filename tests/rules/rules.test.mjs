@@ -150,3 +150,13 @@ test("the app's real booking and signup payloads are accepted", async () => {
     subscriptionTier: null, walletBalance: 0, active: true, referralCode: "ABC123", referredBy: null, createdAt: serverTimestamp(),
   }));
 });
+
+test("driver record is read-only to the driver; riders may save consent and a photo", async () => {
+  await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), "drivers/d1/record/x1"), { type: "accident", points: 30 }));
+  await assertSucceeds(getDoc(doc(driver(), "drivers/d1/record/x1")));
+  await assertFails(getDoc(doc(driver("d2"), "drivers/d1/record/x1")));
+  await assertFails(setDoc(doc(driver(), "drivers/d1/record/x1"), { type: "accident", points: 0 }));
+  await assertFails(updateDoc(doc(driver(), "drivers/d1"), { score: 100, penalties: [] }));
+  await assertSucceeds(updateDoc(doc(rider(), "users/rider1"), { legal: { version: "v", docs: ["rider-terms", "privacy"], acceptedAt: 1 }, marketingOptIn: true }));
+  await assertSucceeds(updateDoc(doc(rider(), "users/rider1"), { photoUrl: "u", photoCheck: "needs-review" }));
+});

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { BRAND } from "../../config/constants";
 import { money } from "../../config/lease";
 import { INCENTIVE_DEFAULTS, incentivePeriod, strikesBetween } from "../../../functions/lib/dispatchCore.mjs";
@@ -25,7 +26,17 @@ export default function DriverRecord({ driver }) {
 
   return (
     <section className="glass-panel border border-white/10 rounded-2xl p-5 space-y-3">
-      <p className="text-xs font-bold tracking-widest text-slate-400 uppercase">Record</p>
+      <div className="flex items-baseline justify-between">
+        <p className="text-xs font-bold tracking-widest text-slate-400 uppercase">Record</p>
+        <Link to="/driver/profile" className="text-sm font-semibold text-gold-300">
+          My profile &rarr;
+        </Link>
+      </div>
+      {driver.callHoldUntil > now && (
+        <p className="rounded-xl bg-red-500/15 border border-red-400/40 p-3 text-red-200">
+          Score under {INC.lowScore}: no app calls until {new Date(driver.callHoldUntil).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}.
+        </p>
+      )}
       <div className="flex gap-6">
         <div>
           <p className="text-2xl font-bold tabular-nums">{driver.score ?? 100}</p>

@@ -31,6 +31,7 @@ const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const DispatcherDashboard = lazy(() => import("./pages/admin/DispatcherDashboard"));
 const DriversAdmin = lazy(() => import("./pages/admin/DriversAdmin"));
 const ZoneEditor = lazy(() => import("./pages/admin/ZoneEditor"));
+const DriverProfile = lazy(() => import("./pages/driver/DriverProfile"));
 const LiveMap = lazy(() => import("./pages/admin/LiveMap"));
 const LeaseAdmin = lazy(() => import("./pages/admin/LeaseAdmin"));
 const PayoutStatement = lazy(() => import("./pages/admin/PayoutStatement"));
@@ -55,6 +56,14 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
+            <Route
+              path="/driver/profile"
+              element={
+                <Suspense fallback={<AdminLoadingFallback />}>
+                  <DriverProfile />
+                </Suspense>
+              }
+            />
             <Route path="/driver-agreement" element={<DriverAgreement />} />
             <Route path="/sign-in" element={<SignIn />} />
             <Route path="/sign-up" element={<SignUp />} />

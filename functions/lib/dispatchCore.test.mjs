@@ -267,12 +267,24 @@ test('incentives: 14-day periods, score from 30-day strikes, bonus rules', () =>
   assert.deepEqual(c.incentivePeriod(at('2026-11-16T15:00:00Z')).startKey, '2026-11-16');
   assert.equal(c.incentivePeriod(at('2026-11-16T03:00:00Z')).startKey, '2026-11-02'); // 10 PM Sunday ET
   const now = at('2026-11-13T15:00:00Z');
-  const s1 = c.recordStrike([at('2026-10-01T12:00:00Z')], now);
-  assert.equal(s1.recentStrikes.length, 1); // October strike aged out
+  const s1 = c.recordStrike([at('2026-09-01T12:00:00Z')], now);
+  assert.equal(s1.recentStrikes.length, 1); // September strike aged out (60-day window)
   assert.equal(s1.score, 90);
   assert.equal(c.recordStrike(s1.recentStrikes, now + 1).score, 80);
   assert.equal(c.strikesBetween([at('2026-11-02T04:59:00Z'), at('2026-11-02T05:01:00Z'), at('2026-11-15T12:00:00Z')], '2026-11-02', '2026-11-16'), 2);
   assert.deepEqual(c.bonusOutcome({ strikes: 1, workedDays: 9 }), { award: true, cents: 500 });
   assert.equal(c.bonusOutcome({ strikes: 2, workedDays: 9 }).reason, 'strikes');
   assert.equal(c.bonusOutcome({ strikes: 0, workedDays: 3 }).reason, 'not_enough_days');
+});
+
+test('standing: 60-day window, office penalties, active warnings, low-score hold, credit hold', () => {
+  const DAY = 86400000, now = Date.parse('2026-11-13T15:00:00Z');
+  const d = { recentStrikes: [now - 70 * DAY, now - 20 * DAY, now - 2 * DAY], penalties: [{ at: now - 5 * DAY, points: 30, type: 'accident' }, { at: now - 90 * DAY, points: 30 }], warningsClearedAt: now - 10 * DAY };
+  const s = c.standing(d, now);
+  assert.deepEqual([s.recentStrikes.length, s.penalties.length, s.score, s.warnings], [2, 1, 50, 1]);
+  assert.equal(c.callHoldUntil(50, now), now + 12 * 3600000);
+  assert.equal(c.callHoldUntil(70, now), null);
+  assert.deepEqual(c.canHoldCredit({ approvedAt: now - 10 * DAY }, now), { ok: false, reason: 'too_new' });
+  assert.deepEqual(c.canHoldCredit({ approvedAt: now - 90 * DAY, recentStrikes: [now - DAY] }, now), { ok: false, reason: 'record' });
+  assert.deepEqual(c.canHoldCredit({ approvedAt: { toMillis: () => now - 90 * DAY } }, now), { ok: true });
 });

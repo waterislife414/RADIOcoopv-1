@@ -110,7 +110,7 @@
     "scheduledLeadMin": 15,
     "pushVapidKey": "",
     "maxWarnings": 3,
-    "incentives": { "bonusCents": 500, "bonusPeriodDays": 14, "bonusAnchor": "2026-11-02", "strikesToForfeit": 2, "bonusMinDays": 5, "scoreStrikePoints": 10, "scoreWindowDays": 30 },
+    "incentives": { "bonusCents": 500, "bonusPeriodDays": 14, "bonusAnchor": "2026-11-02", "strikesToForfeit": 2, "bonusMinDays": 5, "scoreStrikePoints": 10, "scoreWindowDays": 60, "lowScore": 70, "lowScoreHoldHours": 12, "holdCreditAfterDays": 60, "penaltyPoints": { "accident": 30, "no_show": 15, "complaint": 10, "write_up": 20, "other": 5 } },
     "dropOffPlacement": "front",
     "gps": { "staleMin": 3, "outOfZoneMin": 3, "minMoveMeters": 50, "maxIntervalSec": 45 }
   },

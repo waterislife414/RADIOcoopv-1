@@ -18,6 +18,7 @@ import { useAuth } from "../../context/AuthContext";
 import { CERT_LABELS } from "../../config/driverCerts";
 import { formatPhoneDisplay } from "../../utils/phone";
 import CloseOutModal from "../../components/admin/CloseOutModal";
+import AddIncident from "../../components/admin/AddIncident";
 import { money } from "../../config/lease";
 
 const TABS = ["Drivers", "Certifications", "Fleet", "Payouts"];
@@ -36,6 +37,7 @@ function msToDate(ms) {
 
 function DriverRow({ driver }) {
   const [closing, setClosing] = useState(false);
+  const [incident, setIncident] = useState(false);
   const [car, setCar] = useState(driver.carNumber || "");
   const [msg, setMsg] = useState("");
 
@@ -55,11 +57,11 @@ function DriverRow({ driver }) {
   }
 
   async function reinstate() {
-    await updateDoc(doc(db, "drivers", driver.id), { status: "offline", warnings: 0 });
+    await updateDoc(doc(db, "drivers", driver.id), { status: "offline", warnings: 0, warningsClearedAt: Date.now() });
   }
 
   async function clearWarnings() {
-    await updateDoc(doc(db, "drivers", driver.id), { warnings: 0 });
+    await updateDoc(doc(db, "drivers", driver.id), { warnings: 0, warningsClearedAt: Date.now() });
   }
 
   const certs = Object.entries(driver.certs || {});
@@ -129,10 +131,14 @@ function DriverRow({ driver }) {
             Reinstate
           </button>
         )}
+        <button onClick={() => setIncident((v) => !v)} className="px-3 py-1.5 rounded-lg bg-slate-100 font-semibold">
+          Add to record&hellip;
+        </button>
         <button onClick={() => setClosing(true)} className="ml-auto px-3 py-1.5 rounded-lg text-red-700 font-semibold hover:bg-red-50">
           Close out&hellip;
         </button>
       </div>
+      {incident && <AddIncident driver={driver} onDone={() => setIncident(false)} />}
       {closing && <CloseOutModal driver={driver} onClose={() => setClosing(false)} />}
       {msg && <p className="text-sm text-slate-500">{msg}</p>}
     </div>

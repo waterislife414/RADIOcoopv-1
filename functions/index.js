@@ -609,6 +609,7 @@ const featureModules = [
   require("./closeout"),
   require("./incentives"),
   require("./phone"),
+  require("./record"),
 ];
 for (const mod of featureModules) {
   for (const [name, fn] of Object.entries(mod)) if (!name.startsWith("_")) exports[name] = fn;

@@ -143,7 +143,7 @@ async function boardChanged(uid, before) {
   assert.deepEqual([r.dispatchState, r.offer.driverId], ["offering", "d1"]);
 
   // 8. Third strike: d1 at 2 warnings misses → suspended
-  await db.doc("drivers/d1").update({ warnings: 2 });
+  await db.doc("drivers/d1").update({ warnings: 2, recentStrikes: [Date.now() - 3 * 86400000, Date.now() - 2 * 86400000] });
   for (const s of [2, 3, 4]) await runTimer((t) => t.rideId === "r2" && t.step === s && t.seq === r.offer.seq);
   assert.equal((await get("drivers/d1")).status, "suspended");
   assert.equal((await board("d1")).lastEvent.suspended, true);

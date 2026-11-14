@@ -507,7 +507,11 @@ export const INCENTIVE_DEFAULTS = Object.freeze({
   strikesToForfeit: 2,
   bonusMinDays: 5,
   scoreStrikePoints: 10,
-  scoreWindowDays: 30,
+  scoreWindowDays: 60, // warnings and incidents stay on the profile this long
+  lowScore: 70, // below this: no app calls for lowScoreHoldHours
+  lowScoreHoldHours: 12,
+  holdCreditAfterDays: 60, // clean this long -> may hold lease credit for a day
+  penaltyPoints: { accident: 30, no_show: 15, complaint: 10, write_up: 20, other: 5 },
 });
 
 const dayNumber = (key) => {
@@ -535,6 +539,36 @@ export function scoreFrom(recentStrikes = [], now, inc = INCENTIVE_DEFAULTS) {
   const cutoff = now - inc.scoreWindowDays * 86400000;
   const kept = recentStrikes.filter((t) => t > cutoff).sort((a, b) => a - b);
   return { recentStrikes: kept, score: Math.max(0, 100 - kept.length * inc.scoreStrikePoints) };
+}
+
+const toMs = (v) => (v && typeof v.toMillis === 'function' ? v.toMillis() : v ?? 0);
+
+/**
+ * A driver's standing right now: strikes (missed/declined calls) and office
+ * penalties from the last scoreWindowDays, the score they add up to, and
+ * how many warnings are active (strikes since the office last cleared them).
+ */
+export function standing(driver = {}, now, inc = INCENTIVE_DEFAULTS) {
+  const cutoff = now - inc.scoreWindowDays * 86400000;
+  const recentStrikes = (driver.recentStrikes || []).filter((t) => t > cutoff).sort((a, b) => a - b);
+  const penalties = (driver.penalties || []).filter((p) => p.at > cutoff);
+  const lost = recentStrikes.length * inc.scoreStrikePoints + penalties.reduce((s, p) => s + (p.points || 0), 0);
+  const warnings = recentStrikes.filter((t) => t > (driver.warningsClearedAt || 0)).length;
+  return { recentStrikes, penalties, score: Math.max(0, 100 - lost), warnings };
+}
+
+/** New penalty dropped the score under the line -> no app calls until this time (else null). */
+export function callHoldUntil(score, now, inc = INCENTIVE_DEFAULTS) {
+  return score < inc.lowScore ? now + inc.lowScoreHoldHours * 3600000 : null;
+}
+
+/** May this driver hold his lease credit for a day? Needs holdCreditAfterDays driving with a clean record. */
+export function canHoldCredit(driver = {}, now, inc = INCENTIVE_DEFAULTS) {
+  const since = toMs(driver.approvedAt);
+  if (!since || now - since < inc.holdCreditAfterDays * 86400000) return { ok: false, reason: 'too_new' };
+  const s = standing(driver, now, inc);
+  if (s.recentStrikes.length || s.penalties.length || driver.status === 'suspended') return { ok: false, reason: 'record' };
+  return { ok: true };
 }
 
 /** Strikes between two local date keys [startKey, endKey). */

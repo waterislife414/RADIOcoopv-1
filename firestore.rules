@@ -37,7 +37,7 @@ service cloud.firestore {
             && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['firstName', 'lastName', 'phone', 'address', 'dob',
                            'idImageUrl', 'idSubmittedAt', 'idVerified', 'rating', 'active',
-                           'legal', 'marketingOptIn', 'photoUrl'])
+                           'legal', 'marketingOptIn', 'photoUrl', 'photoCheck'])
             // A new ID photo resets verification; only the dispatcher can verify.
             && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['idVerified'])
                 || request.resource.data.idVerified == false));
@@ -94,6 +94,12 @@ service cloud.firestore {
     // Public zone-board entry (car #, status, zone, place in line). Every
     // driver can see the board; only Cloud Functions write it, so nobody
     // can move themselves up the line.
+    // A driver's record: warnings, write-ups, incidents. Server-written.
+    match /drivers/{uid}/record/{entryId} {
+      allow read: if isAdmin() || (isDriver() && request.auth.uid == uid);
+      allow write: if false;
+    }
+
     match /board/{uid} {
       allow read: if isAdmin() || isDriver();
       allow write: if false;

@@ -111,7 +111,8 @@ async function startDispatch(rideId) {
     const drivers = [];
     boards.forEach((b, i) => {
       const d = driverSnaps[i].data();
-      if (d && !blockReason(d, { c, nowMs })) drivers.push({ ...d, ...b, id: b.id });
+      // A driver on a low-score hold stays on the board but gets no app calls.
+      if (d && !blockReason(d, { c, nowMs }) && !(d.callHoldUntil > nowMs)) drivers.push({ ...d, ...b, id: b.id });
     });
     let vehiclesByCar = {};
     if ((ride.requiresCerts || []).includes("wheelchair")) {
@@ -238,8 +239,21 @@ async function resolveOffer(rideId, { seq = null, byDriver = null, reason = "mis
     const [bs, ds] = await Promise.all([tx.get(boardRef(uid)), tx.get(driverRef(uid))]);
     const board = bs.data();
     const driverDoc = ds.data() || {};
-    const result = c.missOutcome({ board: board || {}, driver: driverDoc, kind: offer.kind, reason, now: nowMs, maxWarnings: MAX_WARNINGS });
-    if (result.driver) Object.assign(result.driver, c.recordStrike(driverDoc.recentStrikes, nowMs, INCENTIVES));
+    // Warnings count only strikes still on his record (60 days, since last cleared).
+    const before = c.standing(driverDoc, nowMs, INCENTIVES);
+    const result = c.missOutcome({ board: board || {}, driver: { ...driverDoc, warnings: before.warnings }, kind: offer.kind, reason, now: nowMs, maxWarnings: MAX_WARNINGS });
+    if (result.driver) {
+      const after = c.standing({ ...driverDoc, recentStrikes: [...before.recentStrikes, nowMs] }, nowMs, INCENTIVES);
+      Object.assign(result.driver, after);
+      const hold = c.callHoldUntil(after.score, nowMs, INCENTIVES);
+      if (hold) result.driver.callHoldUntil = hold;
+      const expiresAt = nowMs + INCENTIVES.scoreWindowDays * 86400000;
+      const record = driverRef(uid).collection("record");
+      tx.set(record.doc(), { type: reason === "declined" ? "declined" : "missed_call", at: nowMs, expiresAt, points: INCENTIVES.scoreStrikePoints, rideId, source: "app" });
+      if (result.driver.status === "suspended") {
+        tx.set(record.doc(), { type: "write_up", at: nowMs + 1, expiresAt, points: 0, source: "app", note: `${after.warnings} warnings: off the board until the office reinstates you.` });
+      }
+    }
     if (board?.status === c.STATUS.OFFERED && board.offerRideId === rideId) {
       tx.update(boardRef(uid), { ...result.board, offerRideId: null, updatedAt: serverNow() });
     }

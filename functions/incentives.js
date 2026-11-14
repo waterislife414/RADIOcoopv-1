@@ -50,8 +50,9 @@ async function runIncentives(nowMs = Date.now()) {
   let awarded = 0;
   for (const d of snap.docs) {
     // Score decay: strikes older than the window fall off.
-    const fresh = c.scoreFrom(d.data().recentStrikes || [], nowMs, INCENTIVES);
-    if (fresh.score !== d.data().score || fresh.recentStrikes.length !== (d.data().recentStrikes || []).length) {
+    const fresh = c.standing(d.data(), nowMs, INCENTIVES);
+    const was = d.data();
+    if (fresh.score !== was.score || fresh.warnings !== (was.warnings || 0) || fresh.recentStrikes.length !== (was.recentStrikes || []).length || fresh.penalties.length !== (was.penalties || []).length) {
       await d.ref.update(fresh);
     }
     if (newPeriod) {

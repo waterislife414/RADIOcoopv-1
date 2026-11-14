@@ -42,9 +42,12 @@ async function settlePeriod(c, uid, key, nowMs) {
     const day = ps.data();
     if (!ds.exists || !day || day.settledAt) return null;
     const driver = ds.data();
+    // He chose to hold his banked credit for this day: it stays untouched and
+    // the lease comes from this day's card money and his envelope.
+    const held = driver.holdCreditPeriod === key;
     const s = c.settleLease(
       {
-        creditInCents: driver.leaseCreditCents ?? 0,
+        creditInCents: held ? 0 : driver.leaseCreditCents ?? 0,
         cardFaresCents: day.cardFaresCents ?? 0,
         cardTipsCents: day.cardTipsCents ?? 0,
         discountCents: day.discountCents ?? 0,
@@ -54,14 +57,15 @@ async function settlePeriod(c, uid, key, nowMs) {
     tx.update(dayRef(uid, key), {
       open: false,
       settledAt: nowMs,
-      creditInCents: driver.leaseCreditCents ?? 0,
+      creditInCents: held ? 0 : driver.leaseCreditCents ?? 0,
+      heldCreditCents: held ? driver.leaseCreditCents ?? 0 : 0,
       leaseDueCents: s.leaseDueCents,
       availableCents: s.availableCents,
       envelopeDueCents: s.envelopeCents,
       creditOutCents: s.creditOutCents,
       coveredByCard: s.coveredByCard,
     });
-    const patch = { leaseCreditCents: s.creditOutCents };
+    const patch = { leaseCreditCents: s.creditOutCents + (held ? driver.leaseCreditCents ?? 0 : 0), ...(held ? { holdCreditPeriod: null } : {}) };
     if (s.envelopeCents > 0) {
       patch.leaseOwedCents = (driver.leaseOwedCents ?? 0) + s.envelopeCents;
       patch.leaseOwedPeriodKey = driver.leaseOwedCents > 0 ? driver.leaseOwedPeriodKey : key;
