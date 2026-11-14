@@ -27,11 +27,21 @@ Rollback: Firebase console → Hosting → Release history → Roll back; re-ext
 - Clean 14 days (5+ days worked, under 2 strikes) → $5 lease credit.
 - All numbers are in `branding.config.json` → `dispatch`.
 
+## Menus, legal and profiles
+- Three-line menu (top right): visitors, signed-in riders and drivers each get their own list.
+- Terms of Service, Privacy Policy and Driver Agreement live in `src/legal/documents.js`. Changing `LEGAL_VERSION` makes everyone accept again.
+- The agree box only unlocks after the document has been opened and scrolled to the end. Guests agree on every booking; riders once per version; drivers before the driver screen. Promotions are a separate optional box.
+- Driver profile (`/driver/profile`): score, warnings, record, lease credit (use/hold), card money by day, contact info.
+- Record rules: a missed or declined call = warning + 10 points, on the record 60 days. 3 active warnings = write-up, off the board until the office reinstates. Office can add accident (30), no-show (15), complaint (10), write-up (20). Under 70 = no app calls for 12 hours. Numbers are in `branding.config.json` → `dispatch.incentives`.
+- Hold credit: after 60 clean days a driver may hold his banked credit for one lease day; that day's lease comes from the day's card fares and his envelope.
+
 ## To confirm with Malcolm
 1. Lease charged only on days the driver goes on the board in the app (office can waive a day).
 2. Unpaid envelope money comes out of credit **before** the 50% close-out split.
 3. Bonus: $5 per clean 14 days; 2 strikes forfeit; 5 worked days minimum.
 4. Drop-off puts the driver at the **front** of that zone's line.
 5. Zone names and boundaries (Beallwood, East vs East Wynnton, Airport).
-6. 50% payout and card-credit rules written into the signed driver lease (lawyer review). 1099 handling of card fares (accountant).
-7. Wallet: the old "+$10/+$20/+$50" buttons added money for free. They're removed. Check existing wallet balances before charging any.
+6. Score rules above: points per incident, the 70 line, the 12-hour hold, 60 days on the record.
+7. "Hold credit for a day" rule (60 clean days; one day at a time).
+8. **Lawyer:** the Terms, Privacy Policy and Driver Agreement are drafts written to the owner's instructions. They need an attorney's review before real customers rely on them, along with the signed lease (50% payout, tickets, at-will) and 1099 handling.
+9. Wallet: the old "+$10/+$20/+$50" buttons added money for free. They're removed. Check existing wallet balances before charging any.
