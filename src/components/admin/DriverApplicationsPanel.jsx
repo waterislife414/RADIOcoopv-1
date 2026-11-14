@@ -3,6 +3,7 @@ import { collection, onSnapshot, orderBy, query, where } from "firebase/firestor
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../../config/firebase";
 import { formatPhoneDisplay } from "../../utils/phone";
+import { SCREENING_QUESTIONS, flaggedAnswers } from "../../config/driverScreening";
 
 function ApplicationCard({ app }) {
   const [carNumber, setCarNumber] = useState(app.existingCarNumber || "");
@@ -49,6 +50,34 @@ function ApplicationCard({ app }) {
           </p>
         )}
       </div>
+      {app.dlNumber && (
+        <p className="text-sm text-slate-700">
+          <span className="font-semibold">DL #</span> {app.dlNumber} {app.dlState && `(${app.dlState})`}
+        </p>
+      )}
+      {app.screening?.answers && (
+        <details className="text-sm" open={flaggedAnswers(app.screening.answers).length > 0}>
+          <summary className="font-semibold cursor-pointer">
+            Screening{" "}
+            {flaggedAnswers(app.screening.answers).length ? (
+              <span className="text-amber-700">&middot; {flaggedAnswers(app.screening.answers).length} to review</span>
+            ) : (
+              <span className="text-emerald-700">&middot; no flags</span>
+            )}
+          </summary>
+          <ul className="mt-2 space-y-1">
+            {SCREENING_QUESTIONS.map((q) => {
+              const v = app.screening.answers[q.id];
+              return (
+                <li key={q.id} className={v === q.flag ? "text-amber-800 font-semibold" : "text-slate-600"}>
+                  {v === "yes" ? "Yes" : v === "no" ? "No" : "—"} &mdash; {q.text}
+                </li>
+              );
+            })}
+          </ul>
+          {app.screening.explanation && <p className="mt-2 italic text-slate-600">&ldquo;{app.screening.explanation}&rdquo;</p>}
+        </details>
+      )}
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm font-semibold">
         {app.dlImageUrl && (
           <a href={app.dlImageUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
