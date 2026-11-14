@@ -10,6 +10,8 @@ import ContactFooter from "../components/ContactFooter";
 import { normalizePhone } from "../utils/phone";
 import ConsentModal from "../components/legal/ConsentModal";
 import { SCREENING_QUESTIONS } from "../config/driverScreening";
+import LegalText from "../components/legal/LegalText";
+import { LEGAL_VERSION } from "../legal/documents";
 
 const inputClass =
   "w-full border-2 border-slate-300 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600";
@@ -83,7 +85,7 @@ export default function Careers() {
       if (form.password.length < 8) return "Password must be at least 8 characters.";
       if (form.password !== form.confirmPassword) return "Passwords don't match.";
     }
-    if (!form.backgroundConsent || !form.truthful || !form.contactOk) return "Please check all three boxes at the bottom.";
+    if (!form.truthful || !form.contactOk) return "Please check both boxes at the bottom.";
     return "";
   }
 
@@ -95,6 +97,17 @@ export default function Careers() {
       setStep(2);
       window.scrollTo(0, 0);
     }
+  }
+
+  function authorize(e) {
+    e.preventDefault();
+    if (!form.backgroundConsent) {
+      setError("Check the box to authorize the background check, or contact the office.");
+      return;
+    }
+    setError("");
+    setStep(3);
+    window.scrollTo(0, 0);
   }
 
   function submit(e) {
@@ -131,7 +144,8 @@ export default function Careers() {
         dlNumber: form.dlNumber.trim().toUpperCase(),
         dlState: form.dlState.trim().toUpperCase(),
         consentSigned: true,
-        attestation: { truthful: true, contactOk: true, backgroundCheck: true, signedAt: new Date().toISOString() },
+        attestation: { truthful: true, contactOk: true, signedAt: new Date().toISOString() },
+        backgroundAuthorization: { doc: "background-check", version: LEGAL_VERSION, authorizedAt: new Date().toISOString() },
         screening: { answers, explanation: explain.trim() },
         agreement,
         status: "pending",
@@ -162,14 +176,16 @@ export default function Careers() {
       <BrandHeader tagline="Come Join Our Team" />
       <div className="px-6 py-10">
         <div className="max-w-md mx-auto">
-          <p className="text-xs font-bold tracking-[0.25em] text-blue-700 uppercase">Step {step} of 2</p>
+          <p className="text-xs font-bold tracking-[0.25em] text-blue-700 uppercase">Step {step} of 3</p>
           <h1 className="text-3xl font-display font-semibold text-slate-800 mb-2">
-            {step === 1 ? "Apply to Drive" : "Screening Questions"}
+            {step === 1 ? "Apply to Drive" : step === 2 ? "Background Check" : "Screening Questions"}
           </h1>
           <p className="text-slate-600 text-base mb-2">
             {step === 1
               ? "Create your driver login and send your paperwork. Once you're approved and assigned a car, you'll sign in to get calls."
-              : "Answer honestly. A “Yes” on a record question does not automatically disqualify you — the office reviews every application."}
+              : step === 2
+                ? "Federal law requires this notice on its own page."
+                : "Answer honestly. A “Yes” on a record question does not automatically disqualify you — the office reviews every application."}
           </p>
           {step === 1 && (
             <p className="text-base mb-6">
@@ -241,9 +257,6 @@ export default function Careers() {
                 <Check checked={form.truthful} onChange={(v) => update("truthful", v)}>
                   I certify that everything in this application is true, complete and honest. I understand that false or missing information can disqualify me or end my contract.
                 </Check>
-                <Check checked={form.backgroundConsent} onChange={(v) => update("backgroundConsent", v)}>
-                  I consent to a background and motor vehicle record check.
-                </Check>
                 <Check checked={form.contactOk} onChange={(v) => update("contactOk", v)}>
                   I agree to be contacted by phone, text message and email about this application and the job.
                 </Check>
@@ -251,8 +264,25 @@ export default function Careers() {
               </div>
 
               <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4.5 rounded-2xl shadow-md transition">
-                Next: Screening Questions &rarr;
+                Next &rarr;
               </button>
+            </form>
+          ) : step === 2 ? (
+            <form onSubmit={authorize} className="space-y-4">
+              <div className="rounded-2xl border-2 border-slate-300 p-5" data-testid="fcra-disclosure">
+                <LegalText docIds={["background-check"]} />
+              </div>
+              <Check checked={form.backgroundConsent} onChange={(v) => update("backgroundConsent", v)}>
+                I have read the disclosure above and I authorize the background check.
+              </Check>
+              <div className="grid grid-cols-[auto_1fr] gap-3">
+                <button type="button" onClick={() => { setStep(1); setError(""); }} className="px-5 rounded-2xl border-2 border-slate-300 font-bold text-slate-600">
+                  &larr; Back
+                </button>
+                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4.5 rounded-2xl shadow-md transition">
+                  Next: Screening Questions &rarr;
+                </button>
+              </div>
             </form>
           ) : (
             <form onSubmit={submit} className="space-y-4">
@@ -279,7 +309,7 @@ export default function Careers() {
                 <textarea rows={3} className={inputClass} value={explain} onChange={(e) => setExplain(e.target.value)} placeholder="If you answered Yes to a record question, you can explain here." />
               </div>
               <div className="grid grid-cols-[auto_1fr] gap-3">
-                <button type="button" onClick={() => { setStep(1); setError(""); }} className="px-5 rounded-2xl border-2 border-slate-300 font-bold text-slate-600">
+                <button type="button" onClick={() => { setStep(2); setError(""); }} className="px-5 rounded-2xl border-2 border-slate-300 font-bold text-slate-600">
                   &larr; Back
                 </button>
                 <button type="submit" disabled={submitting} className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4.5 rounded-2xl shadow-md transition disabled:opacity-50">

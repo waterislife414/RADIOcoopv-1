@@ -7,7 +7,7 @@
 import { BRAND, COMPANY_NAME, COMPANY_PHONE_DISPLAY, COMPANY_EMAIL, OFFICE_ADDRESS } from "../config/constants";
 import { clock } from "../config/lease";
 
-export const LEGAL_VERSION = "2026-11-14";
+export const LEGAL_VERSION = "2026-11-14.2";
 
 const lease = BRAND.dispatch?.lease || {};
 const money = (cents) => `$${(cents / 100).toFixed(0)}`;
@@ -27,15 +27,15 @@ export const DOCUMENTS = {
       {
         h: "2. What we do, and what we don't promise",
         p: [
-          "We take ride requests and pass them to drivers. A ride request is only a request. We do not promise that a car will be available, that a driver will accept, that a car will arrive by any time, or that any ride will be started or finished.",
-          "We may refuse, cancel or end service to anyone, at any time, for any lawful reason, with or without notice.",
+          "We take ride requests and pass them to drivers. A ride request is only a request. We do not promise that a car will be available, that a driver will accept, that a car will arrive by any time, or that any ride will be started or finished. We are not responsible for late, missed or cancelled pickups.",
+          "We may refuse, cancel or end service to anyone, at any time, for any lawful reason, with or without notice. We never refuse service because of a disability or a service animal.",
         ],
       },
       {
         h: "3. Drivers are independent contractors",
         p: [
-          `Drivers are independent contractors who lease their vehicles. They are not employees or agents of ${COMPANY_NAME}. Each driver is responsible for how the vehicle is driven and for what happens during the ride.`,
-          "To the fullest extent the law allows, any claim about a ride, a driver's conduct, an accident, an injury, or lost or damaged property is between you and the driver, not us.",
+          `Drivers are independent contractors who lease their vehicles from ${COMPANY_NAME}. They are not our employees or agents. Each driver is responsible for how he or she drives, for his or her own conduct and words, and for obeying traffic and taxi laws.`,
+          "To the fullest extent the law allows, we are not responsible for a driver's conduct, words or driving, or for lost or damaged property. Some laws give passengers rights that a contract cannot take away; nothing in these terms takes those rights away.",
         ],
       },
       {
@@ -43,7 +43,8 @@ export const DOCUMENTS = {
         p: [
           "The fare is set by the meter or by the rate quoted for trips outside the local area. Any price shown in the app before the ride is an estimate only.",
           "If you pay by card, a hold may be placed on your card when you book, and the final fare, fees and any tip are charged after the ride. An app fee may apply to card payments.",
-          "All rides, memberships and add-on fees are non-refundable once a ride has been dispatched or completed, except where the law requires a refund.",
+          "You can cancel at no charge before a driver is assigned (in the app if you have an account, or by calling). After that, call the office.",
+          "All rides, memberships and add-on fees, including the Fast Pass, are non-refundable once a ride has been dispatched or completed, except where the law requires a refund.",
           `You agree to pay for every ride you take. Refusing to pay, using a fraudulent payment method, or leaving without paying may be theft of services under Georgia law (O.C.G.A. \u00a7 16-8-5) and may be reported to the police. ${COMPANY_NAME} may pursue every legal remedy to recover unpaid fares, fees, court costs and reasonable attorney's fees, and may refuse future service to anyone flagged for non-payment.`,
         ],
       },
@@ -52,6 +53,18 @@ export const DOCUMENTS = {
         p: [
           "Give accurate pickup details and a phone number where you can be reached. Wear a seat belt. Do not bring anything illegal or dangerous into the vehicle, and do not harass or threaten the driver or anyone else.",
           "You are responsible for damage or mess you or your guests cause, and may be charged a cleaning or repair fee. Children must ride with a responsible adult and any child seat the law requires, which you must provide.",
+        ],
+      },
+      {
+        h: "5a. Accessibility and service animals",
+        p: [
+          "Service animals ride with their owners at no extra charge, and riders with disabilities pay the same fares as everyone else. If you need a handicap-accessible vehicle, ask when you book; we will tell you what is available.",
+        ],
+      },
+      {
+        h: "5b. Safety",
+        p: [
+          "In an emergency, call 911 first. Report any accident, injury or problem with a driver to the office as soon as you can.",
         ],
       },
       {
@@ -86,7 +99,7 @@ export const DOCUMENTS = {
         h: "11. Changes, and the law that applies",
         p: [
           "We may change these terms at any time. The current version is always in the app, and using the service after a change means you accept it.",
-          "These terms are governed by the laws of the State of Georgia. If any part cannot be enforced, the rest still applies.",
+          "These terms are governed by the laws of the State of Georgia. If you have a problem, please call or write to us first so we can try to fix it. Any lawsuit must be filed in the state or federal courts for Muscogee County, Georgia, except small-claims cases, which may be filed wherever the law allows. If any part of these terms cannot be enforced, the rest still applies.",
           `Questions: ${contact}`,
         ],
       },
@@ -101,7 +114,8 @@ export const DOCUMENTS = {
         h: "1. What we collect",
         p: [
           "From riders: your name, phone number, email, pickup and drop-off addresses, your location if you choose to share it, ride and payment history, any photo or ID you upload, and messages you send us. Card details are handled by our payment processor; we do not store full card numbers.",
-          "From drivers and applicants: contact details, driver's license, driving record and background information, uploaded documents, vehicle and lease records, payments, ride activity, and your location while you are on the board.",
+          "From drivers and applicants: contact details, driver's license and license number, driving record (MVR), answers to screening questions, background information, uploaded documents, vehicle inspection photos and videos, damage and repair reports, typed signatures, vehicle and lease records, payments, ride activity, and your location while you are on the board.",
+          "Places you booked recently are saved only on your own phone, so you can tap them next time.",
           "From everyone: basic device and usage information, such as the type of phone or browser and the pages you open.",
         ],
       },
@@ -120,7 +134,8 @@ export const DOCUMENTS = {
       {
         h: "4. Who we share it with",
         p: [
-          "Drivers and dispatchers, so the ride can happen. Companies that work for us, such as payment, hosting and messaging providers. The police, courts, regulators or insurers when we believe it is appropriate or required. A buyer or successor of the business. Anyone else where the law allows it for a legitimate business purpose.",
+          "Drivers and dispatchers, so the ride can happen. Our mechanics, for vehicle inspections and repairs. Companies that work for us, such as payment, hosting and messaging providers. The police, courts, regulators or insurers when we believe it is appropriate or required. A buyer or successor of the business. Anyone else where the law allows it for a legitimate business purpose.",
+          "We do not sell your personal information.",
         ],
       },
       {
@@ -131,11 +146,12 @@ export const DOCUMENTS = {
         h: "6. Your choices",
         p: [
           "You can stop promotional texts by replying STOP and promotional emails with the unsubscribe link. You can deactivate your account from your profile. You can ask us what we hold about you or ask us to correct it by contacting the office; we will respond as the law requires.",
+          "Background checks: if we order a background check or driving record from a consumer reporting agency, we will first give you a separate written disclosure and ask for your permission, as federal law requires.",
         ],
       },
       {
         h: "7. Children",
-        p: ["The app is not meant for anyone under 18 to use on their own."],
+        p: ["The app is not meant for anyone under 18 to use on their own. We do not knowingly collect information from children under 13."],
       },
       {
         h: "8. Changes and contact",
@@ -163,9 +179,21 @@ export const DOCUMENTS = {
       {
         h: "3. You are responsible for the vehicle and the ride",
         p: [
-          "While the vehicle is leased to you, you are responsible for how it is driven, for your passengers, and for obeying every traffic, licensing and taxi law that applies.",
+          "While the vehicle is leased to you, you take full responsibility for it: for how it is driven, for what happens inside it, for your passengers, and for obeying every traffic, licensing and taxi law that applies.",
+          "Before you first drive a vehicle you must do a full inspection in the app: at least 10 photos all the way around and inside, and any damage marked with a photo. Damage that is not in that inspection, or reported with a photo before your first shift in that vehicle, is treated as having happened while the vehicle was leased to you.",
+          "You must also do the weekly inspection in the app (the five fluids, tires, brakes, lights, belts, glass, warning lights and the inside of the car) and the quick start-of-shift check. You cannot go on the board until they are done. Your typed name on an inspection is your signature, and it confirms the photos and answers are true.",
+          "Report any new damage, accident or mechanical problem (noises, rattles, brakes, leaks, warning lights) in the app right away, with a photo when you can. Do not drive a vehicle you believe is unsafe; call the office.",
+          "You are responsible for keeping the vehicle clean and in good running order: checking and topping off fluids, keeping tires properly filled, and reporting needed repairs. Repairs are done by our shop or a shop we approve. You pay for damage you cause, including accidents you cause, and for damage from misuse, neglect or failing to report a problem. Who pays for repairs from normal wear is set out in your signed lease.",
           `You agree to pay every ticket, citation, toll, fine, towing or impound charge that arises while the vehicle is in your care, including any that are mailed later to ${COMPANY_NAME} or the owner, and to pay us back for any we have to pay.`,
-          "You must tell the office right away about any accident, damage, injury, arrest or complaint. Responsibility for accidents and damage is set out in your signed lease.",
+          "You must tell the office right away about any accident, damage, injury, arrest or complaint. Insurance, deductibles and anything not covered here are set out in your signed lease.",
+        ],
+      },
+      {
+        h: "3a. How you treat passengers",
+        p: [
+          "Treat every passenger with courtesy. No harassment, threats, insults, unwanted contact, discrimination, or unsafe driving. You are responsible for what you say and do.",
+          "You must give rides to people with disabilities and their service animals, at the normal fare, and help with mobility aids as the law requires. Allergies or fear of dogs are not lawful reasons to refuse a service animal. Refusing is grounds for removal.",
+          "Never drive impaired. No alcohol, marijuana or illegal drugs before or during a shift, and no smoking or vaping in the vehicle.",
         ],
       },
       {
@@ -198,7 +226,7 @@ export const DOCUMENTS = {
       {
         h: "8. Protecting the company",
         p: [
-          `To the fullest extent the law allows, you agree to defend and pay back ${COMPANY_NAME}, its owners and staff for any claim, loss, fine or cost that comes from your driving, your conduct, your passengers, or your breaking this agreement or the law.`,
+          `To the fullest extent the law allows, you agree to defend and pay back ${COMPANY_NAME}, its owners and staff for any claim, loss, fine or cost that comes from your driving, your conduct or words, damage you cause to the vehicle or anyone's property, your passengers, or your breaking this agreement or the law.`,
         ],
       },
       {
@@ -206,6 +234,26 @@ export const DOCUMENTS = {
         p: [
           "We may change this agreement at any time; you will be asked to accept the new version in the app. It is governed by the laws of the State of Georgia. If any part cannot be enforced, the rest still applies.",
           `Questions: ${contact}`,
+        ],
+      },
+    ],
+  },
+
+  // FCRA: this must be shown on its own, with nothing else on the page but the authorization.
+  "background-check": {
+    id: "background-check",
+    title: "Disclosure Regarding Background Investigation",
+    sections: [
+      {
+        h: "Disclosure",
+        p: [
+          `${COMPANY_NAME} may obtain a consumer report about you from a consumer reporting agency to decide whether to contract with you as a driver and, if you drive for us, at any time while you do. The report may include your driving record (motor vehicle record), criminal history, identity verification and other public records.`,
+        ],
+      },
+      {
+        h: "Authorization",
+        p: [
+          `I authorize ${COMPANY_NAME} to obtain consumer reports about me for these purposes, now and while I drive for the company.`,
         ],
       },
     ],
