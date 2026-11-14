@@ -121,6 +121,15 @@ export default function Home() {
             </a>
           </div>
 
+          <p
+            className="mt-5 text-center font-display italic font-bold text-3xl sm:text-4xl text-white leading-tight animate-fade-up"
+            style={{ animationDelay: "120ms" }}
+            data-testid="motto"
+          >
+            {COPY.motto.split("?")[0]}?{" "}
+            <span className="not-italic font-extrabold text-chrome-gold whitespace-nowrap">{COPY.motto.split("?").slice(1).join("?").trim()}</span>
+          </p>
+
           <div className="ambient-bar mt-4 mx-auto max-w-[220px] animate-fade-up" style={{ animationDelay: "140ms" }} />
 
           <p className="mt-5 text-center text-sm font-semibold tracking-[0.18em] text-gold-400/90 uppercase animate-fade-up" style={{ animationDelay: "180ms" }}>
@@ -271,7 +280,7 @@ export default function Home() {
       <div className="bg-gradient-to-b from-[#FBF8F1] to-[#F4EEE0] px-6 py-14 mt-6">
         <div className="max-w-md mx-auto text-center">
           <p className="text-sm font-bold tracking-[0.3em] text-blue-700 uppercase mb-4">About Us</p>
-          <p className="font-display italic text-3xl leading-snug text-slate-800">&ldquo;{COPY.aboutQuote}&rdquo;</p>
+          <p className="font-display text-2xl font-semibold leading-snug text-slate-800">Locally owned, on call 24/7.</p>
           <div className="w-16 h-[2px] bg-gold-500 mx-auto my-5" />
           <p className="text-slate-600 text-lg leading-relaxed">{COPY.aboutBody}</p>
           <Link to="/about" className="mt-5 inline-block font-bold text-blue-700">More about us &rarr;</Link>

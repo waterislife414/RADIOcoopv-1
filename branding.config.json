@@ -36,7 +36,7 @@
   "copy": {
     "heroEyebrow": "Columbus · Phenix City · Fort Benning · Midland",
     "heroSubtext": "Round the clock, every day. A real dispatcher answers — not an app.",
-    "aboutQuote": "Gotta Go? Call Radio!",
+    "aboutQuote": "Gotta Go? CALL RADIO!",
     "aboutBody": "We love our customers and have proudly served the Columbus area for decades.",
     "dispatcherFooterLabel": "Radio Co-op Dispatcher",
     "dispatcherDashboardTitle": "Radio Co-op Dispatch",
@@ -54,7 +54,8 @@
       "Members: 1 free entry fee every 10 completed rides",
       "Premium: plus 1 free mile on that same ride, and first in line for dispatch",
       "$5 credit when a friend you refer becomes a member"
-    ]
+    ],
+    "motto": "Gotta Go? CALL RADIO!"
   },
   "colors": {
     "themeColor": "#0A1420",
