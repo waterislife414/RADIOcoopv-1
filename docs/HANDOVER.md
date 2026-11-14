@@ -36,3 +36,20 @@ Publish it to a free preview link (live site untouched):
 
     npm run build:demo
     firebase hosting:channel:deploy demo --config firebase.demo.json --expires 30d --project <project id>
+
+## Wording to confirm with the owner (all in `branding.config.json`)
+| Setting | Now says | Why it needs a check |
+|---|---|---|
+| `about.established` | 1980 | From Yelp ("Established in 1980") and YellowPages ("46 years in business"). BBB lists the LLC as 2018. |
+| `about.owners` | Malcolm and LaToya McMiller | Given by Jared; not found online. Check spelling. |
+| `about.community` | (empty, hidden) | Fill in only if true, e.g. "Proud supporters of our EMS, firefighters and police." |
+| `company.email` | [INSERT_EMAIL] | Shows in the legal pages. |
+| `copy.memberPerks` | Matches what the app does today | Update if prices or perks change. |
+
+Rate comparison (`src/config/fareCalc.js` → `RIDESHARE_SOURCES`): Uber/Lyft "central average" is the
+median of each fare part across the listed sources (checked Nov 2026). Re-check a few times a year.
+At normal (no-surge) prices our cash meter is lower up to about 4.5 miles and higher on longer trips;
+the page shows that honestly and adds a 1.5x busy-time column.
+
+Driver screening questions (`src/config/driverScreening.js`) and the legal pages are drafts: have the
+owner's lawyer review them before going live.
