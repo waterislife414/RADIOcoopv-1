@@ -5,7 +5,7 @@ import { test, before, after, beforeEach } from "node:test";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { assertFails, assertSucceeds, initializeTestEnvironment } from "@firebase/rules-unit-testing";
-import { collection, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from "firebase/firestore";
+import { addDoc, collection, doc, getDoc, getDocs, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 
 let env;
 const rules = readFileSync(fileURLToPath(new URL("../../firestore.rules", import.meta.url)), "utf8");
@@ -79,6 +79,11 @@ test("riders: no free wallet money or membership", async () => {
   await assertSucceeds(updateDoc(doc(rider(), "users/rider1"), { phone: "7065550100" }));
   await assertSucceeds(updateDoc(doc(rider(), "users/rider1"), { idImageUrl: "u", idVerified: false, idSubmittedAt: "t" }));
   await assertFails(updateDoc(doc(rider(), "users/rider1"), { idVerified: true }));
+  // A rider the office already verified can still edit his profile and deactivate.
+  await env.withSecurityRulesDisabled((ctx) => updateDoc(doc(ctx.firestore(), "users/rider1"), { idVerified: true }));
+  await assertSucceeds(updateDoc(doc(rider(), "users/rider1"), { phone: "7065550111" }));
+  await assertSucceeds(updateDoc(doc(rider(), "users/rider1"), { active: false }));
+  await assertSucceeds(updateDoc(doc(rider(), "users/rider1"), { idImageUrl: "new", idVerified: false }));
 });
 
 test("drivers: see the board, never write it; own inbox/location/ledger/envelopes only", async () => {
@@ -127,4 +132,21 @@ test("certification requests: a driver files his own, for real certs only", asyn
   await assertFails(setDoc(doc(driver(), "certRequests/d2_base"), req({ uid: "d2" })));
   await assertFails(setDoc(doc(driver(), "certRequests/d1_pilot"), req({ cert: "pilot" })));
   await assertFails(setDoc(doc(driver(), "certRequests/d1_base"), req({ status: "approved" })));
+});
+
+test("the app's real booking and signup payloads are accepted", async () => {
+  const booking = (customerId) => ({
+    customerId, firstName: "Pat", lastName: null, phone: "7065550100", cardholderName: null,
+    pickup: "100 Main St", pickupLat: null, pickupLng: null, dropoff: "Mall", outOfArea: false, outOfAreaCity: null,
+    passengers: 1, stops: [], needsAccessibleVehicle: false, wantsPriorityPass: false, roundTrip: false,
+    estMiles: null, scheduleType: "now", scheduledFor: null, recurring: null, paymentMethod: "cash",
+    paymentIntentId: null, promoCode: null, status: "pending", finalFare: null, timestamp: serverTimestamp(),
+  });
+  await assertSucceeds(addDoc(collection(guest(), "rides"), booking("guest")));
+  await assertSucceeds(addDoc(collection(rider(), "rides"), { ...booking("rider1"), paymentMethod: "card", paymentIntentId: "pi_123", pickupLat: 32.46, pickupLng: -84.98 }));
+  const fresh = env.authenticatedContext("newbie").firestore();
+  await assertSucceeds(setDoc(doc(fresh, "users/newbie"), {
+    uid: "newbie", firstName: "N", lastName: "B", phone: "7065550123", email: "n@example.com", address: "1 A St", dob: "1990-01-01",
+    subscriptionTier: null, walletBalance: 0, active: true, referralCode: "ABC123", referredBy: null, createdAt: serverTimestamp(),
+  }));
 });

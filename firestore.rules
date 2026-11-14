@@ -38,7 +38,8 @@ service cloud.firestore {
                  .hasOnly(['firstName', 'lastName', 'phone', 'address', 'dob',
                            'idImageUrl', 'idSubmittedAt', 'idVerified', 'rating', 'active'])
             // A new ID photo resets verification; only the dispatcher can verify.
-            && request.resource.data.get('idVerified', false) == false);
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['idVerified'])
+                || request.resource.data.idVerified == false));
       allow delete: if isAdmin();
     }
 
