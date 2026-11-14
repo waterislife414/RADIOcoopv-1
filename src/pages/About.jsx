@@ -33,7 +33,7 @@ export default function About() {
             ].map(([big, small]) => (
               <div key={small} className="rounded-2xl bg-white/[0.06] border border-white/10 py-4 px-2">
                 <p className="font-display text-lg font-bold text-white leading-tight">{big}</p>
-                <p className="text-[11px] tracking-widest text-slate-500 uppercase mt-1">{small}</p>
+                <p className="text-xs tracking-widest text-slate-300 uppercase mt-1">{small}</p>
               </div>
             ))}
           </div>

@@ -13,7 +13,7 @@ function Promo({ eyebrow, title, children, to, cta, tone = "gold" }) {
   const ring = tone === "gold" ? "border-gold-400 bg-amber-50" : tone === "blue" ? "border-blue-500 bg-blue-50" : "border-emerald-500 bg-emerald-50";
   return (
     <div className={`rounded-3xl border-2 p-5 ${ring}`}>
-      <p className="text-[11px] font-extrabold tracking-[0.25em] uppercase text-slate-500">{eyebrow}</p>
+      <p className="text-xs font-extrabold tracking-[0.25em] uppercase text-slate-700">{eyebrow}</p>
       <p className="font-display text-2xl font-bold text-slate-900 mt-1">{title}</p>
       <div className="text-slate-700 mt-2 space-y-1">{children}</div>
       {to && (

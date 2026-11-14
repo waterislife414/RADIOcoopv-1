@@ -50,7 +50,7 @@ function TripCard({ label, miles }) {
       <div className="flex items-center justify-between mb-4">
         <div>
           <p className="font-display font-bold text-xl text-slate-800">{label}</p>
-          <p className="text-sm text-slate-500">{miles} miles &middot; about {miles * MINUTES_PER_MILE} min</p>
+          <p className="text-sm text-slate-600">{miles} miles &middot; about {miles * MINUTES_PER_MILE} min</p>
         </div>
         {badge && <span className={`text-xs font-extrabold rounded-full px-3 py-1.5 ${badge.cls}`}>{badge.text}</span>}
       </div>

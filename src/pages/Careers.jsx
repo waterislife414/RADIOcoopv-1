@@ -32,7 +32,7 @@ function FileField({ label, note, file, onFile, accept = ".pdf,.jpg,.jpeg,.png",
       <label className={labelClass}>
         {label} {required ? <span className="text-red-600">*</span> : <span className="text-slate-500 font-normal">(optional)</span>}
       </label>
-      <input type="file" accept={accept} className="w-full text-base" onChange={(e) => onFile(e.target.files[0] || null)} />
+      <input type="file" accept={accept} aria-label={label} className="w-full text-base" onChange={(e) => onFile(e.target.files[0] || null)} />
       {file ? <p className="text-xs text-emerald-700 mt-1">&#10003; {file.name}</p> : note && <p className="text-xs text-slate-500 mt-1">{note}</p>}
     </div>
   );
@@ -201,28 +201,28 @@ export default function Careers() {
             <form onSubmit={next} className="space-y-4">
               <div>
                 <label className={labelClass}>Full Name <span className="text-red-600">*</span></label>
-                <input type="text" required className={inputClass} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
+                <input type="text" required className={inputClass} aria-label="Full name" value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
                 <p className="text-xs text-slate-500 mt-1">Must match your driver's license.</p>
               </div>
               <div>
                 <label className={labelClass}>Phone <span className="text-red-600">*</span></label>
-                <input type="tel" required className={inputClass} value={form.phone} onChange={(e) => update("phone", e.target.value)} />
+                <input type="tel" required className={inputClass} aria-label="Phone" value={form.phone} onChange={(e) => update("phone", e.target.value)} />
               </div>
               <div>
                 <label className={labelClass}>
                   Email <span className="text-red-600">*</span> <span className="text-slate-500 font-normal">(this is your login)</span>
                 </label>
-                <input type="email" required disabled={!!currentUser} className={`${inputClass} disabled:bg-slate-100`} value={form.email} onChange={(e) => update("email", e.target.value)} />
+                <input type="email" required disabled={!!currentUser} className={`${inputClass} disabled:bg-slate-100`} aria-label="Email" value={form.email} onChange={(e) => update("email", e.target.value)} />
               </div>
               {!currentUser && (
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className={labelClass}>Password</label>
-                    <input type="password" required minLength={8} autoComplete="new-password" className={inputClass} value={form.password} onChange={(e) => update("password", e.target.value)} />
+                    <input type="password" required minLength={8} autoComplete="new-password" className={inputClass} aria-label="Password" value={form.password} onChange={(e) => update("password", e.target.value)} />
                   </div>
                   <div>
                     <label className={labelClass}>Confirm</label>
-                    <input type="password" required autoComplete="new-password" className={inputClass} value={form.confirmPassword} onChange={(e) => update("confirmPassword", e.target.value)} />
+                    <input type="password" required autoComplete="new-password" className={inputClass} aria-label="Confirm password" value={form.confirmPassword} onChange={(e) => update("confirmPassword", e.target.value)} />
                   </div>
                 </div>
               )}
@@ -230,11 +230,11 @@ export default function Careers() {
               <div className="grid grid-cols-[1fr_5.5rem] gap-3">
                 <div>
                   <label className={labelClass}>Driver's License # <span className="text-red-600">*</span></label>
-                  <input type="text" required autoComplete="off" className={`${inputClass} uppercase`} value={form.dlNumber} onChange={(e) => update("dlNumber", e.target.value)} />
+                  <input type="text" required autoComplete="off" className={`${inputClass} uppercase`} aria-label="Driver's license number" value={form.dlNumber} onChange={(e) => update("dlNumber", e.target.value)} />
                 </div>
                 <div>
                   <label className={labelClass}>State</label>
-                  <input type="text" required maxLength={2} className={`${inputClass} uppercase text-center`} value={form.dlState} onChange={(e) => update("dlState", e.target.value)} />
+                  <input type="text" required maxLength={2} className={`${inputClass} uppercase text-center`} aria-label="License state" value={form.dlState} onChange={(e) => update("dlState", e.target.value)} />
                 </div>
               </div>
 
@@ -245,7 +245,7 @@ export default function Careers() {
               {form.existingDriver && (
                 <div>
                   <label className={labelClass}>Your Car #</label>
-                  <input type="text" inputMode="numeric" className={inputClass} value={form.existingCarNumber} onChange={(e) => update("existingCarNumber", e.target.value)} placeholder="44" />
+                  <input type="text" inputMode="numeric" className={inputClass} aria-label="Your car number" value={form.existingCarNumber} onChange={(e) => update("existingCarNumber", e.target.value)} placeholder="44" />
                 </div>
               )}
 
@@ -306,7 +306,7 @@ export default function Careers() {
                 <label className={labelClass}>
                   Anything you'd like us to know? <span className="text-slate-500 font-normal">(optional)</span>
                 </label>
-                <textarea rows={3} className={inputClass} value={explain} onChange={(e) => setExplain(e.target.value)} placeholder="If you answered Yes to a record question, you can explain here." />
+                <textarea rows={3} className={inputClass} aria-label="Anything you'd like us to know" value={explain} onChange={(e) => setExplain(e.target.value)} placeholder="If you answered Yes to a record question, you can explain here." />
               </div>
               <div className="grid grid-cols-[auto_1fr] gap-3">
                 <button type="button" onClick={() => { setStep(2); setError(""); }} className="px-5 rounded-2xl border-2 border-slate-300 font-bold text-slate-600">

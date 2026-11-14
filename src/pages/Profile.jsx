@@ -231,7 +231,7 @@ export default function Profile() {
                 </p>
                 <input
                   type="file"
-                  accept=".jpg,.jpeg,.png"
+                  accept=".jpg,.jpeg,.png" aria-label="Upload ID photo"
                   onChange={handleIdUpload}
                   disabled={idUploading}
                   className="w-full text-base"
