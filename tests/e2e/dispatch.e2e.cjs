@@ -54,7 +54,7 @@ async function boardChanged(uid, before) {
   await db.doc("zones/east").set({ label: "East", order: 2, points: sq(EAST.lat, EAST.lng) });
   await db.doc("zones/fort-benning").set({ label: "Fort Benning", order: 3, requiresCert: "base", points: sq(FB.lat, FB.lng) });
   const mk = async (uid, car, status, zoneId, lineKey, extra = {}) => {
-    await db.doc(`drivers/${uid}`).set({ carNumber: car, status: "offline", active: true, certs: {}, warnings: 0, ...extra });
+    await db.doc(`drivers/${uid}`).set({ carNumber: car, inspection: { carNumber: String(car), initialAt: Date.now(), lastFullAt: Date.now(), shiftCheckAt: Date.now() }, status: "offline", active: true, certs: {}, warnings: 0, ...extra });
     await db.doc(`board/${uid}`).set({ carNumber: car, status, zoneId, lineKey });
   };
   await mk("d1", "44", "ready", "rose-hill", 1);

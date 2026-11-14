@@ -160,3 +160,29 @@ test("driver record is read-only to the driver; riders may save consent and a ph
   await assertSucceeds(updateDoc(doc(rider(), "users/rider1"), { legal: { version: "v", docs: ["rider-terms", "privacy"], acceptedAt: 1 }, marketingOptIn: true }));
   await assertSucceeds(updateDoc(doc(rider(), "users/rider1"), { photoUrl: "u", photoCheck: "needs-review" }));
 });
+
+test("inspections and shop work orders: server-written; driver reads his own, shop and office read all", async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    const db = ctx.firestore();
+    await setDoc(doc(db, "vehicle_inspections/i1"), { driverId: "d1", carNumber: "44", type: "weekly" });
+    await setDoc(doc(db, "vehicle_inspections/i2"), { driverId: "d2", carNumber: "12", type: "weekly" });
+    await setDoc(doc(db, "work_orders/w1"), { carNumber: "44", status: "open", reportedBy: { uid: "d1" } });
+    await setDoc(doc(db, "work_orders/w2"), { carNumber: "12", status: "open", reportedBy: { uid: "d2" } });
+    await setDoc(doc(db, "cancelled_rides/c1"), { customerId: "rider1" });
+  });
+  const driver = env.authenticatedContext("d1", { driver: true }).firestore();
+  const shop = env.authenticatedContext("m1", { shop: true }).firestore();
+  const rider = env.authenticatedContext("rider1").firestore();
+  await assertSucceeds(getDoc(doc(driver, "vehicle_inspections/i1")));
+  await assertFails(getDoc(doc(driver, "vehicle_inspections/i2")));
+  await assertFails(setDoc(doc(driver, "vehicle_inspections/i3"), { driverId: "d1", carNumber: "44", type: "weekly" }));
+  await assertSucceeds(getDoc(doc(driver, "work_orders/w1")));
+  await assertFails(getDoc(doc(driver, "work_orders/w2")));
+  await assertFails(updateDoc(doc(driver, "work_orders/w1"), { status: "done" }));
+  await assertSucceeds(getDoc(doc(shop, "work_orders/w2")));
+  await assertSucceeds(getDoc(doc(shop, "vehicle_inspections/i2")));
+  await assertFails(updateDoc(doc(shop, "work_orders/w2"), { status: "done" }));
+  await assertSucceeds(getDoc(doc(shop, "vehicles/44")));
+  await assertFails(getDoc(doc(rider, "work_orders/w1")));
+  await assertFails(getDoc(doc(rider, "cancelled_rides/c1")));
+});
