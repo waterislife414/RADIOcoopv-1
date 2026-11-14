@@ -1,7 +1,7 @@
 // Demo stand-in for the "stripe" server library: example payments only,
 // no card network is contacted and nothing is charged.
 const id = (p) => `${p}_demo_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
-export default function Stripe() {
+function Stripe() {
   const intents = {};
   return {
     paymentIntents: {
@@ -27,3 +27,5 @@ export default function Stripe() {
     },
   };
 }
+
+module.exports = Stripe;

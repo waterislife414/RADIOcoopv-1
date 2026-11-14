@@ -38,7 +38,7 @@ const demoAliases = [
   { find: /^firebase-admin$/, replacement: demo('shims/admin.js') },
   { find: /^firebase-admin\/functions$/, replacement: demo('shims/admin-functions.js') },
   { find: /^firebase-functions\/(v2\/(https|scheduler|firestore|tasks)|params)$/, replacement: demo('shims/functions-runtime.js') },
-  { find: /^stripe$/, replacement: demo('shims/stripe-server.js') },
+  { find: /^stripe$/, replacement: demo('shims/stripe-server.cjs') },
   { find: /^\.\/geocode$/, replacement: demo('geocode.js') },
 ]
 function demoEntryPlugin() {
