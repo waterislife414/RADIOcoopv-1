@@ -236,7 +236,11 @@ export default function Home() {
                 <p className="text-xs tracking-widest text-slate-400 uppercase mt-1">Service Area</p>
               </div>
               <div>
-                <a href={`tel:${COMPANY_PHONE_TEL}`} className="font-mono text-lg font-semibold text-white tabular-nums">{COMPANY_PHONE_DISPLAY}</a>
+                <a href={`tel:${COMPANY_PHONE_TEL}`} className="block font-mono text-lg font-semibold text-white tabular-nums leading-tight">
+                  {COMPANY_PHONE_DISPLAY.replace(/\)\s*/, ")\n").split("\n").map((part) => (
+                    <span key={part} className="block">{part}</span>
+                  ))}
+                </a>
                 <p className="text-xs tracking-widest text-slate-400 uppercase mt-1">Dispatch</p>
               </div>
             </div>

@@ -96,7 +96,7 @@ function DriverRow({ driver }) {
           <span
             key={key}
             className={`text-sm font-semibold px-2.5 py-1 rounded-full border ${
-              c.status === "approved" ? "bg-gold-50 border-gold-400 text-gold-600" : "bg-slate-50 border-slate-300 text-slate-500"
+              c.status === "approved" ? "bg-amber-50 border-gold-400 text-gold-600" : "bg-slate-50 border-slate-300 text-slate-500"
             }`}
           >
             {CERT_LABELS[key]?.icon} {CERT_LABELS[key]?.label || key}
