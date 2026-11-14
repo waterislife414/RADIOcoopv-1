@@ -7,3 +7,4 @@ tests/rules/node_modules/
 *-debug.log
 tests/rules/package-lock.json
 .firebase/
+dist-demo/

@@ -1,0 +1,118 @@
+import { useEffect, useState } from "react";
+import * as core from "./core";
+import { accounts } from "./accounts";
+import { getSimulated, setSimulated } from "./geo";
+import { center } from "./seed";
+import { lockUnpaidNow, settleLeasesNow } from "./engine";
+import { resetDemo } from "./boot";
+
+const ROLES = [
+  { uid: null, label: "Rider (guest)", path: "/" },
+  { uid: "demo-rider", label: "Rider with an account", path: "/" },
+  { uid: "demo-driver-44", label: "Driver · Car 44", path: "/driver" },
+  { uid: "demo-driver-12", label: "Driver · Car 12 (Base + van)", path: "/driver" },
+  { uid: "demo-admin", label: "Dispatcher / Owner", path: "/admin/dashboard" },
+];
+
+/** Small floating menu, demo build only: switch role, set location, fast-forward the lease clock. */
+export default function DemoBar() {
+  const [open, setOpen] = useState(false);
+  const [zones, setZones] = useState([]);
+  const [note, setNote] = useState("");
+  const [, force] = useState(0);
+  const uid = accounts.currentUid();
+  const sim = getSimulated();
+
+  useEffect(() => {
+    const read = () => setZones(core.runQuery({ collection: "zones" }).map((r) => ({ id: r.path.split("/").pop(), ...r.data })).sort((a, b) => a.order - b.order));
+    read();
+    const a = core.subscribe(read);
+    const b = accounts.onChange(() => force((n) => n + 1));
+    return () => {
+      a();
+      b();
+    };
+  }, []);
+
+  function go(role, newTab) {
+    const url = `${role.path}?as=${role.uid || "guest"}`;
+    if (newTab) window.open(url, "_blank");
+    else window.location.assign(url);
+  }
+  async function act(fn, done) {
+    setNote("Working…");
+    try {
+      const n = await fn();
+      setNote(done(n));
+    } catch (e) {
+      setNote(e.message || "Didn't work.");
+    }
+  }
+
+  const box = { position: "fixed", left: 12, bottom: 12, zIndex: 9999, fontFamily: "system-ui, sans-serif" };
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} style={{ ...box, background: "#0f172a", color: "#fbbf24", border: "2px solid #fbbf24", borderRadius: 999, padding: "8px 14px", fontWeight: 800, fontSize: 13, letterSpacing: 1, boxShadow: "0 4px 14px rgba(0,0,0,.35)" }}>
+        DEMO
+      </button>
+    );
+  }
+  const btn = { display: "block", width: "100%", textAlign: "left", padding: "9px 10px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", fontSize: 14, cursor: "pointer" };
+  const h = { fontSize: 11, fontWeight: 800, letterSpacing: 1, color: "#64748b", textTransform: "uppercase", margin: "12px 0 6px" };
+  return (
+    <div style={{ ...box, width: 300, maxHeight: "86vh", overflowY: "auto", background: "#f8fafc", color: "#0f172a", borderRadius: 16, padding: 14, boxShadow: "0 10px 30px rgba(0,0,0,.4)", border: "2px solid #fbbf24" }}>
+      <div style={{ display: "flex", alignItems: "center" }}>
+        <strong style={{ flex: 1 }}>Demo &mdash; example data</strong>
+        <button onClick={() => setOpen(false)} style={{ border: 0, background: "none", fontSize: 20, cursor: "pointer" }} aria-label="Close">
+          &times;
+        </button>
+      </div>
+      <p style={{ fontSize: 12, color: "#475569", margin: "4px 0 0" }}>Nothing here is real: no charges, no real people. Everything runs in this browser.</p>
+
+      <p style={h}>Use the app as</p>
+      {ROLES.map((r) => (
+        <div key={r.label} style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+          <button style={{ ...btn, fontWeight: (r.uid || null) === (uid || null) ? 800 : 500, borderColor: (r.uid || null) === (uid || null) ? "#0f172a" : "#e2e8f0" }} onClick={() => go(r, false)}>
+            {r.label}
+          </button>
+          <button style={{ ...btn, width: 44, textAlign: "center" }} title="Open in a new tab" onClick={() => go(r, true)}>
+            &#8599;
+          </button>
+        </div>
+      ))}
+
+      <p style={h}>This device is at</p>
+      <select
+        value={sim?.real ? "real" : sim?.zoneId || ""}
+        onChange={(e) => {
+          const v = e.target.value;
+          setSimulated(v === "real" ? null : { ...center(v), zoneId: v });
+          force((n) => n + 1);
+        }}
+        style={{ ...btn, padding: "9px 8px" }}
+      >
+        {zones.map((z) => (
+          <option key={z.id} value={z.id}>
+            {z.label}
+          </option>
+        ))}
+        <option value="real">Real GPS of this device</option>
+      </select>
+
+      <p style={h}>Lease clock</p>
+      <button style={{ ...btn, marginBottom: 6 }} onClick={() => act(settleLeasesNow, (n) => `2 PM: settled ${n} lease day${n === 1 ? "" : "s"}.`)}>
+        Jump to 2 PM &mdash; settle today&apos;s leases
+      </button>
+      <button style={btn} onClick={() => act(lockUnpaidNow, (n) => `4 PM: ${n} driver${n === 1 ? "" : "s"} locked for unpaid lease.`)}>
+        Jump past 4 PM &mdash; lock unpaid drivers
+      </button>
+
+      <p style={h}>Start over</p>
+      <button style={btn} onClick={() => resetDemo().then(() => window.location.assign("/"))}>
+        Reset example data
+      </button>
+      {note && <p style={{ fontSize: 13, color: "#0f766e", marginTop: 8 }}>{note}</p>}
+      <p style={{ fontSize: 11, color: "#64748b", marginTop: 10 }}>Sign-in for any example account: password &ldquo;demo1234&rdquo;.</p>
+    </div>
+  );
+}

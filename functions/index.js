@@ -596,8 +596,20 @@ exports.purgeStaleGuestRides = onSchedule(
   }
 );
 
-// Driver accounts, zones, board, auto-dispatch, dispatcher controls, lease.
-// Keys starting with "_" are internal helpers, not deployed functions.
-for (const mod of ["./drivers", "./zones", "./board", "./dispatch", "./dispatcher", "./lease", "./closeout", "./incentives", "./phone"]) {
-  for (const [name, fn] of Object.entries(require(mod))) if (!name.startsWith("_")) exports[name] = fn;
+// Driver accounts, zones, board, auto-dispatch, dispatcher controls, lease,
+// close-out, incentives, phone quick entry. Keys starting with "_" are
+// internal helpers, not deployed functions.
+const featureModules = [
+  require("./drivers"),
+  require("./zones"),
+  require("./board"),
+  require("./dispatch"),
+  require("./dispatcher"),
+  require("./lease"),
+  require("./closeout"),
+  require("./incentives"),
+  require("./phone"),
+];
+for (const mod of featureModules) {
+  for (const [name, fn] of Object.entries(mod)) if (!name.startsWith("_")) exports[name] = fn;
 }
