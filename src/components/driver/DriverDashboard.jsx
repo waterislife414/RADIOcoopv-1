@@ -7,6 +7,7 @@ import { CERT_LABELS } from "../../config/driverCerts";
 import DriverCerts from "./DriverCerts";
 import DriverLeaseCard from "./DriverLeaseCard";
 import VehicleCheckCard from "./VehicleCheckCard";
+import EmergencyButton from "./EmergencyButton";
 import DriverRecord from "./DriverRecord";
 import DriverAgreementGate from "./DriverAgreementGate";
 import { consentIsCurrent } from "../../legal/documents";
@@ -88,6 +89,7 @@ export default function DriverDashboard() {
         </div>
       </header>
 
+      {driver.active !== false && <EmergencyButton />}
       <main className="px-5 pt-5 max-w-md mx-auto space-y-5">
         {driver.status === "suspended" && (
           <div className="bg-red-600/20 border-2 border-red-500 rounded-2xl p-5 text-center">

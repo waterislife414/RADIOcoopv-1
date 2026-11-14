@@ -186,3 +186,15 @@ test("inspections and shop work orders: server-written; driver reads his own, sh
   await assertFails(getDoc(doc(rider, "work_orders/w1")));
   await assertFails(getDoc(doc(rider, "cancelled_rides/c1")));
 });
+
+test("alerts: office reads them; nobody writes them from the app", async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), "alerts/a1"), { type: "emergency", driverId: "d1", status: "open" });
+  });
+  const driver = env.authenticatedContext("d1", { driver: true }).firestore();
+  const office = env.authenticatedContext("boss", { admin: true }).firestore();
+  await assertFails(getDoc(doc(driver, "alerts/a1")));
+  await assertFails(setDoc(doc(driver, "alerts/a2"), { type: "emergency", driverId: "d1", status: "open" }));
+  await assertSucceeds(getDoc(doc(office, "alerts/a1")));
+  await assertFails(updateDoc(doc(office, "alerts/a1"), { status: "handled" }));
+});

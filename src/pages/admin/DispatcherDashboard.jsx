@@ -22,6 +22,7 @@ import FareModal from "../../components/admin/FareModal";
 import WalletChargeModal from "../../components/admin/WalletChargeModal";
 import DispatcherAccountSettings from "../../components/admin/DispatcherAccountSettings";
 import DriverApplicationsPanel from "../../components/admin/DriverApplicationsPanel";
+import AlertsBanner from "../../components/admin/AlertsBanner";
 import ZoneBoard from "../../components/board/ZoneBoard";
 import DispatchModePanel from "../../components/admin/DispatchModePanel";
 import AssignCarModal from "../../components/admin/AssignCarModal";
@@ -246,6 +247,10 @@ export default function DispatcherDashboard() {
       {showAccountSettings && (
         <DispatcherAccountSettings onClose={() => setShowAccountSettings(false)} />
       )}
+
+      <div className="px-6 pt-4 max-w-6xl mx-auto empty:hidden">
+        <AlertsBanner />
+      </div>
 
       <div className="px-6 pt-6 max-w-6xl mx-auto empty:hidden">
         <DriverApplicationsPanel />

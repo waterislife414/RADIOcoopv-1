@@ -188,6 +188,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Driver emergencies and call problems, for the dispatch desk. Written by functions only.
+    match /alerts/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // Copies of rides riders cancelled; office only.
     match /cancelled_rides/{id} {
       allow read: if isAdmin();

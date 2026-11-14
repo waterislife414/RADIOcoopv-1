@@ -23,6 +23,7 @@ const RECORD_LABEL = {
   no_show: "No-show",
   complaint: "Complaint",
   other: "Note from the office",
+  call_ended: "Couldn't finish a call",
 };
 const day = (ms) => new Date(ms).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
 const card = "glass-panel border border-white/10 rounded-2xl p-5 space-y-3";
@@ -114,7 +115,10 @@ function Record({ uid, now }) {
       {active.map((r) => (
         <div key={r.id} className="border-t border-white/10 pt-2 first:border-0 first:pt-0">
           <div className="flex items-baseline gap-2">
-            <p className={`font-bold flex-1 ${r.type === "write_up" || r.type === "accident" ? "text-red-300" : "text-amber-200"}`}>{RECORD_LABEL[r.type] || r.type}</p>
+            <p className={`font-bold flex-1 ${r.type === "write_up" || r.type === "accident" ? "text-red-300" : "text-amber-200"}`}>{RECORD_LABEL[r.type] || r.type}
+              {r.label ? `: ${r.label}` : ""}
+              {r.warnings ? ` (${r.warnings} warning${r.warnings > 1 ? "s" : ""})` : ""}
+            </p>
             {r.points > 0 && <p className="text-sm text-slate-300">&minus;{r.points}</p>}
           </div>
           {r.note && <p className="text-sm text-slate-300">{r.note}</p>}
