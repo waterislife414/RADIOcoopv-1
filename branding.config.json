@@ -270,5 +270,17 @@
   "policies": {
     "dataRetentionDays": 5,
     "mvrLookbackYears": 7
+  },
+  "about": {
+    "_note": "Confirm with Malcolm before going live. established: Yelp lists 'Established in 1980' and YellowPages '46 years in business'. owners: as given by Jared. community: leave null until confirmed (e.g. 'Proud supporters of our EMS, firefighters and police.').",
+    "established": "1980",
+    "owners": "Malcolm and LaToya McMiller",
+    "community": null,
+    "services": [
+      "24/7 taxi service, every day of the year",
+      "Scheduled pickups and daily commuter rides",
+      "Small package delivery",
+      "Corporate accounts"
+    ]
   }
 }

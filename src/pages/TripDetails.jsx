@@ -386,7 +386,7 @@ export default function TripDetails() {
               </button>
             </div>
 
-            <div className="flex items-center justify-between border-2 border-gold-400/50 bg-gold-50 rounded-xl px-4 py-3.5">
+            <div className="flex items-center justify-between border-2 border-gold-400/50 bg-amber-50 rounded-xl px-4 py-3.5">
               <span className="text-base font-semibold text-slate-700">
                 &#9733; VIP for a Day &mdash; $5 Fast Pass
               </span>
