@@ -7,8 +7,8 @@ import { consentIsCurrent } from "../legal/documents";
 const RIDER_DOCS = ["rider-terms", "privacy"];
 import { useRide } from "../context/RideContext";
 import BrandHeader from "../components/BrandHeader";
-import {
 import { recentPlaces, rememberPlaces } from "../utils/recentPlaces";
+import {
   SURROUNDING_SERVICE_CITIES,
   OUT_OF_AREA_MINIMUM_FARE,
   OUT_OF_AREA_ENTRY_FEE,
