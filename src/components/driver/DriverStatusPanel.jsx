@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../../config/firebase";
 import { BRAND } from "../../config/constants";
@@ -7,6 +8,7 @@ import { useDriverGps } from "../../hooks/useDriverGps";
 import { unlockAudio } from "../../utils/alertSound";
 import { enableDriverPush, pushPermission } from "../../push/driverPush";
 import { hasCert, linePosition, ordinal, zoneLine } from "../../../functions/lib/dispatchCore.mjs";
+import { inspectionNeeded } from "../../../functions/lib/inspectionCore.mjs";
 
 const OUT_OF_ZONE_MIN = BRAND.dispatch?.gps?.outOfZoneMin ?? 3;
 const MAX_WARNINGS = BRAND.dispatch?.maxWarnings ?? 3;
@@ -17,6 +19,7 @@ const checkReady = call("driverCheckReady");
 const goMoving = call("driverGoMoving");
 const goOffline = call("driverGoOffline");
 const dropOff = call("driverDropOff");
+const submitInspection = call("submitInspection");
 
 const BIG = "w-full rounded-2xl py-4 text-lg font-bold transition disabled:opacity-50";
 const PRIMARY = `${BIG} bg-gold-400 text-navy-950 hover:bg-gold-300`;
@@ -93,6 +96,8 @@ export default function DriverStatusPanel({ driver, board, drivers, zones }) {
   const [msg, setMsg] = useState("");
   const [push, setPush] = useState(() => pushPermission());
 
+  const navigate = useNavigate();
+  const [shiftCheck, setShiftCheck] = useState(false);
   const status = board?.status || "offline";
   const onBoard = status !== "offline";
   const [prevStatus, setPrevStatus] = useState(status);
@@ -127,6 +132,32 @@ export default function DriverStatusPanel({ driver, board, drivers, zones }) {
   // stays on once the board shows the driver online.
   async function handleGoOnline() {
     unlockAudio();
+    const needed = inspectionNeeded(driver.inspection, driver.carNumber, Date.now());
+    if (needed === "initial" || needed === "weekly") {
+      navigate(`/driver/inspection?type=${needed}&then=online`);
+      return;
+    }
+    if (needed === "shift") {
+      setShiftCheck(true);
+      return;
+    }
+    setStarting(true);
+    if (!(await run(goOnline))) setStarting(false);
+  }
+
+  // Start-of-shift check: one tap if nothing changed, then straight on the board.
+  async function shiftOk() {
+    setBusy(true);
+    setMsg("");
+    try {
+      await submitInspection({ type: "shift", noNewDamage: true, signedName: driver.name || "Driver" });
+    } catch (e) {
+      setBusy(false);
+      setMsg(e?.message || "Couldn't save the check. Try again.");
+      return;
+    }
+    setBusy(false);
+    setShiftCheck(false);
     setStarting(true);
     if (!(await run(goOnline))) setStarting(false);
   }
@@ -134,7 +165,31 @@ export default function DriverStatusPanel({ driver, board, drivers, zones }) {
   if (driver.status === "suspended" || driver.active === false) return null;
 
   return (
+    <>
+      {shiftCheck && (
+        <div className="fixed inset-0 z-[70] bg-black/70 flex items-end sm:items-center justify-center p-3" role="dialog" aria-modal="true" aria-label="Start-of-shift check">
+          <div className="w-full max-w-md rounded-3xl bg-navy-900 border border-white/15 p-5 space-y-3 text-white">
+            <p className="text-xs font-bold tracking-widest text-gold-400 uppercase">Start-of-shift check &middot; Car {driver.carNumber}</p>
+            <p className="text-2xl font-display font-bold">Walk around your car.</p>
+            <p className="text-lg text-slate-200">Any new damage, or anything wrong with it since your last check?</p>
+            <button type="button" disabled={busy} onClick={shiftOk} className="w-full min-h-[56px] rounded-2xl bg-emerald-500 text-navy-950 font-extrabold text-lg disabled:opacity-60">
+              {busy ? "Saving\u2026" : "\u2713 No, it's the same \u2014 Go Online"}
+            </button>
+            <button type="button" onClick={() => navigate("/driver/inspection?type=damage&then=online")} className="w-full min-h-[52px] rounded-2xl border-2 border-amber-400 text-amber-200 font-bold text-lg">
+              Yes &mdash; report new damage
+            </button>
+            <button type="button" onClick={() => navigate("/driver/inspection?type=repair&then=online")} className="w-full min-h-[52px] rounded-2xl border-2 border-white/30 font-bold text-lg">
+              Something&rsquo;s wrong with the car
+            </button>
+            <button type="button" onClick={() => setShiftCheck(false)} className="w-full py-2 text-slate-300 font-semibold">
+              Not now
+            </button>
+            <p className="text-xs text-slate-400">Tapping &ldquo;No&rdquo; is your sign-off that the car has no new damage you haven&rsquo;t reported.</p>
+          </div>
+        </div>
+      )}
     <section className="glass-panel border border-white/10 rounded-2xl p-5 space-y-4">
+
       <div>
         <p className="text-xs font-bold tracking-widest text-slate-500 uppercase mb-1">Status</p>
         {status === "offline" && <p className="text-2xl font-bold">Off the board</p>}
@@ -236,5 +291,6 @@ export default function DriverStatusPanel({ driver, board, drivers, zones }) {
         </p>
       )}
     </section>
+    </>
   );
 }

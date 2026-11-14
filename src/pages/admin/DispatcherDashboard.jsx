@@ -225,6 +225,9 @@ export default function DispatcherDashboard() {
           <Link to="/admin/lease" className="text-base font-semibold text-gold-300 hover:text-gold-200">
             Lease
           </Link>
+          <Link to="/shop" className="text-base font-semibold text-gold-300 hover:text-gold-200">
+            Shop
+          </Link>
           <Link to="/admin/zones" className="text-base font-semibold text-gold-300 hover:text-gold-200">
             Zones
           </Link>

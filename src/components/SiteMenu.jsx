@@ -10,10 +10,24 @@ const LEGAL = [
 ];
 
 // Three menus: visitors, signed-in riders, and drivers.
-function sectionsFor({ signedIn, isDriver, isAdmin }) {
+function sectionsFor({ signedIn, isDriver, isAdmin, isShop }) {
+  if (isShop && !isAdmin && !isDriver) {
+    return [
+      { title: "Shop", items: [{ to: "/shop", label: "Shop Board" }] },
+      { title: "Company", items: [{ to: "/", label: "Home Page" }, { to: "/contact", label: "Contact Us" }] },
+    ];
+  }
   if (isDriver) {
     return [
       { title: "Driving", items: [{ to: "/driver", label: "Driver Home" }, { to: "/driver/profile", label: "My Profile" }] },
+      {
+        title: "My Car",
+        items: [
+          { to: "/driver/inspection?type=weekly", label: "Vehicle Inspection" },
+          { to: "/driver/inspection?type=damage", label: "Report Damage" },
+          { to: "/driver/inspection?type=repair", label: "Report a Problem" },
+        ],
+      },
       { title: "Company", items: [{ to: "/", label: "Home Page" }, { to: "/about", label: "About Us" }, { to: "/contact", label: "Contact Us" }] },
       { title: "Legal", items: LEGAL },
     ];
@@ -31,7 +45,7 @@ function sectionsFor({ signedIn, isDriver, isAdmin }) {
           { to: "/promotions", label: "Promotions" },
         ],
       },
-      { title: "Company", items: [{ to: "/about", label: "About Us" }, { to: "/contact", label: "Contact Us" }, { to: "/help", label: "Help & Questions" }, ...(isAdmin ? [{ to: "/admin/dashboard", label: "Dispatch Desk" }] : [])] },
+      { title: "Company", items: [{ to: "/about", label: "About Us" }, { to: "/contact", label: "Contact Us" }, { to: "/help", label: "Help & Questions" }, ...(isAdmin ? [{ to: "/admin/dashboard", label: "Dispatch Desk" }, { to: "/shop", label: "Shop Board" }] : [])] },
       { title: "Legal", items: LEGAL.slice(0, 2) },
       { title: "Drivers", items: [{ to: "/driver/sign-in", label: "Driver Sign In" }, { to: "/become-a-driver", label: "Come Join Our Team" }] },
     ];
@@ -69,7 +83,7 @@ function savedLarge() {
 if (typeof document !== "undefined") applyTextSize(savedLarge());
 
 export default function SiteMenu() {
-  const { currentUser, isDriver, isAdmin, logout } = useAuth();
+  const { currentUser, isDriver, isAdmin, isShop, logout } = useAuth();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -94,7 +108,7 @@ export default function SiteMenu() {
   }, [open]);
 
   if (pathname.startsWith("/admin")) return null;
-  const sections = sectionsFor({ signedIn: !!currentUser, isDriver, isAdmin });
+  const sections = sectionsFor({ signedIn: !!currentUser, isDriver, isAdmin, isShop });
   const who = isDriver ? "Driver menu" : currentUser ? "My menu" : "Menu";
 
   return (

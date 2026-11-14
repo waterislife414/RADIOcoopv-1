@@ -6,6 +6,7 @@ import { COMPANY_WORDMARK } from "../../config/constants";
 import { CERT_LABELS } from "../../config/driverCerts";
 import DriverCerts from "./DriverCerts";
 import DriverLeaseCard from "./DriverLeaseCard";
+import VehicleCheckCard from "./VehicleCheckCard";
 import DriverRecord from "./DriverRecord";
 import DriverAgreementGate from "./DriverAgreementGate";
 import { consentIsCurrent } from "../../legal/documents";
@@ -109,6 +110,7 @@ export default function DriverDashboard() {
           </section>
         )}
 
+        {driver.active !== false && <VehicleCheckCard driver={driver} />}
         {driver.active !== false && <DriverLeaseCard driver={driver} />}
 
         <DriverRecord driver={driver} />

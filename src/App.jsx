@@ -33,6 +33,8 @@ import PostSignupUpsell from "./pages/PostSignupUpsell";
 // there, so a customer booking a ride on their phone never fetches it.
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const DispatcherDashboard = lazy(() => import("./pages/admin/DispatcherDashboard"));
+const VehicleInspection = lazy(() => import("./pages/driver/VehicleInspection"));
+const ShopBoard = lazy(() => import("./pages/ShopBoard"));
 const DriversAdmin = lazy(() => import("./pages/admin/DriversAdmin"));
 const ZoneEditor = lazy(() => import("./pages/admin/ZoneEditor"));
 const DriverProfile = lazy(() => import("./pages/driver/DriverProfile"));
@@ -66,6 +68,22 @@ export default function App() {
               element={
                 <Suspense fallback={<AdminLoadingFallback />}>
                   <DriverProfile />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/driver/inspection"
+              element={
+                <Suspense fallback={<AdminLoadingFallback />}>
+                  <VehicleInspection />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/shop"
+              element={
+                <Suspense fallback={<AdminLoadingFallback />}>
+                  <ShopBoard />
                 </Suspense>
               }
             />

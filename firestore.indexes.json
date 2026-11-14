@@ -129,6 +129,20 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "vehicle_inspections",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "carNumber",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "at",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

@@ -12,6 +12,7 @@ const ROLES = [
   { uid: "demo-driver-44", label: "Driver · Car 44", path: "/driver" },
   { uid: "demo-driver-12", label: "Driver · Car 12 (Base + van)", path: "/driver" },
   { uid: "demo-admin", label: "Dispatcher / Owner", path: "/admin/dashboard" },
+  { uid: "demo-mechanic", label: "Mechanic \u00b7 Shop board", path: "/shop" },
 ];
 
 /** Small floating menu, demo build only: switch role, set location, fast-forward the lease clock. */

@@ -39,6 +39,7 @@ export const DEMO_USERS = {
   "demo-driver-44": { email: "driver44@example.com", password: DEMO_PASSWORD, claims: { driver: true } },
   "demo-driver-12": { email: "driver12@example.com", password: DEMO_PASSWORD, claims: { driver: true } },
   "demo-rider": { email: "rider@example.com", password: DEMO_PASSWORD, claims: {} },
+  "demo-mechanic": { email: "shop@example.com", password: DEMO_PASSWORD, claims: { shop: true } },
   "demo-applicant": { email: "applicant@example.com", password: DEMO_PASSWORD, claims: {} },
 };
 
@@ -62,7 +63,12 @@ export function buildSeed(now = Date.now()) {
     d[`vehicles/${car}`] = { carNumber: car, plate: `EX${car}MPL`, isVan: !!extra.van, active: true };
     delete d[`drivers/${uid}`].van;
   };
-  driver("demo-driver-44", "44", "Jordan Example", { leaseCreditCents: 1500 });
+  // Car 44 had its 360 and weekly check two days ago (just the quick start-of-shift check is left);
+  // car 12 has never been inspected, so it walks through the full first inspection.
+  driver("demo-driver-44", "44", "Jordan Example", {
+    leaseCreditCents: 1500,
+    inspection: { carNumber: "44", initialAt: now - 30 * DAY, lastFullAt: now - 2 * DAY, shiftCheckAt: now - 2 * DAY, lastAt: now - 2 * DAY, lastType: "weekly" },
+  });
   driver("demo-driver-12", "12", "Sam Example", { van: true, certs: { base: approved, wheelchair: approved }, leaseCreditCents: 3500 });
 
   // Example cars already working, so the board has life and calls get answered.
@@ -98,6 +104,21 @@ export function buildSeed(now = Date.now()) {
     credit = Math.max(0, avail - 7500);
   });
   d["drivers/demo-driver-44"].leaseCreditCents = credit;
+
+  // Example shop board.
+  const wo = (id, car, item, description, urgency, status, by, ageDays) => {
+    d[`work_orders/${id}`] = {
+      carNumber: car, item, description, urgency, status, photo: null, shopNotes: status === "parts_ordered" ? "Pads ordered from the parts store." : "",
+      reportedBy: { uid: by === "Jordan Example" ? "demo-driver-44" : "bot", name: by, inspectionId: null, type: "weekly" },
+      createdAt: now - ageDays * DAY, updatedAt: now - ageDays * DAY, history: [{ status: "open", at: now - ageDays * DAY, by }],
+    };
+  };
+  wo("demo-wo-1", "44", "Brakes (squeak, grind, soft pedal)", "Front brakes squeal when stopping, getting worse.", "soon", "parts_ordered", "Jordan Example", 2);
+  wo("demo-wo-2", "7", "Rattle or clunk", "Rattle from back right over bumps.", "watch", "open", "Dee Example", 4);
+  wo("demo-wo-3", "21", "Engine / check-engine light", "Check-engine light came on this morning.", "now", "open", "Example Driver", 0);
+  d["vehicles/44"] = { ...(d["vehicles/44"] || {}), openRepairs: 1, mileage: 84210, lastInspectionAt: now - 2 * DAY, lastInspectionType: "weekly" };
+  if (d["vehicles/7"]) d["vehicles/7"].openRepairs = 1;
+  if (d["vehicles/21"]) d["vehicles/21"].openRepairs = 1;
 
   d["envelopes/demo-env-1"] = { driverId: "bot-7", carNumber: "7", driverName: "Dee Example", amountCents: 7500, periodKeys: [dateKey(now)], droppedAt: now - 50 * 60000, status: "dropped" };
 

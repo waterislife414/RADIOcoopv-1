@@ -27,6 +27,7 @@ export function AuthProvider({ children }) {
   const [userProfile, setUserProfile] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isDriver, setIsDriver] = useState(false);
+  const [isShop, setIsShop] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Re-reads role claims from the server. Needed right after a driver is
@@ -35,9 +36,10 @@ export function AuthProvider({ children }) {
     const user = auth.currentUser;
     if (!user) return { admin: false, driver: false };
     const tokenResult = await user.getIdTokenResult(true);
-    const claims = { admin: !!tokenResult.claims.admin, driver: !!tokenResult.claims.driver };
+    const claims = { admin: !!tokenResult.claims.admin, driver: !!tokenResult.claims.driver, shop: !!tokenResult.claims.shop };
     setIsAdmin(claims.admin);
     setIsDriver(claims.driver);
+    setIsShop(claims.shop || claims.admin);
     return claims;
   }
 
@@ -55,11 +57,13 @@ export function AuthProvider({ children }) {
         const tokenResult = await user.getIdTokenResult();
         setIsAdmin(!!tokenResult.claims.admin);
         setIsDriver(!!tokenResult.claims.driver);
+        setIsShop(!!tokenResult.claims.shop || !!tokenResult.claims.admin);
         await refreshProfile(user.uid);
       } else {
         setUserProfile(null);
         setIsAdmin(false);
         setIsDriver(false);
+        setIsShop(false);
       }
       setLoading(false);
     });
@@ -155,6 +159,7 @@ export function AuthProvider({ children }) {
     currentUser,
     userProfile,
     isAdmin,
+    isShop,
     isDriver,
     refreshClaims,
     loading,

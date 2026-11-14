@@ -12,6 +12,8 @@ const admin = require("firebase-admin");
 const BRANDING = require("./branding.json");
 const { getZones } = require("./zoneStore");
 const { requireDriver, blockReason, LEASE_CFG } = require("./workRules");
+let inspectionCorePromise = null;
+const inspectionCore = () => (inspectionCorePromise ||= import("./lib/inspectionCore.mjs"));
 
 const DISPATCH = BRANDING.dispatch || {};
 const GPS = { staleMin: 3, outOfZoneMin: 3, ...(DISPATCH.gps || {}) };
@@ -109,9 +111,13 @@ exports.driverPing = onCall(async (request) => {
 // Off the board → Moving (on the board, not in a line yet).
 exports.driverGoOnline = onCall(async (request) => {
   const uid = requireDriver(request);
+  const ic = await inspectionCore();
   return changeStatus(uid, request.data, ({ c, board, driver, nowMs }) => {
     const blocked = blockReason(driver, { c, nowMs });
     if (blocked) throw new HttpsError("failed-precondition", blocked);
+    // Vehicle inspection: first 360 for this car, weekly, then a quick check each shift.
+    const needed = board.status === c.STATUS.OFFLINE ? ic.inspectionNeeded(driver.inspection, driver.carNumber, nowMs) : null;
+    if (needed) throw new HttpsError("failed-precondition", ic.NEEDED_MESSAGE[needed], { inspection: needed });
     if (board.status !== c.STATUS.OFFLINE) return null; // already on the board
     return { status: c.STATUS.MOVING, zoneId: null, lineKey: null };
   });

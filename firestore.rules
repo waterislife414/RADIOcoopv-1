@@ -8,6 +8,9 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && request.auth.token.admin == true;
     }
+    function isShop() {
+      return isSignedIn() && (request.auth.token.admin == true || request.auth.token.shop == true);
+    }
     function isDriver() {
       return isSignedIn() && request.auth.token.driver == true;
     }
@@ -168,8 +171,27 @@ service cloud.firestore {
 
     // Fleet: car #, plate, wheelchair van flag.
     match /vehicles/{carNumber} {
-      allow read: if isAdmin() || isDriver();
+      allow read: if isShop() || isDriver();
       allow write: if isAdmin();
+    }
+
+    // Inspections are filed only through submitInspection (server checks
+    // and stamps them). The driver who filed one, the office and the shop can read it.
+    match /vehicle_inspections/{id} {
+      allow read: if isShop() || (isDriver() && resource.data.driverId == request.auth.uid);
+      allow write: if false;
+    }
+
+    // Shop work orders: changed only through the work-order functions.
+    match /work_orders/{id} {
+      allow read: if isShop() || (isDriver() && resource.data.reportedBy.uid == request.auth.uid);
+      allow write: if false;
+    }
+
+    // Copies of rides riders cancelled; office only.
+    match /cancelled_rides/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
     }
 
     match /blacklist/{entryId} {

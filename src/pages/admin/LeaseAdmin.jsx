@@ -11,7 +11,17 @@ const adjust = httpsCallable(functions, "adjustLease");
 const time = (ms) => new Date(ms).toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" });
 const toCents = (v) => Math.round(parseFloat(String(v).replace(/[$,]/g, "")) * 100);
 
-function EnvelopeRow({ env }) {
+/** Open shop repairs for this car, so they can be done while the driver is here paying. */
+function RepairBadge({ count, car }) {
+  if (!count) return null;
+  return (
+    <Link to={`/shop?car=${encodeURIComponent(car)}`} className="inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-400 text-amber-900 text-sm font-bold px-3 py-1">
+      &#128295; {count} repair{count > 1 ? "s" : ""}
+    </Link>
+  );
+}
+
+function EnvelopeRow({ env, repairs = 0 }) {
   const [amount, setAmount] = useState((env.amountCents / 100).toFixed(2));
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
@@ -29,7 +39,7 @@ function EnvelopeRow({ env }) {
     <div className="flex items-center gap-3 flex-wrap border border-slate-200 rounded-xl p-3">
       <div className="flex-1 min-w-40">
         <p className="font-bold">
-          Car {env.carNumber} {env.driverName ? `· ${env.driverName}` : ""}
+          Car {env.carNumber} {env.driverName ? `· ${env.driverName}` : ""} <RepairBadge count={repairs} car={env.carNumber} />
         </p>
         <p className="text-sm text-slate-400">
           Logged {money(env.amountCents)} &middot; {time(env.droppedAt)}
@@ -151,7 +161,7 @@ function History({ uid }) {
   );
 }
 
-function DriverRow({ driver, periodKey, now }) {
+function DriverRow({ driver, periodKey, now, repairs = 0 }) {
   const [day, setDay] = useState(null);
   const [open, setOpen] = useState(null);
   useEffect(() => onSnapshot(doc(db, "ledger", driver.id, "days", periodKey), (s) => setDay(s.data() || null)), [driver.id, periodKey]);
@@ -162,7 +172,7 @@ function DriverRow({ driver, periodKey, now }) {
     <div className="border-b border-slate-200 py-2.5">
       <div className="flex items-center gap-3 flex-wrap">
         <span className="font-bold w-20">Car {driver.carNumber}</span>
-        <span className="text-slate-600 flex-1 min-w-24">{driver.name}</span>
+        <span className="text-slate-600 flex-1 min-w-24">{driver.name} <RepairBadge count={repairs} car={driver.carNumber} /></span>
         <span className="text-sm w-28">{day ? `Card today ${money(card)}` : <span className="text-slate-400">Not out today</span>}</span>
         <span className="text-sm w-24">Credit {money(driver.leaseCreditCents)}</span>
         <span className={`text-sm w-32 font-semibold ${owed ? (locked ? "text-red-700" : "text-amber-700") : "text-slate-400"}`}>
@@ -194,12 +204,16 @@ export default function LeaseAdmin() {
   const [drivers, setDrivers] = useState([]);
   const [dropped, setDropped] = useState([]);
   const [received, setReceived] = useState([]);
+  const [repairCounts, setRepairCounts] = useState({});
   const [now, setNow] = useState(() => Date.now());
   const periodKey = leasePeriodKey(now, LEASE_CFG);
   const windowState = leaseWindow(now, LEASE_CFG);
 
   useEffect(() => {
     const offs = [
+      onSnapshot(collection(db, "vehicles"), (s) =>
+        setRepairCounts(Object.fromEntries(s.docs.map((d) => [d.id, d.data().openRepairs || 0])))
+      ),
       onSnapshot(query(collection(db, "drivers"), where("active", "==", true)), (s) =>
         setDrivers(
           s.docs
@@ -250,7 +264,7 @@ export default function LeaseAdmin() {
           <h2 className="font-bold text-lg">Envelopes to count ({dropped.length})</h2>
           {dropped.length === 0 && <p className="text-slate-400">None waiting.</p>}
           {dropped.map((e) => (
-            <EnvelopeRow key={e.id} env={e} />
+            <EnvelopeRow key={e.id} env={e} repairs={repairCounts[String(e.carNumber)] || 0} />
           ))}
           {shorts.map((e) => (
             <ShortRow key={e.id} env={e} onOwe={oweShort} />
@@ -272,7 +286,7 @@ export default function LeaseAdmin() {
             Lease day ending {periodKey} at {clock(LEASE_CFG.lease.dueStart)}. Card fares and tips go toward the lease; extra rolls forward as credit.
           </p>
           {drivers.map((d) => (
-            <DriverRow key={d.id} driver={d} periodKey={periodKey} now={now} />
+            <DriverRow key={d.id} driver={d} periodKey={periodKey} now={now} repairs={repairCounts[String(d.carNumber)] || 0} />
           ))}
         </section>
       </main>

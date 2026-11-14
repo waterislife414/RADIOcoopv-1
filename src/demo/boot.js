@@ -7,7 +7,7 @@ import { installGeo } from "./geo";
 import { startEngine } from "./engine";
 
 const VERSION_KEY = "rc-demo-seed";
-const SEED_VERSION = "1";
+const SEED_VERSION = "2";
 
 export async function resetDemo() {
   accounts.reset(structuredClone(DEMO_USERS));
