@@ -117,7 +117,7 @@ export default function DispatchModePanel() {
             >
               + Add hours
             </button>
-            <p className="text-xs text-slate-400 self-center">Days are when the hours start. 10 PM&ndash;6 AM on Friday runs into Saturday morning.</p>
+            <p className="text-xs text-slate-500 self-center">Days are when the hours start. 10 PM&ndash;6 AM on Friday runs into Saturday morning.</p>
           </div>
           {dirty && (
             <button disabled={busy} onClick={() => save()} className="w-full rounded-xl py-3 font-bold bg-gold-400 text-navy-950">

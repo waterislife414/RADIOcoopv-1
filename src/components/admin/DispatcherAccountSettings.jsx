@@ -105,7 +105,7 @@ export default function DispatcherAccountSettings({ onClose }) {
 
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-              New Login Email <span className="text-slate-400 font-normal">(optional)</span>
+              New Login Email <span className="text-slate-500 font-normal">(optional)</span>
             </label>
             <input
               type="email"
@@ -119,7 +119,7 @@ export default function DispatcherAccountSettings({ onClose }) {
 
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-              New Password <span className="text-slate-400 font-normal">(optional)</span>
+              New Password <span className="text-slate-500 font-normal">(optional)</span>
             </label>
             <input
               type="password"

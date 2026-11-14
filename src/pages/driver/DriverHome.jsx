@@ -71,7 +71,7 @@ export default function DriverHome() {
           <a href={`tel:${COMPANY_PHONE_TEL}`} className="block text-blue-600 font-semibold text-lg mb-6">
             Call the office: {COMPANY_PHONE_DISPLAY}
           </a>
-          <button onClick={logout} className="text-slate-500 font-semibold">
+          <button onClick={logout} className="text-slate-400 font-semibold">
             Sign out
           </button>
         </div>

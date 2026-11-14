@@ -14,6 +14,7 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Contact from "./pages/Contact";
 import TripDetails from "./pages/TripDetails";
+import Help from "./pages/Help";
 import Promotions from "./pages/Promotions";
 import FastPass from "./pages/FastPass";
 import PaymentSelection from "./pages/PaymentSelection";
@@ -45,7 +46,7 @@ const DriverHome = lazy(() => import("./pages/driver/DriverHome"));
 function AdminLoadingFallback() {
   return (
     <div className="min-h-screen bg-navy-950 flex items-center justify-center">
-      <p className="text-slate-400 text-base">Loading...</p>
+      <p className="text-slate-500 text-base">Loading...</p>
     </div>
   );
 }
@@ -97,6 +98,7 @@ export default function App() {
             <Route path="/qr" element={<QRCode />} />
             <Route path="/join" element={<ChoosePlan />} />
             <Route path="/promotions" element={<Promotions />} />
+            <Route path="/help" element={<Help />} />
             <Route path="/compare" element={<CompareRideshare />} />
             <Route path="/welcome" element={<PostSignupUpsell />} />
 

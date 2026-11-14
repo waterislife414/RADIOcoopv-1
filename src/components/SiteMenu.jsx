@@ -31,7 +31,7 @@ function sectionsFor({ signedIn, isDriver, isAdmin }) {
           { to: "/promotions", label: "Promotions" },
         ],
       },
-      { title: "Company", items: [{ to: "/about", label: "About Us" }, { to: "/contact", label: "Contact Us" }, ...(isAdmin ? [{ to: "/admin/dashboard", label: "Dispatch Desk" }] : [])] },
+      { title: "Company", items: [{ to: "/about", label: "About Us" }, { to: "/contact", label: "Contact Us" }, { to: "/help", label: "Help & Questions" }, ...(isAdmin ? [{ to: "/admin/dashboard", label: "Dispatch Desk" }] : [])] },
       { title: "Legal", items: LEGAL.slice(0, 2) },
       { title: "Drivers", items: [{ to: "/driver/sign-in", label: "Driver Sign In" }, { to: "/become-a-driver", label: "Come Join Our Team" }] },
     ];
@@ -47,18 +47,43 @@ function sectionsFor({ signedIn, isDriver, isAdmin }) {
         { to: "/compare", label: "Compare Rates" },
       ],
     },
-    { title: "Company", items: [{ to: "/about", label: "About Us" }, { to: "/contact", label: "Contact Us" }, { to: "/promotions", label: "Promotions" }] },
+    { title: "Company", items: [{ to: "/about", label: "About Us" }, { to: "/contact", label: "Contact Us" }, { to: "/help", label: "Help & Questions" }, { to: "/promotions", label: "Promotions" }] },
     { title: "Legal", items: LEGAL },
     { title: "Drivers", items: [{ to: "/driver/sign-in", label: "Driver Sign In" }, { to: "/become-a-driver", label: "Come Join Our Team" }] },
   ];
 }
 
 /** The three-line menu, top right of every rider and driver page. */
+// "Larger text" (like Uber's Simple mode): scales every rem-based size.
+const TEXT_KEY = "rc-text-size";
+function applyTextSize(large) {
+  document.documentElement.classList.toggle("text-large", large);
+}
+function savedLarge() {
+  try {
+    return localStorage.getItem(TEXT_KEY) === "large";
+  } catch {
+    return false;
+  }
+}
+if (typeof document !== "undefined") applyTextSize(savedLarge());
+
 export default function SiteMenu() {
   const { currentUser, isDriver, isAdmin, logout } = useAuth();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [large, setLarge] = useState(savedLarge);
+  const toggleLarge = () => {
+    const next = !large;
+    setLarge(next);
+    applyTextSize(next);
+    try {
+      localStorage.setItem(TEXT_KEY, next ? "large" : "normal");
+    } catch {
+      // ignore
+    }
+  };
 
   useEffect(() => setOpen(false), [pathname]);
   useEffect(() => {
@@ -101,9 +126,22 @@ export default function SiteMenu() {
             </div>
 
             <div className="flex-1 overflow-y-auto px-3 py-3">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={large}
+                onClick={toggleLarge}
+                className={`mb-4 w-full flex items-center justify-between gap-3 rounded-2xl border-2 px-4 min-h-[56px] font-bold text-lg ${large ? "border-gold-400 bg-gold-400/15 text-gold-200" : "border-white/20 text-white"}`}
+              >
+                <span><span className="font-display text-2xl mr-2">Aa</span>Larger text</span>
+                <span className={`rounded-full px-3 py-1 text-sm ${large ? "bg-gold-400 text-navy-950" : "bg-white/15"}`}>{large ? "On" : "Off"}</span>
+              </button>
+              <a href={`tel:${COMPANY_PHONE_TEL}`} className="mb-4 flex items-center justify-center gap-2 rounded-2xl bg-blue-600 min-h-[56px] font-bold text-lg">
+                &#9742; Call {COMPANY_PHONE_DISPLAY}
+              </a>
               {sections.map((s) => (
                 <div key={s.title} className="mb-3">
-                  <p className="px-3 pb-1 text-[11px] font-bold tracking-[0.25em] text-slate-500 uppercase">{s.title}</p>
+                  <p className="px-3 pb-1 text-xs font-bold tracking-[0.25em] text-slate-300 uppercase">{s.title}</p>
                   {s.items.map((it) => (
                     <Link
                       key={it.to + it.label}

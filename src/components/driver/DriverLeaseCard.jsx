@@ -47,8 +47,8 @@ export default function DriverLeaseCard({ driver }) {
   return (
     <section className={`glass-panel rounded-2xl p-5 space-y-3 border ${locked ? "border-red-500" : "border-white/10"}`}>
       <div className="flex items-baseline justify-between">
-        <p className="text-xs font-bold tracking-widest text-slate-400 uppercase">Lease &middot; due {DUE_TEXT}</p>
-        <p className="text-sm text-slate-400">Credit {money(credit)}</p>
+        <p className="text-xs font-bold tracking-widest text-slate-500 uppercase">Lease &middot; due {DUE_TEXT}</p>
+        <p className="text-sm text-slate-500">Credit {money(credit)}</p>
       </div>
 
       {owed > 0 ? (
@@ -88,7 +88,7 @@ export default function DriverLeaseCard({ driver }) {
         <div className="h-2.5 rounded-full bg-white/10 mt-1 overflow-hidden">
           <div className="h-full bg-emerald-400" style={{ width: `${lease ? Math.round((covered / lease) * 100) : 100}%` }} />
         </div>
-        <p className="text-sm text-slate-400 mt-2">
+        <p className="text-sm text-slate-500 mt-2">
           {lease === 0
             ? "No lease this day."
             : credit + card >= lease

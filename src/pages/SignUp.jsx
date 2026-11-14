@@ -98,7 +98,7 @@ export default function SignUp() {
                 onChange={(e) => update("lastName", e.target.value)}
               />
             </div>
-            <p className="text-xs text-slate-400 -mt-2">
+            <p className="text-xs text-slate-500 -mt-2">
               Name must match your driver's license or state ID.
             </p>
             <input
@@ -135,10 +135,11 @@ export default function SignUp() {
               onChange={(e) => update("password", e.target.value)}
             />
             <div>
-              <label className="block text-base font-semibold text-slate-700 mb-1.5">
+              <label htmlFor="dob" className="block text-base font-semibold text-slate-700 mb-1.5">
                 Date of Birth
               </label>
               <input
+                id="dob"
                 type="date"
                 required
                 className="w-full border-2 border-slate-300 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600"

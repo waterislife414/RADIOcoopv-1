@@ -31,7 +31,7 @@ function EnvelopeRow({ env }) {
         <p className="font-bold">
           Car {env.carNumber} {env.driverName ? `· ${env.driverName}` : ""}
         </p>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-400">
           Logged {money(env.amountCents)} &middot; {time(env.droppedAt)}
         </p>
       </div>
@@ -125,7 +125,7 @@ function History({ uid }) {
   if (!days.length) return <p className="text-sm text-slate-400">No lease days yet.</p>;
   return (
     <table className="w-full text-sm">
-      <thead className="text-slate-500 text-left">
+      <thead className="text-slate-400 text-left">
         <tr>
           <th className="py-1">Due</th>
           <th>Card</th>
@@ -248,7 +248,7 @@ export default function LeaseAdmin() {
       <main className="max-w-4xl mx-auto p-4 space-y-5">
         <section className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
           <h2 className="font-bold text-lg">Envelopes to count ({dropped.length})</h2>
-          {dropped.length === 0 && <p className="text-slate-500">None waiting.</p>}
+          {dropped.length === 0 && <p className="text-slate-400">None waiting.</p>}
           {dropped.map((e) => (
             <EnvelopeRow key={e.id} env={e} />
           ))}
@@ -268,7 +268,7 @@ export default function LeaseAdmin() {
 
         <section className="bg-white rounded-2xl border border-slate-200 p-4">
           <h2 className="font-bold text-lg mb-1">Drivers</h2>
-          <p className="text-sm text-slate-500 mb-2">
+          <p className="text-sm text-slate-400 mb-2">
             Lease day ending {periodKey} at {clock(LEASE_CFG.lease.dueStart)}. Card fares and tips go toward the lease; extra rolls forward as credit.
           </p>
           {drivers.map((d) => (

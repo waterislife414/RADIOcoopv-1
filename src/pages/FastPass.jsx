@@ -88,7 +88,7 @@ export default function FastPass() {
             <p className="font-display text-3xl font-bold mt-1">&#9733; Fast Pass</p>
             <p className="text-slate-300 mt-2">Moves you up the dispatcher&rsquo;s queue for this ride.</p>
             <p className="font-mono text-4xl font-bold text-gold-300 mt-4">$5.00</p>
-            <p className="text-xs text-slate-400 mt-1">Paid now, separate from your ride. Your ride is paid next.</p>
+            <p className="text-xs text-slate-500 mt-1">Paid now, separate from your ride. Your ride is paid next.</p>
           </div>
 
           <Elements stripe={stripePromise}>
@@ -110,7 +110,7 @@ export default function FastPass() {
           >
             No thanks &mdash; skip the Fast Pass
           </button>
-          <p className="text-xs text-slate-400 text-center mt-2">Premium members are always dispatched first.</p>
+          <p className="text-xs text-slate-500 text-center mt-2">Premium members are always dispatched first.</p>
         </div>
       </div>
     </div>

@@ -80,7 +80,7 @@ function PositionLine({ drivers, uid, zoneId }) {
       {pos.callsUntilYou === 0
         ? "you're next up"
         : `${pos.callsUntilYou} call${pos.callsUntilYou === 1 ? "" : "s"} until you`}
-      {onCallAhead > 0 && <span className="text-slate-400">{` \u00b7 ${onCallAhead} on call`}</span>}
+      {onCallAhead > 0 && <span className="text-slate-500">{` \u00b7 ${onCallAhead} on call`}</span>}
     </p>
   );
 }
@@ -136,7 +136,7 @@ export default function DriverStatusPanel({ driver, board, drivers, zones }) {
   return (
     <section className="glass-panel border border-white/10 rounded-2xl p-5 space-y-4">
       <div>
-        <p className="text-xs font-bold tracking-widest text-slate-400 uppercase mb-1">Status</p>
+        <p className="text-xs font-bold tracking-widest text-slate-500 uppercase mb-1">Status</p>
         {status === "offline" && <p className="text-2xl font-bold">Off the board</p>}
         {status === "moving" && <p className="text-2xl font-bold">{"\u{1F695}"} Moving</p>}
         {status === "ready" && (
@@ -189,7 +189,7 @@ export default function DriverStatusPanel({ driver, board, drivers, zones }) {
             <button className={PRIMARY} disabled={busy} onClick={() => run(dropOff)}>
               Drop Off
             </button>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-500">
               {!gpsZone
                 ? "You're outside every zone, so you'll go to Moving."
                 : certNeeded
@@ -209,7 +209,7 @@ export default function DriverStatusPanel({ driver, board, drivers, zones }) {
 
         {(status === "moving" || status === "ready") && (
           <button
-            className="w-full py-2 text-sm font-semibold text-slate-400 hover:text-white"
+            className="w-full py-2 text-sm font-semibold text-slate-500 hover:text-white"
             disabled={busy}
             onClick={() => run(goOffline, { withFix: false })}
           >

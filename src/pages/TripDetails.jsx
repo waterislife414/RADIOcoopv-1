@@ -8,6 +8,7 @@ const RIDER_DOCS = ["rider-terms", "privacy"];
 import { useRide } from "../context/RideContext";
 import BrandHeader from "../components/BrandHeader";
 import {
+import { recentPlaces, rememberPlaces } from "../utils/recentPlaces";
   SURROUNDING_SERVICE_CITIES,
   OUT_OF_AREA_MINIMUM_FARE,
   OUT_OF_AREA_ENTRY_FEE,
@@ -20,11 +21,29 @@ const includedMiles = Math.floor(
   (OUT_OF_AREA_MINIMUM_FARE - OUT_OF_AREA_ENTRY_FEE) / FARE_CONFIG.PER_MILE
 );
 
+function RecentChips({ places, current, onPick, label }) {
+  const list = places.filter((p) => p !== current);
+  if (!list.length) return null;
+  return (
+    <div className="mt-2">
+      <p className="text-sm text-slate-600 mb-1.5">{label}</p>
+      <div className="flex flex-wrap gap-2">
+        {list.slice(0, 4).map((p) => (
+          <button key={p} type="button" onClick={() => onPick(p)} className="min-h-[44px] max-w-full truncate rounded-full border-2 border-blue-200 bg-blue-50 px-4 text-base font-semibold text-blue-800">
+            &#128339; {p}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function TripDetails() {
   const { currentUser, userProfile, saveLegalConsent } = useAuth();
   // Guests agree on every booking. Signed-in riders agree once per version.
   const alreadyAgreed = !!currentUser && consentIsCurrent(userProfile?.legal, RIDER_DOCS);
   const [askConsent, setAskConsent] = useState(false);
+  const [recent] = useState(recentPlaces);
   const { ride, updateRide, addStop, removeStop } = useRide();
   const navigate = useNavigate();
 
@@ -108,6 +127,7 @@ export default function TripDetails() {
   }
 
   function proceed(consent) {
+    rememberPlaces(ride.pickup, ride.dropoff);
     if (!alreadyAgreed && currentUser) saveLegalConsent(consent).catch(() => {});
     updateRide({ scheduleType, consent });
     navigate(ride.wantsPriorityPass ? "/fast-pass" : "/payment");
@@ -157,16 +177,18 @@ export default function TripDetails() {
             </div>
 
             <div>
-              <label className="block text-base font-semibold text-slate-700 mb-1.5">
+              <label htmlFor="pickup" className="block text-base font-semibold text-slate-700 mb-1.5">
                 Pickup Location
               </label>
               <input
+                id="pickup"
                 type="text"
                 className="w-full border-2 border-slate-300 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
                 value={ride.pickup}
                 onChange={(e) => updateRide({ pickup: e.target.value })}
                 placeholder={COPY.pickupPlaceholder}
               />
+              <RecentChips places={recent} current={ride.pickup} label="Recent places" onPick={(p) => updateRide({ pickup: p })} />
               <button
                 type="button"
                 onClick={shareLocation}
@@ -187,16 +209,18 @@ export default function TripDetails() {
             </div>
 
             <div>
-              <label className="block text-base font-semibold text-slate-700 mb-1.5">
+              <label htmlFor="dropoff" className="block text-base font-semibold text-slate-700 mb-1.5">
                 Drop-off Location
               </label>
               <input
+                id="dropoff"
                 type="text"
                 className="w-full border-2 border-slate-300 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
                 value={ride.dropoff}
                 onChange={(e) => updateRide({ dropoff: e.target.value })}
                 placeholder={COPY.dropoffPlaceholder}
               />
+              <RecentChips places={recent} current={ride.dropoff} label="Recent places" onPick={(p) => updateRide({ dropoff: p })} />
             </div>
 
             {/* Out of area: simple yes/no first, details only reveal after they engage */}
@@ -205,7 +229,7 @@ export default function TripDetails() {
                 <span className="text-base font-semibold text-slate-700">
                   Is this trip outside {LOCAL_AREA_SHORT_LABEL}?
                 </span>
-                <button
+                <button role="switch" aria-checked={!!(ride.outOfArea)} aria-label="Trip outside the local area"
                   type="button"
                   onClick={() =>
                     updateRide({
@@ -213,7 +237,7 @@ export default function TripDetails() {
                       outOfAreaCity: "",
                     })
                   }
-                  className={`w-12 h-7 rounded-full transition ${
+                  className={`w-12 h-7 rounded-full transition after:absolute after:-inset-2.5 after:content-[''] ${
                     ride.outOfArea ? "bg-amber-500" : "bg-slate-300"
                   } relative shrink-0`}
                 >
@@ -228,10 +252,11 @@ export default function TripDetails() {
               {ride.outOfArea && (
                 <div className="mt-4 pt-4 border-t border-slate-200 space-y-3">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-600 mb-1.5">
+                    <label htmlFor="area-select" className="block text-sm font-semibold text-slate-600 mb-1.5">
                       Which area?
                     </label>
                     <select
+                      id="area-select"
                       className="w-full border-2 border-slate-300 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-600"
                       value={ride.outOfAreaCity}
                       onChange={(e) => updateRide({ outOfAreaCity: e.target.value })}
@@ -279,10 +304,11 @@ export default function TripDetails() {
             </div>
 
             <div>
-              <label className="block text-base font-semibold text-slate-700 mb-1.5">
+              <label htmlFor="passengers-select" className="block text-base font-semibold text-slate-700 mb-1.5">
                 Passengers
               </label>
               <select
+                id="passengers-select"
                 className="w-full border-2 border-slate-300 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
                 value={ride.passengers}
                 onChange={(e) => updateRide({ passengers: parseInt(e.target.value, 10) })}
@@ -299,10 +325,10 @@ export default function TripDetails() {
               <span className="text-base font-semibold text-slate-700">
                 Add Stops (Flexible)
               </span>
-              <button
+              <button role="switch" aria-checked={!!(showStops)} aria-label="Add stops"
                 type="button"
                 onClick={() => setShowStops((s) => !s)}
-                className={`w-12 h-7 rounded-full transition ${
+                className={`w-12 h-7 rounded-full transition after:absolute after:-inset-2.5 after:content-[''] ${
                   showStops ? "bg-blue-600" : "bg-slate-300"
                 } relative`}
               >
@@ -352,10 +378,10 @@ export default function TripDetails() {
 
             <div className="flex items-center justify-between border-2 border-slate-300 rounded-xl px-4 py-3.5">
               <span className="text-base font-semibold text-slate-700">Round Trip</span>
-              <button
+              <button role="switch" aria-checked={!!(ride.roundTrip)} aria-label="Round trip"
                 type="button"
                 onClick={() => updateRide({ roundTrip: !ride.roundTrip })}
-                className={`w-12 h-7 rounded-full transition ${
+                className={`w-12 h-7 rounded-full transition after:absolute after:-inset-2.5 after:content-[''] ${
                   ride.roundTrip ? "bg-blue-600" : "bg-slate-300"
                 } relative`}
               >
@@ -371,10 +397,10 @@ export default function TripDetails() {
               <span className="text-base font-semibold text-slate-700 flex items-center gap-2">
                 <span aria-hidden="true">&#9855;</span> Need a Handicap-Accessible Vehicle?
               </span>
-              <button
+              <button role="switch" aria-checked={!!(ride.needsAccessibleVehicle)} aria-label="Handicap-accessible vehicle"
                 type="button"
                 onClick={() => updateRide({ needsAccessibleVehicle: !ride.needsAccessibleVehicle })}
-                className={`w-12 h-7 rounded-full transition shrink-0 ${
+                className={`w-12 h-7 rounded-full transition after:absolute after:-inset-2.5 after:content-[''] shrink-0 ${
                   ride.needsAccessibleVehicle ? "bg-blue-600" : "bg-slate-300"
                 } relative`}
               >
@@ -390,10 +416,10 @@ export default function TripDetails() {
               <span className="text-base font-semibold text-slate-700">
                 &#9733; VIP for a Day &mdash; $5 Fast Pass
               </span>
-              <button
+              <button role="switch" aria-checked={!!(ride.wantsPriorityPass)} aria-label="VIP Fast Pass"
                 type="button"
                 onClick={() => updateRide({ wantsPriorityPass: !ride.wantsPriorityPass })}
-                className={`w-12 h-7 rounded-full transition shrink-0 ${
+                className={`w-12 h-7 rounded-full transition after:absolute after:-inset-2.5 after:content-[''] shrink-0 ${
                   ride.wantsPriorityPass ? "bg-gold-500" : "bg-slate-300"
                 } relative`}
               >
@@ -404,7 +430,7 @@ export default function TripDetails() {
                 />
               </button>
             </div>
-            <p className="text-xs text-slate-400 -mt-2">
+            <p className="text-xs text-slate-500 -mt-2">
               Moves you up the dispatcher's queue for this ride. The $5 is
               paid on its own before checkout. (Premium members still dispatch first.)
             </p>

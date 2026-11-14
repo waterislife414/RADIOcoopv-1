@@ -162,7 +162,7 @@ export default function RideCard({ ride, customerStatus, carFor, zones, onSetZon
       </div>
 
       {ride.notes && <p className="text-sm text-slate-700">{"\u{1F4DD}"} {ride.notes}</p>}
-      {ride.source === "phone" && <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Phone call</p>}
+      {ride.source === "phone" && <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Phone call</p>}
 
       {ride.phone && (
         <a href={`tel:${ride.phone}`} className="text-blue-600 text-base font-semibold block">
@@ -202,7 +202,7 @@ export default function RideCard({ ride, customerStatus, carFor, zones, onSetZon
           {isFinished && (
             <button
               onClick={() => onArchive(ride)}
-              className="w-full text-sm font-semibold text-slate-400 hover:text-slate-600"
+              className="w-full text-sm font-semibold text-slate-500 hover:text-slate-600"
             >
               Mark Settled / Remove from Active
             </button>
@@ -242,7 +242,7 @@ export default function RideCard({ ride, customerStatus, carFor, zones, onSetZon
           {isFinished && (
             <button
               onClick={() => onArchive(ride)}
-              className="w-full text-sm font-semibold text-slate-400 hover:text-slate-600"
+              className="w-full text-sm font-semibold text-slate-500 hover:text-slate-600"
             >
               Remove from Active
             </button>

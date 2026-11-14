@@ -25,7 +25,7 @@ export default function PostSignupUpsell() {
               <p className="font-display font-bold text-lg text-slate-800">Basic</p>
               <p className="text-2xl font-bold text-slate-800 my-1">
                 ${SUBSCRIPTION_TIERS.BASIC.monthlyPrice}
-                <span className="text-sm font-normal text-slate-400">/mo</span>
+                <span className="text-sm font-normal text-slate-500">/mo</span>
               </p>
               <p className="text-xs text-slate-500 leading-snug">
                 1 free entry fee every {SUBSCRIPTION_TIERS.BASIC.ridesForFreeEntry} rides
@@ -41,14 +41,14 @@ export default function PostSignupUpsell() {
               <p className="font-display font-bold text-lg text-slate-800">Premium</p>
               <p className="text-2xl font-bold text-slate-800 my-1">
                 ${SUBSCRIPTION_TIERS.PREMIUM.monthlyPrice}
-                <span className="text-sm font-normal text-slate-400">/mo</span>
+                <span className="text-sm font-normal text-slate-500">/mo</span>
               </p>
               <p className="text-xs text-slate-500 leading-snug">
                 Free entry fee + free mile every {SUBSCRIPTION_TIERS.PREMIUM.ridesForFreeEntry} rides
               </p>
             </Link>
           </div>
-          <p className="text-xs text-slate-400 text-center mb-6">
+          <p className="text-xs text-slate-500 text-center mb-6">
             {SUBSCRIPTION_TRIAL_DAYS}-day free trial on either plan. Cancel anytime.
           </p>
 

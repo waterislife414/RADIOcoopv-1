@@ -33,7 +33,7 @@ export default function About() {
             ].map(([big, small]) => (
               <div key={small} className="rounded-2xl bg-white/[0.06] border border-white/10 py-4 px-2">
                 <p className="font-display text-lg font-bold text-white leading-tight">{big}</p>
-                <p className="text-[11px] tracking-widest text-slate-400 uppercase mt-1">{small}</p>
+                <p className="text-[11px] tracking-widest text-slate-500 uppercase mt-1">{small}</p>
               </div>
             ))}
           </div>
@@ -63,13 +63,13 @@ export default function About() {
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="rounded-2xl border-2 border-slate-200 p-5">
-              <p className="text-xs font-bold tracking-widest text-slate-400 uppercase mb-1">Where we serve</p>
+              <p className="text-xs font-bold tracking-widest text-slate-500 uppercase mb-1">Where we serve</p>
               <p className="font-bold text-slate-800">{list(LOCAL_SERVICE_CITIES)}</p>
               <p className="text-slate-600 mt-2">{list(SURROUNDING_SERVICE_CITIES)}</p>
               <p className="text-sm text-slate-500 mt-2">{COPY.outOfAreaNote}</p>
             </div>
             <div className="rounded-2xl border-2 border-slate-200 p-5">
-              <p className="text-xs font-bold tracking-widest text-slate-400 uppercase mb-1">Find us</p>
+              <p className="text-xs font-bold tracking-widest text-slate-500 uppercase mb-1">Find us</p>
               <p className="font-bold text-slate-800">{SERVICE_HOURS}</p>
               <a href={OFFICE_MAP_LINK} target="_blank" rel="noopener noreferrer" className="block text-blue-700 underline mt-2">
                 {OFFICE_ADDRESS}

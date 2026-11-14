@@ -35,7 +35,7 @@ export default function LegalConsent({ docIds, onChange, promoLabel, dark = fals
   }, [open]);
 
   const text = dark ? "text-slate-200" : "text-slate-700";
-  const sub = dark ? "text-slate-400" : "text-slate-500";
+  const sub = dark ? "text-slate-500" : "text-slate-500";
   const panel = dark ? "border-white/15 bg-white/[0.04]" : "border-slate-300 bg-slate-50";
 
   return (
@@ -74,7 +74,7 @@ export default function LegalConsent({ docIds, onChange, promoLabel, dark = fals
             </div>
             <div ref={scroller} onScroll={checkEnd} className="flex-1 overflow-y-auto px-5 py-4" data-testid="legal-scroll">
               <LegalText docIds={docIds} />
-              <p className="text-center text-sm text-slate-400 py-4">&mdash; End &mdash;</p>
+              <p className="text-center text-sm text-slate-500 py-4">&mdash; End &mdash;</p>
             </div>
             <div className="p-4 border-t border-slate-200">
               <button

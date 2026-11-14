@@ -76,7 +76,7 @@ export default function CardPaymentForm({ onAuthorized, submitting }) {
       >
         {processing ? "Authorizing..." : "Authorize Card"}
       </button>
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-slate-500">
         This places a hold only. You are not charged until dispatch confirms your final fare.
       </p>
     </div>

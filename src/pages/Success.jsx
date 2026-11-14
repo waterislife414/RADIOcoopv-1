@@ -48,6 +48,14 @@ export default function Success() {
           </p>
 
           {currentUser && <CurrentRideStatus />}
+          {!currentUser && (
+            <a
+              href={`tel:${COMPANY_PHONE_TEL}`}
+              className="block text-center min-h-[52px] leading-[52px] rounded-2xl border-2 border-blue-300 bg-blue-50 text-blue-700 font-bold text-lg mb-6"
+            >
+              &#9742; Need to change or cancel? Call {COMPANY_PHONE_DISPLAY}
+            </a>
+          )}
 
           <div className="grid grid-cols-1 gap-3.5 mb-8">
             <a

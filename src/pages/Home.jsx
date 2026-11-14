@@ -77,7 +77,7 @@ function CompareTeaser() {
         <p className="mt-4 text-center text-sm font-bold text-emerald-300">
           See every trip &amp; our sources &rarr;
         </p>
-        <p className="text-[10px] text-slate-500 text-center mt-1">Busy times = {RIDESHARE_SURGE.multiplier}&times; surge. Estimates; your meter sets the fare.</p>
+        <p className="text-[10px] text-slate-400 text-center mt-1">Busy times = {RIDESHARE_SURGE.multiplier}&times; surge. Estimates; your meter sets the fare.</p>
       </div>
     </Link>
   );
@@ -320,7 +320,7 @@ export default function Home() {
           </Link>
         </div>
         <div className="flex justify-center mt-6">
-          <Link to="/admin/login" className="text-sm text-slate-500 hover:text-slate-300">{COPY.dispatcherFooterLabel}</Link>
+          <Link to="/admin/login" className="text-sm text-slate-400 hover:text-slate-300">{COPY.dispatcherFooterLabel}</Link>
         </div>
       </footer>
     </div>

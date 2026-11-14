@@ -205,13 +205,13 @@ export default function DispatcherDashboard() {
       <header className="bg-navy-950 text-white px-6 py-5 flex justify-between items-center flex-wrap gap-2">
         <div>
           <h1 className="font-display font-bold text-2xl">{COPY.dispatcherDashboardTitle}</h1>
-          <p className="text-sm text-slate-400 mt-0.5">
+          <p className="text-sm text-slate-500 mt-0.5">
             {OFFICE_ADDRESS} &middot; {COMPANY_PHONE_DISPLAY}
           </p>
         </div>
         <div className="flex items-center gap-6">
           <div className="text-right">
-            <p className="text-xs text-slate-400 uppercase tracking-wide">
+            <p className="text-xs text-slate-500 uppercase tracking-wide">
               Today's Electronic Gross
             </p>
             <p className="font-bold text-xl text-gold-300">${dailyGross.toFixed(2)}</p>
@@ -300,7 +300,7 @@ export default function DispatcherDashboard() {
             {(boardCounts.ready || 0) + (boardCounts.offered || 0)} waiting &middot; {boardCounts.on_call || 0} on call
             &middot; {boardCounts.moving || 0} moving
           </p>
-          <p className="text-xs text-slate-400">Tap a car to move it.</p>
+          <p className="text-xs text-slate-500">Tap a car to move it.</p>
           {liveBoard.zones.length > 0 && (
             <button onClick={() => setCarAction("new")} className="ml-auto text-sm font-semibold text-blue-700">
               + Radio car
@@ -347,7 +347,7 @@ export default function DispatcherDashboard() {
               />
             ))}
             {pending.length === 0 && (
-              <p className="text-base text-slate-400">No new requests.</p>
+              <p className="text-base text-slate-500">No new requests.</p>
             )}
           </div>
         </section>
@@ -373,7 +373,7 @@ export default function DispatcherDashboard() {
               />
             ))}
             {active.length === 0 && (
-              <p className="text-base text-slate-400">No active rides.</p>
+              <p className="text-base text-slate-500">No active rides.</p>
             )}
           </div>
         </section>

@@ -158,7 +158,7 @@ export default function LiveMap() {
                   {c.zoneId ? `Line: ${zoneLabel[c.zoneId] || c.zoneId}` : "No line"}
                   {c.loc?.zoneId && c.loc.zoneId !== c.zoneId ? ` · now in ${zoneLabel[c.loc.zoneId]}` : ""}
                 </p>
-                <p className={`text-xs mt-0.5 ${stale ? "text-red-600 font-semibold" : "text-slate-400"}`}>
+                <p className={`text-xs mt-0.5 ${stale ? "text-red-600 font-semibold" : "text-slate-500"}`}>
                   GPS {ago(c.loc?.at, now)}
                 </p>
               </button>

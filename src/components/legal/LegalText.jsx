@@ -9,7 +9,7 @@ export default function LegalText({ docIds }) {
         return (
           <article key={id}>
             <h2 className="font-display text-2xl font-bold text-slate-900">{doc.title}</h2>
-            <p className="text-xs text-slate-400 mb-4">Version {LEGAL_VERSION}</p>
+            <p className="text-xs text-slate-500 mb-4">Version {LEGAL_VERSION}</p>
             {doc.sections.map((s) => (
               <section key={s.h} className="mb-4">
                 <h3 className="font-bold text-slate-800 mb-1">{s.h}</h3>

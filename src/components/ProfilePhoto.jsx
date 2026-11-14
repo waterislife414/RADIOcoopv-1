@@ -55,7 +55,7 @@ export default function ProfilePhoto() {
       </div>
       <div className="flex-1">
         <p className="font-bold text-lg text-slate-800">Profile photo</p>
-        <p className="text-sm text-slate-500">A clear picture of your face helps your driver find you.</p>
+        <p className="text-sm text-slate-400">A clear picture of your face helps your driver find you.</p>
         <label className="inline-block mt-2 rounded-xl px-4 py-2 font-semibold bg-navy-950 text-white cursor-pointer">
           {busy ? "Saving…" : userProfile?.photoUrl ? "Change photo" : "Add photo"}
           <input type="file" accept="image/*" capture="user" className="hidden" disabled={busy} onChange={pick} />

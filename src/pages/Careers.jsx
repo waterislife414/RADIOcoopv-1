@@ -28,10 +28,10 @@ function FileField({ label, note, file, onFile, accept = ".pdf,.jpg,.jpeg,.png",
   return (
     <div>
       <label className={labelClass}>
-        {label} {required ? <span className="text-red-600">*</span> : <span className="text-slate-400 font-normal">(optional)</span>}
+        {label} {required ? <span className="text-red-600">*</span> : <span className="text-slate-500 font-normal">(optional)</span>}
       </label>
       <input type="file" accept={accept} className="w-full text-base" onChange={(e) => onFile(e.target.files[0] || null)} />
-      {file ? <p className="text-xs text-emerald-700 mt-1">&#10003; {file.name}</p> : note && <p className="text-xs text-slate-400 mt-1">{note}</p>}
+      {file ? <p className="text-xs text-emerald-700 mt-1">&#10003; {file.name}</p> : note && <p className="text-xs text-slate-500 mt-1">{note}</p>}
     </div>
   );
 }
@@ -186,7 +186,7 @@ export default function Careers() {
               <div>
                 <label className={labelClass}>Full Name <span className="text-red-600">*</span></label>
                 <input type="text" required className={inputClass} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
-                <p className="text-xs text-slate-400 mt-1">Must match your driver's license.</p>
+                <p className="text-xs text-slate-500 mt-1">Must match your driver's license.</p>
               </div>
               <div>
                 <label className={labelClass}>Phone <span className="text-red-600">*</span></label>
@@ -194,7 +194,7 @@ export default function Careers() {
               </div>
               <div>
                 <label className={labelClass}>
-                  Email <span className="text-red-600">*</span> <span className="text-slate-400 font-normal">(this is your login)</span>
+                  Email <span className="text-red-600">*</span> <span className="text-slate-500 font-normal">(this is your login)</span>
                 </label>
                 <input type="email" required disabled={!!currentUser} className={`${inputClass} disabled:bg-slate-100`} value={form.email} onChange={(e) => update("email", e.target.value)} />
               </div>
@@ -247,7 +247,7 @@ export default function Careers() {
                 <Check checked={form.contactOk} onChange={(v) => update("contactOk", v)}>
                   I agree to be contacted by phone, text message and email about this application and the job.
                 </Check>
-                <p className="text-xs text-slate-400">Checking these boxes serves as my electronic signature.</p>
+                <p className="text-xs text-slate-500">Checking these boxes serves as my electronic signature.</p>
               </div>
 
               <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4.5 rounded-2xl shadow-md transition">
@@ -274,7 +274,7 @@ export default function Careers() {
               ))}
               <div>
                 <label className={labelClass}>
-                  Anything you'd like us to know? <span className="text-slate-400 font-normal">(optional)</span>
+                  Anything you'd like us to know? <span className="text-slate-500 font-normal">(optional)</span>
                 </label>
                 <textarea rows={3} className={inputClass} value={explain} onChange={(e) => setExplain(e.target.value)} placeholder="If you answered Yes to a record question, you can explain here." />
               </div>

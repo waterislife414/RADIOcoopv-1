@@ -41,7 +41,7 @@ export default function ZoneBoard({ drivers, zones, viewer = null, variant = "dr
 
   const rowCls = dark ? "border-white/10" : "border-slate-200";
   const labelCls = dark ? "text-slate-200" : "text-slate-700";
-  const muted = dark ? "text-slate-600" : "text-slate-400";
+  const muted = dark ? "text-slate-600" : "text-slate-500";
 
   return (
     <div className={dark ? "" : "bg-white rounded-2xl border border-slate-200 p-4"}>
@@ -68,7 +68,7 @@ export default function ZoneBoard({ drivers, zones, viewer = null, variant = "dr
       ))}
 
       {dark && (
-        <div className="flex flex-wrap gap-x-4 gap-y-1 pt-3 text-xs text-slate-400">
+        <div className="flex flex-wrap gap-x-4 gap-y-1 pt-3 text-xs text-slate-500">
           <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-emerald-500" />On call</span>
           <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-red-500" />Waiting</span>
           <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full border-[3px] border-blue-400" />Your spot</span>

@@ -124,7 +124,7 @@ export default function QuickEntry({ zones, board }) {
                     await forgetCaller({ phone: digits });
                     setCaller((c) => ({ ...c, saved: null }));
                   }}
-                  className="text-xs text-slate-400 underline"
+                  className="text-xs text-slate-500 underline"
                 >
                   forget
                 </button>

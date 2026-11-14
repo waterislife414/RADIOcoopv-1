@@ -116,7 +116,7 @@ export default function DriverSignIn() {
             onAccept={signIn}
           />
 
-          <p className="text-center text-base text-slate-500 mt-6">
+          <p className="text-center text-base text-slate-400 mt-6">
             Not a driver yet?{" "}
             <Link to="/become-a-driver" className="text-blue-600 font-semibold">
               Become a Driver

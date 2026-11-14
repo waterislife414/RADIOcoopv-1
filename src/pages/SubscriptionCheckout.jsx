@@ -131,7 +131,7 @@ function CheckoutForm({ tierKey, tierInfo, billingCycle }) {
       >
         {processing ? "Processing..." : `Start ${SUBSCRIPTION_TRIAL_DAYS}-Day Free Trial`}
       </button>
-      <p className="text-xs text-slate-400 text-center">
+      <p className="text-xs text-slate-500 text-center">
         Free for {SUBSCRIPTION_TRIAL_DAYS} days, then ${price}/{period} automatically
         &mdash; cancel anytime before your trial ends and you won't be charged.
       </p>

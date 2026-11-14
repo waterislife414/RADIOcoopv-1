@@ -88,7 +88,7 @@ export default function AssignCarModal({ ride, board, zones, onClose }) {
         {groups.length === 0 && <p className="text-slate-500">No cars on the board.</p>}
         {groups.map((g) => (
           <div key={g.title} className="space-y-1.5">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{g.title}</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{g.title}</p>
             {g.cars.map((d) => {
               const warn = problem(d);
               return (

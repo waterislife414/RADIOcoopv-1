@@ -5,7 +5,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../config/firebase";
 import { useAuth } from "../context/AuthContext";
-import { FARE_CONFIG, STRIPE_PUBLISHABLE_KEY } from "../config/constants";
+import { FARE_CONFIG, STRIPE_PUBLISHABLE_KEY, COMPANY_PHONE_DISPLAY, COMPANY_PHONE_TEL } from "../config/constants";
 
 const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
 
@@ -203,6 +203,56 @@ function RatingPrompt({ ride, rideId }) {
   );
 }
 
+const cancelMyRide = httpsCallable(functions, "cancelMyRide");
+
+/** Cancel before a driver is assigned; after that, a call to the office. */
+function CancelOrCall({ ride, rideId }) {
+  const [ask, setAsk] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const canCancel = ride.status === "pending" && !ride.driverId;
+
+  async function cancel() {
+    setBusy(true);
+    setMsg("");
+    try {
+      await cancelMyRide({ rideId });
+    } catch (e) {
+      setMsg(e?.message || "Couldn't cancel. Please call us.");
+      setBusy(false);
+      setAsk(false);
+    }
+  }
+
+  return (
+    <div className="mt-4 pt-4 border-t border-blue-200 space-y-2">
+      {canCancel && !ask && (
+        <button type="button" onClick={() => setAsk(true)} className="w-full min-h-[48px] rounded-xl border-2 border-red-300 bg-white text-red-700 font-bold text-base">
+          Cancel this ride
+        </button>
+      )}
+      {ask && (
+        <div className="rounded-xl bg-white border-2 border-red-300 p-4 text-center">
+          <p className="font-bold text-slate-800 text-lg">Cancel this ride?</p>
+          <p className="text-sm text-slate-600 mt-1">No charge &mdash; any card hold is released.</p>
+          <div className="grid grid-cols-2 gap-3 mt-3">
+            <button type="button" onClick={() => setAsk(false)} disabled={busy} className="min-h-[48px] rounded-xl border-2 border-slate-300 font-bold text-slate-700">
+              Keep ride
+            </button>
+            <button type="button" onClick={cancel} disabled={busy} className="min-h-[48px] rounded-xl bg-red-600 text-white font-bold">
+              {busy ? "Cancelling\u2026" : "Yes, cancel"}
+            </button>
+          </div>
+        </div>
+      )}
+      {msg && <p className="text-sm text-red-700 text-center">{msg}</p>}
+      <a href={`tel:${COMPANY_PHONE_TEL}`} className="block text-center min-h-[48px] leading-[48px] rounded-xl bg-white border-2 border-blue-300 text-blue-700 font-bold">
+        &#9742; {canCancel ? "Questions? Call" : "Need to change or cancel? Call"} {COMPANY_PHONE_DISPLAY}
+      </a>
+    </div>
+  );
+}
+
 function CurrentRideStatusInner() {
   const { currentUser } = useAuth();
   const [ride, setRide] = useState(null);
@@ -267,6 +317,8 @@ function CurrentRideStatusInner() {
           <RatingPrompt ride={ride} rideId={rideId} />
         </div>
       )}
+
+      {!isPaid && ride.status !== "in_transit" && <CancelOrCall ride={ride} rideId={rideId} />}
 
       {ride.status === "in_transit" && !isPaid && (
         <div className="mt-4 pt-4 border-t border-blue-200">

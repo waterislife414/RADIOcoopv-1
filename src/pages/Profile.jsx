@@ -173,12 +173,12 @@ export default function Profile() {
                         perk.ridesUntilFreePerk === 1 ? "ride" : "rides"
                       } until your next free entry.`}
                 </p>
-                <p className="text-sm text-slate-400 mt-1">
+                <p className="text-sm text-slate-500 mt-1">
                   {perk.completedRides} completed rides total
                 </p>
               </>
             ) : (
-              <p className="text-base text-slate-400">Loading...</p>
+              <p className="text-base text-slate-500">Loading...</p>
             )}
           </div>
 
@@ -240,7 +240,7 @@ export default function Profile() {
                   <p className="text-sm text-red-600 mt-2">{idUploadError}</p>
                 )}
                 {idUploading && (
-                  <p className="text-sm text-slate-400 mt-2">Uploading&hellip;</p>
+                  <p className="text-sm text-slate-500 mt-2">Uploading&hellip;</p>
                 )}
               </>
             )}

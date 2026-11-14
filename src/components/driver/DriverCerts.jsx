@@ -72,7 +72,7 @@ function CertRow({ certKey, driver }) {
       )}
       {((!approved && !pending) || (expiringSoon && !pending)) && (
         <>
-          <p className="text-slate-400 text-sm mt-1">{NOTES[certKey]}</p>
+          <p className="text-slate-500 text-sm mt-1">{NOTES[certKey]}</p>
           <label className="mt-3 block text-center bg-white/10 hover:bg-white/15 rounded-xl py-3 font-bold cursor-pointer">
             {uploading ? "Uploading…" : expiringSoon ? "Upload renewal" : "Upload proof"}
             <input type="file" accept=".jpg,.jpeg,.png,.pdf" className="hidden" onChange={submitProof} disabled={uploading} />
@@ -90,7 +90,7 @@ function CertRow({ certKey, driver }) {
 export default function DriverCerts({ driver }) {
   return (
     <section className="glass-panel border border-white/10 rounded-2xl p-5">
-      <p className="text-xs font-bold tracking-widest text-slate-400 uppercase mb-3">
+      <p className="text-xs font-bold tracking-widest text-slate-500 uppercase mb-3">
         Certifications &middot; unlock more rides
       </p>
       <div className="space-y-3">

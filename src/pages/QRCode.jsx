@@ -35,7 +35,7 @@ export default function QRCode() {
 
         <div className="flex justify-center my-6">
           <div className="p-4 rounded-2xl border-2 border-gold-400">
-            <QRCodeSVG
+            <QRCodeSVG title="QR code that opens the booking page" role="img" aria-label="QR code that opens the booking page"
               value={APP_URL}
               size={200}
               fgColor="#0A1420"
@@ -49,7 +49,7 @@ export default function QRCode() {
         <p className="font-display font-semibold text-xl text-navy-950 mb-1">
           Scan to Book a Ride
         </p>
-        <p className="text-base text-slate-500 mb-4">{COMPANY_PHONE_DISPLAY}</p>
+        <p className="text-base text-slate-400 mb-4">{COMPANY_PHONE_DISPLAY}</p>
         <div className="w-12 h-[2px] bg-gold-500 mx-auto mb-4" />
         <p className="text-xs text-slate-400 mb-1">{OFFICE_ADDRESS}</p>
         <p className="text-[10px] text-slate-400 italic">

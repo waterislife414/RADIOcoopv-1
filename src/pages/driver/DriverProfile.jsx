@@ -26,7 +26,7 @@ const RECORD_LABEL = {
 };
 const day = (ms) => new Date(ms).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
 const card = "glass-panel border border-white/10 rounded-2xl p-5 space-y-3";
-const label = "text-xs font-bold tracking-widest text-slate-400 uppercase";
+const label = "text-xs font-bold tracking-widest text-slate-500 uppercase";
 const input = "w-full rounded-xl bg-white/5 border border-white/15 px-3 py-2.5 text-white placeholder:text-slate-500";
 
 function Contact({ driver }) {
@@ -95,7 +95,7 @@ function Score({ driver, now }) {
           Your score is under {INC.lowScore}. No app calls until {new Date(driver.callHoldUntil).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}. Dispatch can still send you calls.
         </p>
       )}
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-slate-500">
         Everyone starts at 100. A missed or turned-down call is {INC.scoreStrikePoints} points and a warning. {MAX_WARNINGS} warnings is a write-up and you&apos;re off the board until the
         office puts you back. Under {INC.lowScore}, the app stops sending you calls for {INC.lowScoreHoldHours} hours. Everything drops off after {INC.scoreWindowDays} days.
       </p>
@@ -139,12 +139,12 @@ function CardMoney({ uid }) {
   return (
     <section className={card}>
       <p className={label}>Card money by day</p>
-      {days && rows.length === 0 && <p className="text-slate-400">No card fares yet.</p>}
+      {days && rows.length === 0 && <p className="text-slate-500">No card fares yet.</p>}
       {rows.map((d) => (
         <div key={d.periodKey} className="flex items-center gap-3 border-t border-white/10 pt-2 first:border-0 first:pt-0">
           <div className="flex-1">
             <p className="font-semibold">{d.periodKey}</p>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500">
               {d.cardRides || 0} card ride{d.cardRides === 1 ? "" : "s"}
               {d.settledAt ? (d.envelopeDueCents ? ` · envelope ${money(d.envelopeDueCents)}` : " · lease paid by card") : " · today, still open"}
               {d.heldCreditCents ? " · credit held" : ""}
@@ -181,7 +181,7 @@ function Credit({ driver, now }) {
         <p className={label}>Lease credit</p>
         <p className="text-2xl font-bold tabular-nums">{money(driver.leaseCreditCents)}</p>
       </div>
-      <p className="text-sm text-slate-400">Card money above the {money(LEASE_CFG.lease.dailyCents)} lease builds up here and pays future lease days.</p>
+      <p className="text-sm text-slate-500">Card money above the {money(LEASE_CFG.lease.dailyCents)} lease builds up here and pays future lease days.</p>
       {can.ok ? (
         <>
           <div className="flex gap-2">
@@ -192,12 +192,12 @@ function Credit({ driver, now }) {
               Hold it today
             </button>
           </div>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-500">
             {holding ? "Held: today's lease comes from today's card fares and your envelope. Your credit stays put. It goes back to normal tomorrow." : "Your credit goes toward today's lease first."}
           </p>
         </>
       ) : (
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-slate-500">
           {can.reason === "too_new"
             ? `After ${INC.holdCreditAfterDays} days of driving with a clean record you can choose to hold your credit for a day.`
             : `Holding credit for a day needs a clean record for ${INC.scoreWindowDays} days.`}

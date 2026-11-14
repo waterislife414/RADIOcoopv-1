@@ -131,7 +131,7 @@ export default function CompareRideshare() {
                 </a>
               </li>
             </ul>
-            <p className="text-xs text-slate-400">Sources checked November 2026.</p>
+            <p className="text-xs text-slate-500">Sources checked November 2026.</p>
           </div>
 
           <ContactFooter />

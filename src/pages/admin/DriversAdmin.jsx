@@ -91,7 +91,7 @@ function DriverRow({ driver }) {
       </div>
 
       <div className="flex flex-wrap gap-2 items-center">
-        {certs.length === 0 && <span className="text-sm text-slate-400">No certifications</span>}
+        {certs.length === 0 && <span className="text-sm text-slate-500">No certifications</span>}
         {certs.map(([key, c]) => (
           <span
             key={key}
@@ -102,7 +102,7 @@ function DriverRow({ driver }) {
             {CERT_LABELS[key]?.icon} {CERT_LABELS[key]?.label || key}
             {c.status !== "approved" && ` (${c.status})`}
             {c.expiresAt ? ` · exp ${msToDate(c.expiresAt)}` : ""}
-            <button onClick={() => revokeCert(key)} className="ml-1.5 text-slate-400 hover:text-red-600" aria-label="Remove">
+            <button onClick={() => revokeCert(key)} className="ml-1.5 text-slate-500 hover:text-red-600" aria-label="Remove">
               &times;
             </button>
           </span>

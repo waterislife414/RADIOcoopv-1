@@ -122,3 +122,6 @@ html, body, #root {
 }
 .ad-marquee { animation: ad-marquee 28s linear infinite; will-change: transform; }
 @media (prefers-reduced-motion: reduce) { .ad-marquee { animation-duration: 90s; } }
+
+/* "Larger text" setting from the menu. Everything sized in rem grows with it. */
+html.text-large { font-size: 118.75%; }

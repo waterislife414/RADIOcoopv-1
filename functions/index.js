@@ -489,7 +489,42 @@ exports.onRideDispatched = onDocumentUpdated("rides/{rideId}", async (event) => 
   });
 });
 
+// Rider cancels their own ride before a driver is assigned. The card hold is
+// released, a copy is kept in cancelled_rides, and the ride is removed (the
+// onRideDeleted trigger frees any driver who was being offered the call).
+exports.cancelMyRide = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "Sign in to cancel.");
+  const rideId = String(request.data?.rideId || "");
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(rideId)) throw new HttpsError("invalid-argument", "Missing ride.");
+  const ref = db.collection("rides").doc(rideId);
+  const ride = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const r = snap.exists ? snap.data() : null;
+    if (!r || r.customerId !== uid) throw new HttpsError("not-found", "Ride not found.");
+    if (r.status !== "pending" || r.driverId) {
+      throw new HttpsError("failed-precondition", "A driver is already on the way. Please call us to cancel.");
+    }
+    tx.set(db.collection("cancelled_rides").doc(rideId), {
+      ...r,
+      cancelledBy: "rider",
+      cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    tx.delete(ref);
+    return r;
+  });
+  if (ride.paymentMethod === "card" && ride.paymentIntentId) {
+    try {
+      await getStripe().paymentIntents.cancel(ride.paymentIntentId);
+    } catch {
+      // Hold may already be released.
+    }
+  }
+  return { cancelled: true };
+});
+
 exports.declineRide = onCall(async (request) => {
+  if (!isAdmin(request)) throw new HttpsError("permission-denied", "Dispatchers only.");
   const { rideId } = request.data;
 
   if (!rideId) {

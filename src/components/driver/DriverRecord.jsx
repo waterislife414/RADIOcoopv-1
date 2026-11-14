@@ -27,7 +27,7 @@ export default function DriverRecord({ driver }) {
   return (
     <section className="glass-panel border border-white/10 rounded-2xl p-5 space-y-3">
       <div className="flex items-baseline justify-between">
-        <p className="text-xs font-bold tracking-widest text-slate-400 uppercase">Record</p>
+        <p className="text-xs font-bold tracking-widest text-slate-500 uppercase">Record</p>
         <Link to="/driver/profile" className="text-sm font-semibold text-gold-300">
           My profile &rarr;
         </Link>
@@ -40,14 +40,14 @@ export default function DriverRecord({ driver }) {
       <div className="flex gap-6">
         <div>
           <p className="text-2xl font-bold tabular-nums">{driver.score ?? 100}</p>
-          <p className="text-sm text-slate-400">Score</p>
+          <p className="text-sm text-slate-500">Score</p>
         </div>
         <div>
           <p className={`text-2xl font-bold tabular-nums ${driver.warnings ? "text-amber-300" : ""}`}>
             {driver.warnings ?? 0}
             <span className="text-base text-slate-500">/{MAX_WARNINGS}</span>
           </p>
-          <p className="text-sm text-slate-400">Warnings</p>
+          <p className="text-sm text-slate-500">Warnings</p>
         </div>
       </div>
       <div className={`rounded-xl p-3 ${lost ? "bg-red-500/10" : "bg-emerald-500/10"}`}>
@@ -63,7 +63,7 @@ export default function DriverRecord({ driver }) {
         )}
       </div>
       {last && (
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-slate-500">
           Last period ({shortDate(last.periodStartKey)}):{" "}
           {last.award ? `+${money(last.cents)} added to your lease credit` : last.reason === "strikes" ? "no bonus (missed calls)" : `no bonus (under ${INC.bonusMinDays} days worked)`}
         </p>

@@ -44,7 +44,7 @@ export default function CurrentRide({ ride }) {
         {ride.how === "dispatcher" && <span className="ml-2 text-amber-300">from dispatch</span>}
       </p>
       <div>
-        <p className="text-sm text-slate-400">From</p>
+        <p className="text-sm text-slate-500">From</p>
         <p className="text-xl font-bold">{ride.pickup}</p>
         {going && (
           <a href={navUrl(ride.pickupLat, ride.pickupLng, ride.pickup)} target="_blank" rel="noopener noreferrer" className="text-sky-300 font-semibold">
@@ -54,7 +54,7 @@ export default function CurrentRide({ ride }) {
       </div>
       {ride.dropoff && (
         <div>
-          <p className="text-sm text-slate-400">To</p>
+          <p className="text-sm text-slate-500">To</p>
           <p className="text-lg">{ride.dropoff}</p>
           {!going && (
             <a href={navUrl(ride.dropLat, ride.dropLng, ride.dropoff)} target="_blank" rel="noopener noreferrer" className="text-sky-300 font-semibold">
