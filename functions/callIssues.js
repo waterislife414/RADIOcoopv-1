@@ -137,6 +137,8 @@ exports.driverEndCall = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request)
       { merge: true }
     );
     tx.set(db().collection("driverInbox").doc(uid), { current: null }, { merge: true });
+    // Off the board means off the dispatcher's live map too.
+    tx.set(db().collection("driverLocations").doc(uid), { live: !offline, ...(fix ? { ...fix, at: nowMs } : {}) }, { merge: true });
 
     // The office hears about it.
     if (v.alert || outcome === "office") {

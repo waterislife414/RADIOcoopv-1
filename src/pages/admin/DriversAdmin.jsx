@@ -399,7 +399,7 @@ export default function DriversAdmin() {
         </button>
       </header>
       <div className="max-w-3xl mx-auto p-6">
-        <div className="flex gap-2 mb-5">
+        <div className="flex flex-wrap gap-2 mb-5">
           {TABS.map((t) => (
             <button
               key={t}

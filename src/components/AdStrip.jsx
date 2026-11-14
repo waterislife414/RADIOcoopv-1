@@ -7,7 +7,7 @@ import { COMPANY_PHONE_DISPLAY, COMPANY_PHONE_TEL, COPY } from "../config/consta
 const hidden = (path) =>
   path.startsWith("/admin") || (path.startsWith("/driver") && path !== "/driver/sign-in" && path !== "/driver-agreement");
 
-/** Scrolling "Advertise your business here" strip, moving left to right. */
+/** Scrolling "Advertise your business here" strip, moving right to left. */
 export default function AdStrip({ position = "top" }) {
   const { pathname } = useLocation();
   if (hidden(pathname)) return null;

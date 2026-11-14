@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useRide } from "../context/RideContext";
@@ -23,7 +23,14 @@ function calcEstimate(ride, miles) {
 
 export default function Success() {
   const { currentUser } = useAuth();
-  const { ride, resetRide } = useRide();
+  const { ride: bookedRide, resetRide } = useRide();
+  // Keep this ride's details for this page, then clear the booking so the next
+  // one starts fresh (new agreement for guests, no leftover Fast Pass or addresses).
+  const [ride] = useState(bookedRide);
+  useEffect(() => {
+    resetRide();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [milesInput, setMilesInput] = useState("");
   const [estimate, setEstimate] = useState(null);
   const [savings, setSavings] = useState(null);

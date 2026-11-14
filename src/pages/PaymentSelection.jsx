@@ -146,6 +146,8 @@ export default function PaymentSelection() {
             </div>
           </div>
 
+          {/* Hidden until a first-ride discount is actually applied at checkout. */}
+          {PROMO_CODES.FIRST_RIDE_ACTIVE && (
           <div className="border-2 border-dashed border-slate-300 rounded-2xl p-4">
             <label className="block text-base font-semibold text-slate-700 mb-2">
               Promo Code
@@ -167,6 +169,7 @@ export default function PaymentSelection() {
             </div>
             {promoStatus && <p className="text-sm text-slate-500 mt-2">{promoStatus}</p>}
           </div>
+          )}
         </div>
       </div>
     </div>

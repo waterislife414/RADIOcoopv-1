@@ -139,7 +139,9 @@
     },
     "promo": {
       "FIRST_RIDE": "WELCOME2",
-      "REFERRAL_BONUS": 5.0
+      "REFERRAL_BONUS": 5.0,
+      "FIRST_RIDE_ACTIVE": false,
+      "_note": "FIRST_RIDE code is hidden at checkout until FIRST_RIDE_ACTIVE is true AND the discount is applied at checkout (not built yet: amount not decided)."
     }
   },
   "dispatch": {

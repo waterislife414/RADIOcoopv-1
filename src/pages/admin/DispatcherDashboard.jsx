@@ -206,11 +206,11 @@ export default function DispatcherDashboard() {
       <header className="bg-navy-950 text-white px-6 py-5 flex justify-between items-center flex-wrap gap-2">
         <div>
           <h1 className="font-display font-bold text-2xl">{COPY.dispatcherDashboardTitle}</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="text-sm text-slate-300 mt-0.5">
             {OFFICE_ADDRESS} &middot; {COMPANY_PHONE_DISPLAY}
           </p>
         </div>
-        <div className="flex items-center gap-6">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
           <div className="text-right">
             <p className="text-xs text-slate-500 uppercase tracking-wide">
               Today's Electronic Gross
