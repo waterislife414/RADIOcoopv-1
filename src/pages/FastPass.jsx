@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Elements, CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
@@ -7,7 +7,7 @@ import { httpsCallable } from "firebase/functions";
 import { functions } from "../config/firebase";
 import { useRide } from "../context/RideContext";
 import BrandHeader from "../components/BrandHeader";
-import { BRAND, STRIPE_PUBLISHABLE_KEY } from "../config/constants";
+import { BRAND, COMPANY_PHONE_DISPLAY, STRIPE_PUBLISHABLE_KEY } from "../config/constants";
 
 const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
 const payFastPass = httpsCallable(functions, "payFastPass");
@@ -72,6 +72,7 @@ function PayForm({ onPaid, label }) {
 }
 
 const applyDayPass = httpsCallable(functions, "applyDayPass");
+const queueStatus = httpsCallable(functions, "queueStatus");
 const PASS = BRAND.copy.dayPass;
 
 function PassCard() {
@@ -81,7 +82,7 @@ function PassCard() {
       <p className="text-xs font-bold tracking-[0.3em] text-gold-400 uppercase">&#9733; {PASS.title}</p>
       <p className="font-display text-2xl font-bold mt-1">{PASS.tagline}</p>
       <ul className="text-left space-y-1.5 text-slate-200 mt-4">
-        {PASS.perks.map((p) => (
+        {(currentUser ? PASS.perks : PASS.perks.slice(0, 1)).map((p) => (
           <li key={p} className="flex gap-2">
             <span className="text-gold-400" aria-hidden="true">
               &#10003;
@@ -91,7 +92,7 @@ function PassCard() {
         ))}
       </ul>
       <p className="font-mono text-4xl font-bold text-gold-300 mt-4">{PASS.price}</p>
-      <p className="text-xs text-slate-400 mt-1">{PASS.fine}</p>
+      <p className="text-xs text-slate-400 mt-1">{currentUser ? PASS.fine : "For this ride. Premium members still go first."}</p>
       {!currentUser && (
         <p className="text-sm text-gold-200 mt-3 font-semibold">As a guest, the pass moves this ride up the line. The map and calling need a free account.</p>
       )}
@@ -111,7 +112,23 @@ export default function FastPass() {
   const [params] = useSearchParams();
   const waitingRideId = params.get("ride");
   const [err, setErr] = useState("");
+  const [stillWaiting, setStillWaiting] = useState(true);
   const back = currentUser ? "/" : "/success";
+  // Don't sell a pass for a ride a driver already took.
+  useEffect(() => {
+    if (!waitingRideId) return undefined;
+    let stop = false;
+    const check = () =>
+      queueStatus({ rideId: waitingRideId })
+        .then(({ data }) => !stop && setStillWaiting(!!data?.waiting || (!!currentUser && data?.status === "dispatched")))
+        .catch(() => {});
+    check();
+    const t = setInterval(check, 10000);
+    return () => {
+      stop = true;
+      clearInterval(t);
+    };
+  }, [waitingRideId, currentUser]);
   // Saying no here counts as seeing the offer (it shows twice at most).
   function declineAndGoBack() {
     try {
@@ -131,6 +148,12 @@ export default function FastPass() {
         <div className="px-6 py-8">
           <div className="max-w-md mx-auto">
             <PassCard />
+            {!stillWaiting && (
+              <p className="rounded-xl bg-emerald-50 border-2 border-emerald-300 p-3 font-semibold text-emerald-900 mb-3">
+                A driver already has your ride, so you don&rsquo;t need this now.
+              </p>
+            )}
+            {stillWaiting && (
             <Elements stripe={stripePromise}>
               <PayForm
                 label={`Pay ${PASS.price} and skip ahead`}
@@ -139,12 +162,17 @@ export default function FastPass() {
                     await applyDayPass({ rideId: waitingRideId, passId: id });
                     navigate(back, { replace: true });
                   } catch (e) {
-                    setErr(`Paid. ${e?.message || "It couldn't be added to this ride."} Your pass still works on your next ride today.`);
+                    setErr(
+                      currentUser
+                        ? `Paid. ${e?.message || "It couldn't be added to this ride."} Your pass still works on your other rides today.`
+                        : `Paid, but ${e?.message || "it couldn't be added to this ride"}. Call us at ${COMPANY_PHONE_DISPLAY} and we'll refund your ${PASS.price}.`
+                    );
                     setTimeout(() => navigate(back, { replace: true }), 4000);
                   }
                 }}
               />
             </Elements>
+            )}
             {err && <p className="text-sm text-red-700 mt-3">{err}</p>}
             <button type="button" onClick={declineAndGoBack} className="w-full mt-4 min-h-[48px] text-slate-500 font-semibold py-3">
               No thanks, I&rsquo;ll wait

@@ -6,7 +6,16 @@ function Stripe() {
   return {
     paymentIntents: {
       async create(p) {
-        const pi = { id: id("pi"), amount: p.amount, capture_method: p.capture_method, status: p.confirm ? "succeeded" : "requires_payment_method", metadata: p.metadata || {} };
+        // A demo hold "saves" a demo card for the ride, like setup_future_usage does.
+        const pi = {
+          id: id("pi"),
+          amount: p.amount,
+          capture_method: p.capture_method,
+          customer: p.customer || null,
+          payment_method: p.payment_method || (p.setup_future_usage ? "pm_demo_saved" : null),
+          status: p.confirm ? "succeeded" : "requires_payment_method",
+          metadata: p.metadata || {},
+        };
         pi.client_secret = `${pi.id}_secret_demo`;
         intents[pi.id] = pi;
         return pi;

@@ -93,6 +93,15 @@ export default function ZoneBoard({ drivers, zones, viewer = null, variant = "dr
         </div>
       ))}
 
+      {!dark && (
+        <div className="flex flex-wrap gap-x-4 gap-y-1 pt-3 text-xs text-slate-500" data-testid="board-key">
+          <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-red-500" />Waiting in line (first on the left)</span>
+          <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-red-500 ring-2 ring-amber-400 ring-offset-1" />Being offered a call</span>
+          <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-emerald-500" />On a call</span>
+          <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-slate-400" />Moving / free</span>
+          <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full outline outline-2 outline-dashed outline-slate-500" />Radio-only car</span>
+        </div>
+      )}
       {dark && (
         <div className="flex flex-wrap gap-x-4 gap-y-1 pt-3 text-xs text-slate-500">
           <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-emerald-500" />On call</span>

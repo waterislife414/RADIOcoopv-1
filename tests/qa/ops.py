@@ -60,8 +60,12 @@ with sync_playwright() as p:
         return v.get("driverId")=="demo-driver-44" or f"status={v.get('status')} driver={v.get('driverId')} state={v.get('dispatchState')}"
     check("Dispatcher: DISPATCH -> pick Car 44 (car picker pop-up)", send_car)
     def driver_gets_call():
-        D.wait_for_timeout(1500)
-        return D.locator("button:has-text('Picked up')").count()==1 or "no call card on the driver's phone"
+        # Background tabs in the test browser update slowly; a driver's own phone doesn't.
+        D.bring_to_front()
+        for _ in range(30):
+            if D.locator("button:has-text('Picked up')").count(): return True
+            D.wait_for_timeout(500)
+        return "no call card on the driver's phone"
     check("Driver: the call shows up with Picked up", driver_gets_call)
     def pickup_drop():
         D.click("button:has-text('Picked up')"); D.wait_for_timeout(1500)
@@ -77,14 +81,17 @@ with sync_playwright() as p:
         if A.locator("button:has-text('Close out'), button:has-text('Confirm'), button:has-text('Yes')").count():
             A.locator("button:has-text('Close out'), button:has-text('Confirm'), button:has-text('Yes')").first.click(); A.wait_for_timeout(1000)
         k,v=ride_doc(A,"QA Civic Center")
-        return v.get("status") in ("completed","settled","closed") or v.get("settled") or f"status={v.get('status')}"
+        return v.get("status") in ("completed","settled","closed","archived") or v.get("settled") or f"status={v.get('status')}"
     check("Dispatcher: Mark Settled closes the ride", settle)
     # ---------- SOS and alert
     def sos():
         D.click("button[aria-label='Emergency: call 911']"); D.wait_for_timeout(300)
         D.click("button:has-text('Alert the office only')"); D.wait_for_timeout(2000)
         D.click("button:has-text('Close')")
-        A.wait_for_timeout(1500)
+        A.bring_to_front()
+        for _ in range(24):
+            if A.locator("[role=alert]").count(): break
+            A.wait_for_timeout(500)
         ok=A.locator("[role=alert]").count()>0
         A.locator("[role=alert] button:has-text('Handled')").first.click(); A.wait_for_timeout(1200)
         return ok or "no alert on desk"

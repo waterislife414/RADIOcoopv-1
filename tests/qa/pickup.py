@@ -4,12 +4,13 @@ from playwright.sync_api import sync_playwright
 def rides(pg, pickup): return [(k,v) for k,v in db(pg).items() if k.startswith("rides/") and v.get("pickup","").startswith(pickup)]
 def put(pg, path, data):
     pg.evaluate("([k,p,d])=>{const s=JSON.parse(localStorage.getItem(k)||'{}');s[p]=Object.assign(s[p]||{},d);localStorage.setItem(k,JSON.stringify(s))}", [KEY,path,data])
-def book(pg, pickup, share=True, pay="Cash"):
+def book(pg, pickup, share=True, pay="Card"):
     pg.goto(BASE+"/trip-details"); pg.wait_for_timeout(900)
     pg.fill("#pickup", pickup); pg.fill("#dropoff","Peachtree Mall")
     sw=pg.locator("[aria-label='Share my location with my driver']")
     if (sw.get_attribute("aria-checked")=="true") != share: sw.click()
     pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
+    if pg.locator("text=You already have a ride").count(): pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
     agree_modal(pg,"Agree & Continue"); pg.wait_for_timeout(1500)
     if pay=="Card":
         pg.locator("text=Card").first.click(); pg.wait_for_timeout(500)
@@ -45,6 +46,7 @@ with sync_playwright() as p:
         pg.goto(BASE+"/trip-details"); pg.wait_for_timeout(800)
         pg.fill("#pickup","QA 2 Broadway"); pg.fill("#dropoff","Mall")
         pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
+        if pg.locator("text=You already have a ride").count(): pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
         return pg.locator("[data-testid=legal-scroll]").count()==1 or "no agreement pop-up on 2nd booking"
     check("Rider: agreement pop-up on every booking", terms_again)
     # C. Location off = call-in ride for the office
@@ -85,7 +87,7 @@ with sync_playwright() as p:
     check("Rider: 'You're 3rd in line' pop-up -> Day Pass -> moves up with map + calling", line_offer)
     def next_up():
         pg.goto(BASE+"/"); pg.wait_for_timeout(2500)
-        t=pg.locator("[data-testid=line-status]").inner_text() if pg.locator("[data-testid=line-status]").count() else ""
+        t=" | ".join(pg.locator("[data-testid=line-status]").all_inner_texts())  # home can show up to 3 open rides
         return "next up" in t or f"line text: {t!r}"
     check("Rider: after the pass, 'You're next up!'", next_up)
     # E. Cancel with the right price

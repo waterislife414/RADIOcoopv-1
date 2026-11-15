@@ -51,14 +51,32 @@ exports.createPaymentIntent = onCall(
   { secrets: [STRIPE_SECRET_KEY] },
   async (request) => {
     const stripe = getStripe();
-    const preAuthAmount = 500;
+    // The booking hold checks the card and saves it for this ride, so the
+    // real fare (or a cancel/no-show fee) can be charged to the same card
+    // afterwards. A hold can't be raised later on most cards, so it never has
+    // to be: big enough for the no-show fee, the fare is a separate charge.
+    const preAuthAmount = Math.max(500, Math.round((RIDE_RULES.noShowFee ?? 10) * 100));
+    const uid = request.auth?.uid || null;
+    let customer = null;
+    if (uid) {
+      const userRef = db.collection("users").doc(uid);
+      customer = (await userRef.get()).data()?.stripeCustomerId || null;
+      if (!customer) {
+        customer = (await stripe.customers.create({ metadata: { uid } })).id;
+        await userRef.set({ stripeCustomerId: customer }, { merge: true });
+      }
+    } else {
+      customer = (await stripe.customers.create({ metadata: { guest: "true" } })).id;
+    }
 
     const intent = await stripe.paymentIntents.create({
       amount: preAuthAmount,
       currency: "usd",
       capture_method: "manual",
+      customer,
+      setup_future_usage: "off_session",
       metadata: {
-        uid: request.auth ? request.auth.uid : "guest",
+        uid: uid || "guest",
       },
     });
 
@@ -413,6 +431,7 @@ exports.captureFare = onCall(
 
     const stripe = getStripe();
     let stripeStatus = "manual_override";
+    let balanceOwedCents = 0;
     try {
 
     if (ride.paymentMethod === "card") {
@@ -430,13 +449,23 @@ exports.captureFare = onCall(
         }, { idempotencyKey: `fare_${rideId}_${totalCents}` });
         stripeStatus = intent.status;
         if (intent.status === "succeeded" && owedCents > 0) await fees.settleOwedFees(ride.customerId, owed);
+        // They paid with a card just now: let go of the booking hold.
+        if (intent.status === "succeeded" && ride.paymentIntentId) {
+          await stripe.paymentIntents.cancel(ride.paymentIntentId).catch(() => {});
+        }
       } else if (ride.paymentIntentId) {
-        // Original pre-auth hold path (kept for compatibility).
-        await stripe.paymentIntents.update(ride.paymentIntentId, {
-          amount: totalCents,
-        });
-        const captured = await stripe.paymentIntents.capture(ride.paymentIntentId, {}, { idempotencyKey: `capture_${rideId}` });
-        stripeStatus = captured.status;
+        // Office or driver settles a card ride: charge the fare to the card the
+        // booking hold saved, then release the hold. If the bank asks the rider
+        // to approve it, take what the hold covers and record the rest as owed.
+        const r = await fees.chargeSavedCard({ stripe, ride, rideId, cents: totalCents, key: `fare_${rideId}_${totalCents}` });
+        if (r.chargedCents === 0) {
+          throw new HttpsError("failed-precondition", "The rider's card didn't go through. Collect cash, or have them pay in the app.");
+        }
+        stripeStatus = "succeeded";
+        if (r.owedCents > 0 && r.chargedCents > 0) {
+          balanceOwedCents = r.owedCents;
+          await fees.recordOwed(ride, rideId, r.owedCents, "fare_balance");
+        }
       }
     }
     } catch (e) {
@@ -451,6 +480,7 @@ exports.captureFare = onCall(
       stripeStatus,
       cardFeeCents,
       ...(owedCents > 0 && stripeStatus === "succeeded" ? { earlierFeesCents: owedCents } : {}),
+      ...(balanceOwedCents > 0 ? { balanceOwedCents } : {}),
       memberDiscountApplied,
       settlingAt: null,
       settledBy: requesterIsAdmin && !requesterIsRider ? "dispatcher_override" : "customer",

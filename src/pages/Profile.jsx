@@ -18,6 +18,10 @@ export default function Profile() {
     resetPassword,
     deactivateAccount,
   } = useAuth();
+  // "Verify your ID" links land on the ID section.
+  useEffect(() => {
+    if (window.location.hash === "#verify-id" && userProfile) document.getElementById("verify-id")?.scrollIntoView({ block: "start" });
+  }, [userProfile]);
   const navigate = useNavigate();
 
   const [perk, setPerk] = useState(null);
@@ -206,28 +210,26 @@ export default function Profile() {
             )}
           </div>
 
-          {/* ID Verification for birthday credit */}
-          <div className="border-2 border-slate-200 rounded-2xl p-5 mb-5">
+          {/* ID check: app rides, and the birthday credit */}
+          <div id="verify-id" className="border-2 border-slate-200 rounded-2xl p-5 mb-5">
             <h2 className="font-bold text-lg text-slate-800 mb-1">
-              Birthday Ride Credit
+              Verify your ID
             </h2>
             {userProfile.idVerified ? (
               <p className="text-base text-emerald-600 font-semibold">
-                &#10003; ID verified &mdash; you'll automatically get $5 wallet
-                credit on your birthday every year.
+                &#10003; ID verified. Your card rides go straight to a driver in the app, and you get a $5 credit on your
+                birthday every year.
               </p>
             ) : userProfile.idImageUrl ? (
               <p className="text-base text-amber-600 font-semibold">
-                ID submitted &mdash; pending review. You'll get $5 wallet
-                credit on your birthday once verified.
+                ID sent. Our office will check it soon. Until then, our dispatcher sends your rides.
               </p>
             ) : (
               <>
                 <p className="text-base text-slate-600 mb-3">
-                  Upload a photo of your driver's license or state ID to
-                  unlock an automatic $5 wallet credit every year on your
-                  birthday. This also confirms your name matches your ID, as
-                  required to ride with us.
+                  Send a photo of your driver&rsquo;s license or state ID. Once our office checks it, your card rides go
+                  straight to a driver in the app (faster, with live updates), and you get a $5 credit on your birthday.
+                  Until then, our dispatcher sends your rides.
                 </p>
                 <input
                   type="file"

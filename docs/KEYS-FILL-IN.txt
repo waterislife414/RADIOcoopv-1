@@ -10,12 +10,15 @@ yourself in Cloud Shell; the script prints the exact commands.
 
 ## 1. FIREBASE (the app's home). console.firebase.google.com
 ##    Project settings > General > Your apps > Web app > "SDK setup and configuration" > Config
+##    Fill in ALL of these together (the script won't use half of a new project).
 FIREBASE_API_KEY =
 FIREBASE_AUTH_DOMAIN =
 FIREBASE_PROJECT_ID =
 FIREBASE_STORAGE_BUCKET =
 FIREBASE_MESSAGING_SENDER_ID =
 FIREBASE_APP_ID =
+##    Optional: the "measurementId" line in the same Config box (starts G-). Blank = no Google Analytics.
+FIREBASE_MEASUREMENT_ID =
 ##    Optional: call alerts with the driver's screen off.
 ##    Project settings > Cloud Messaging > Web Push certificates > Key pair
 FIREBASE_WEB_PUSH_KEY =
@@ -35,11 +38,17 @@ TWILIO_PHONE_NUMBER =
 MAP_TILE_URL =
 MAP_TILE_ATTRIBUTION =
 
-## 5. PEOPLE
-##    Email Malcolm will log in with as the owner / dispatcher
+## 5. PEOPLE AND CONTACT
+##    Email Malcolm will log in with as the owner / dispatcher.
+##    He signs up in the app once with it first; then it's made the owner login.
 OWNER_LOGIN_EMAIL =
-##    Email for mechanics' shop login (optional)
-SHOP_LOGIN_EMAIL =
+##    Email customers can write to (shows on Contact, Terms, Privacy and the booking page).
+##    Blank = the app hides the email.
+OFFICE_EMAIL =
+##    Google Business Profile > "Ask for reviews" / "Get more reviews" > copy the link (starts https://).
+##    Blank = the app hides the "Leave a Google Review" button.
+GOOGLE_REVIEW_LINK =
+##    Mechanics: no email needed here. The owner gives them access on the Shop board ("Give a mechanic access").
 
 ## 6. CONFIRM OR CHANGE (already filled in with what the app uses now)
 OFFICE_PHONE = (706) 322-0700

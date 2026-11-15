@@ -95,7 +95,9 @@ test("riders: no free wallet money or membership", async () => {
   await assertFails(updateDoc(doc(rider(), "users/rider1"), { feesOwedCents: 0 }));
   const rider8 = env.authenticatedContext("rider8").firestore();
   await assertFails(setDoc(doc(rider8, "users/rider8"), { firstName: "X", walletBalance: 0, subscriptionTier: null, dayPass: { id: "x" } }));
+  await assertFails(setDoc(doc(rider8, "users/rider8"), { firstName: "X", walletBalance: 0, subscriptionTier: null, idVerified: true }));
   await assertSucceeds(setDoc(doc(rider8, "users/rider8"), { firstName: "X", walletBalance: 0, subscriptionTier: null }));
+  await assertFails(updateDoc(doc(rider8, "users/rider8"), { idVerified: true }));
   await assertSucceeds(updateDoc(doc(rider(), "users/rider1"), { phone: "7065550100" }));
   await assertSucceeds(updateDoc(doc(rider(), "users/rider1"), { idImageUrl: "u", idVerified: false, idSubmittedAt: "t" }));
   await assertFails(updateDoc(doc(rider(), "users/rider1"), { idVerified: true }));

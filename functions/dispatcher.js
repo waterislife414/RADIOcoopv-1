@@ -181,7 +181,6 @@ exports.dispatcherBoardAction = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Pick a zone.");
   }
   if (!["ready", "front", "moving", "off", "remove", "radio_call"].includes(action)) throw new HttpsError("invalid-argument", "Unknown action.");
-  const force = request.data?.force === true;
   const note = String(request.data?.note || "").trim().slice(0, 120);
   const nowMs = Date.now();
 
@@ -200,14 +199,15 @@ exports.dispatcherBoardAction = onCall(async (request) => {
     const rideSnap = board.status === "on_call" && board.rideId ? await tx.get(rideRef(board.rideId)) : null;
     const loc = board.radioOnly ? null : (await tx.get(db().collection("driverLocations").doc(uid))).data();
 
-    // An app driver's phone says where he really is: putting him in a
-    // different zone's line needs a second "move anyway".
+    // An app driver's phone says where he really is. He can only be put in
+    // the line of the zone his GPS shows (a GPS reading older than 5 minutes
+    // doesn't count). Radio-only cars have no GPS and move freely.
     const gpsFresh = loc && Number.isFinite(loc.at) && nowMs - loc.at < 5 * 60000 && loc.zoneId;
-    if (["ready", "front"].includes(action) && gpsFresh && loc.zoneId !== zoneId && !force) {
+    if (["ready", "front"].includes(action) && gpsFresh && loc.zoneId !== zoneId) {
       const here = zones.find((z) => z.id === loc.zoneId)?.label || "another zone";
       const there = zones.find((z) => z.id === zoneId)?.label || "that zone";
-      throw new HttpsError("failed-precondition", `Car ${board.carNumber}'s GPS shows ${here}, not ${there}.`, {
-        needsForce: true,
+      throw new HttpsError("failed-precondition", `Car ${board.carNumber}'s GPS shows ${here}, not ${there}. He goes in ${there}'s line once he's there.`, {
+        gpsBlocked: true,
         gpsZoneId: loc.zoneId,
         gpsZoneLabel: here,
       });

@@ -106,7 +106,8 @@ exports.driverPing = onCall(async (request) => {
       const patch = {};
       if (ride.status === "dispatched") {
         const eta = T.etaMinutes(fix, T.pickupPoint(ride), rules);
-        patch.eta = eta == null ? null : { minutes: eta, at: nowMs };
+        // Only write when the minutes change: every ride write wakes the ride triggers.
+        if ((ride.eta?.minutes ?? null) !== eta) patch.eta = eta == null ? null : { minutes: eta, at: nowMs };
         if (T.shouldSendHeadsUp(ride, eta, rules)) patch.headsUpAt = nowMs;
       }
       if (ride.perks?.liveMap) patch.driverPos = { lat: fix.lat, lng: fix.lng, at: nowMs };

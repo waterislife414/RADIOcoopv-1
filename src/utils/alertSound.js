@@ -36,5 +36,12 @@ export function ring(beeps = 3) {
   } catch {
     // ignore
   }
-  navigator.vibrate?.(Array.from({ length: beeps * 2 - 1 }, (_, i) => (i % 2 ? 150 : 400)));
+  // Phones only allow vibration after the person has touched the page.
+  if (navigator.userActivation?.hasBeenActive !== false) {
+    try {
+      navigator.vibrate?.(Array.from({ length: beeps * 2 - 1 }, (_, i) => (i % 2 ? 150 : 400)));
+    } catch {
+      // Not allowed yet; the sound still plays.
+    }
+  }
 }

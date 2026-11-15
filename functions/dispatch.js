@@ -138,7 +138,9 @@ exports.driverArrived = onCall(async (request) => {
     const ride = rs.data();
     if (!ride || ride.driverId !== uid) throw new HttpsError("failed-precondition", "That isn't your call.");
     if (ride.status !== "dispatched") throw new HttpsError("failed-precondition", "This call isn't waiting on a pickup.");
-    if (ride.arrivedAt != null) return { arrivedAt: ride.arrivedAt, arrivedDistM: ride.arrivedDistM ?? null };
+    // A real arrival stands. One tapped away from the pickup can be tapped
+    // again once he's there: the clocks restart from the real arrival.
+    if (ride.arrivedAt != null && ride.arrivedNear !== false) return { arrivedAt: ride.arrivedAt, arrivedDistM: ride.arrivedDistM ?? null, near: true };
     // Where he is: his last GPS ping when it's recent (the same feed the board
     // uses), else what his phone sent with the tap.
     const loc = ls.data();
@@ -148,6 +150,8 @@ exports.driverArrived = onCall(async (request) => {
     const dists = [T.distanceMeters(at, T.pickupPoint(ride)), T.distanceMeters(at, ride.riderPos)].filter((d) => Number.isFinite(d));
     const arrivedDistM = dists.length ? Math.round(Math.min(...dists)) : null;
     const near = arrivedDistM != null && arrivedDistM <= rules.nearPickupMeters;
+    // Still not at the pickup on a second tap: keep the first arrival.
+    if (ride.arrivedAt != null && !near) return { arrivedAt: ride.arrivedAt, arrivedDistM: ride.arrivedDistM ?? null, near: false };
     tx.update(rideRef(rideId), {
       arrivedAt: nowMs,
       arrivedDistM,
@@ -156,7 +160,7 @@ exports.driverArrived = onCall(async (request) => {
       // Only a real arrival ends free cancelling.
       ...(near ? { headsUpAt: ride.headsUpAt ?? nowMs } : {}),
     });
-    tx.set(inboxRef(uid), { current: { arrivedAt: nowMs, arrivedDistM } }, { merge: true });
+    tx.set(inboxRef(uid), { current: { arrivedAt: nowMs, arrivedDistM, arrivedNear: near } }, { merge: true });
     return { arrivedAt: nowMs, arrivedDistM, near: arrivedDistM == null ? null : arrivedDistM <= rules.nearPickupMeters };
   });
 });

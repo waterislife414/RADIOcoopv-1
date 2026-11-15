@@ -23,8 +23,11 @@ function calcEstimate(ride, miles) {
   return { low: low.toFixed(2), high: high.toFixed(2) };
 }
 
+// Settings not filled in yet (like "[INSERT_EMAIL]") are hidden, not shown as broken links.
+const isPlaceholder = (v) => !v || String(v).startsWith("[INSERT");
+
 export default function Success() {
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
   const { ride: bookedRide, resetRide } = useRide();
   // Keep this ride's details for this page, then clear the booking so the next
   // one starts fresh (new agreement for guests, no leftover Fast Pass or addresses).
@@ -59,17 +62,27 @@ export default function Success() {
       <div className="px-6 py-10 flex flex-col items-center justify-center text-center">
         <div className="max-w-md w-full">
           <div className="text-6xl mb-4">&#9989;</div>
-          <h1 className="text-3xl font-display font-semibold text-slate-800 mb-2">
-            Request sent to dispatch!
-          </h1>
+          <h1 className="text-3xl font-display font-semibold text-slate-800 mb-2">Ride requested!</h1>
           <p className="text-slate-500 text-base mb-6">
-            A dispatcher will confirm your ride shortly.
+            {/* Same tests the server uses to decide app vs. radio dispatch. */}
+            {!currentUser || ride.paymentMethod === "cash" || ride.callIn || userProfile?.idVerified !== true
+              ? "Our dispatcher will send your car and may call you."
+              : "The app is finding your driver now."}
           </p>
 
           {currentUser && <CurrentRideStatus />}
           {!currentUser && guestRideId && (
             <div className="mb-4">
-              <LineStatus rideId={guestRideId} />
+              <LineStatus
+                rideId={guestRideId}
+                onDone={() => {
+                  try {
+                    sessionStorage.removeItem("rc-last-ride");
+                  } catch {
+                    // Nothing stored.
+                  }
+                }}
+              />
             </div>
           )}
           {!currentUser && (
@@ -88,20 +101,24 @@ export default function Success() {
             >
               Call Office
             </a>
-            <a
-              href={`mailto:${COMPANY_EMAIL}`}
-              className="bg-slate-300 hover:bg-slate-400 text-slate-800 font-bold text-lg py-4 min-h-[56px] rounded-full shadow-md transition"
-            >
-              Email Us
-            </a>
-            <a
-              href={GOOGLE_REVIEW_LINK}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-lg py-4 min-h-[56px] rounded-full transition"
-            >
-              Leave a Google Review
-            </a>
+            {!isPlaceholder(COMPANY_EMAIL) && (
+              <a
+                href={`mailto:${COMPANY_EMAIL}`}
+                className="bg-slate-300 hover:bg-slate-400 text-slate-800 font-bold text-lg py-4 min-h-[56px] rounded-full shadow-md transition"
+              >
+                Email Us
+              </a>
+            )}
+            {!isPlaceholder(GOOGLE_REVIEW_LINK) && (
+              <a
+                href={GOOGLE_REVIEW_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-lg py-4 min-h-[56px] rounded-full transition"
+              >
+                Leave a Google Review
+              </a>
+            )}
           </div>
 
           <div className="border-2 border-slate-300 rounded-2xl p-5 text-left">

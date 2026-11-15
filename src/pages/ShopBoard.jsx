@@ -175,25 +175,51 @@ function InspectionHistory({ car }) {
 function MechanicAccess() {
   const [email, setEmail] = useState("");
   const [msg, setMsg] = useState("");
-  async function grant() {
+  const [busy, setBusy] = useState(false);
+  async function change(allow) {
+    const who = email.trim();
     setMsg("");
+    setBusy(true);
     try {
-      await setShopAccess({ email, allow: true });
-      setMsg(`${email} can now open the shop board.`);
+      await setShopAccess({ email: who, allow });
+      setMsg(
+        allow
+          ? `${who} has shop access. They need to sign out and sign back in to see the shop board.`
+          : `${who} no longer has shop access. It ends the next time they sign in (or within the hour).`
+      );
       setEmail("");
     } catch (e) {
-      setMsg(e?.message || "Couldn't give access.");
+      setMsg(e?.message || (allow ? "Couldn't give access." : "Couldn't remove access."));
+    } finally {
+      setBusy(false);
     }
   }
   return (
     <div className="rounded-2xl border-2 border-dashed border-slate-300 p-4">
       <p className="font-bold text-slate-800">Give a mechanic access</p>
       <p className="text-sm text-slate-600">They sign up with their email first, then you add it here.</p>
-      <div className="flex gap-2 mt-2">
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="mechanic@email.com" className="flex-1 min-h-[44px] border-2 border-slate-300 rounded-xl px-3" />
-        <button type="button" onClick={grant} className="min-h-[44px] px-4 rounded-xl bg-navy-950 text-white font-bold">Give access</button>
+      <div className="flex flex-wrap gap-2 mt-2">
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="mechanic@email.com"
+          aria-label="Mechanic's email"
+          className="flex-1 min-w-[12rem] min-h-[44px] border-2 border-slate-300 rounded-xl px-3"
+        />
+        <button type="button" disabled={busy || !email.trim()} onClick={() => change(true)} className="min-h-[44px] px-4 rounded-xl bg-navy-950 text-white font-bold disabled:opacity-50">
+          Give access
+        </button>
+        <button
+          type="button"
+          disabled={busy || !email.trim()}
+          onClick={() => change(false)}
+          className="min-h-[44px] px-4 rounded-xl border-2 border-red-300 text-red-700 font-bold disabled:opacity-50"
+        >
+          Remove access
+        </button>
       </div>
-      {msg && <p className="text-sm text-slate-700 mt-2">{msg}</p>}
+      {msg && <p className="text-sm text-slate-700 mt-2" role="status">{msg}</p>}
     </div>
   );
 }

@@ -109,7 +109,9 @@ const PICKUP_RESET = Object.freeze({
 async function dispatchFieldsFor(ride, nowMs = Date.now(), rideId = null) {
   const c = await core();
   const T = await timing();
-  let priority = ride.wantsPriorityPass ? "vip" : null;
+  // Day Pass priority only when it's paid, or the ride's card pays it at the end.
+  const cardRide = ride.paymentMethod === "card" && !!ride.paymentIntentId;
+  let priority = null;
   let tier = null;
   let user = null;
   if (ride.customerId && ride.customerId !== "guest") {
@@ -122,6 +124,7 @@ async function dispatchFieldsFor(ride, nowMs = Date.now(), rideId = null) {
     const p = await db().collection("fast_passes").doc(String(ride.fastPassId)).get();
     dayPass = T.isDayPassValid(p.data(), ride.customerId, rideId, nowMs);
   }
+  if (priority !== "premium" && ride.wantsPriorityPass && (dayPass || cardRide)) priority = "vip";
   const fields = {
     priority,
     dispatchState: "new",
@@ -392,6 +395,7 @@ function assignInTx(tx, c, { rideId, ride, uid, board, driver, customer, how, zo
         riderPos: ride.riderPos ?? null,
         appRide: isAppRide(ride),
         cardHold: ride.paymentMethod === "card" && !!ride.paymentIntentId,
+        extraTime: !!(ride.extraTime || ride.needsAccessibleVehicle),
         assignedAt: nowMs,
         how,
       },

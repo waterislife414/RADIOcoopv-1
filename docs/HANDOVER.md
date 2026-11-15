@@ -15,14 +15,15 @@ The program does not change. Only the settings and keys below do.
    About $1.15 a month for the number plus about 3 cents a minute for recorded calls.
    Without it, riders see the office number and drivers call riders directly.
 
-## What gets typed in (one file + two secrets)
+## What gets typed in (one file + three secrets)
 | Where | What | Comes from |
 |---|---|---|
 | `branding.config.json` → `infrastructure.firebase` | apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId | Firebase console → Project settings → Your apps → Web app |
 | `branding.config.json` → `infrastructure.stripePublishableKey` | Publishable key (`pk_live_…`) | Stripe → Developers → API keys |
 | `branding.config.json` → `dispatch.pushVapidKey` (optional) | Web Push key, for call alerts with the screen off | Firebase console → Project settings → Cloud Messaging → Web Push certificates |
 | Secret `STRIPE_SECRET_KEY` | Secret key (`sk_live_…`) | Stripe → Developers → API keys |
-| Secret `STRIPE_WEBHOOK_SECRET` | Signing secret (`whsec_…`) | Stripe → Developers → Webhooks, endpoint = the `stripeWebhook` function URL |
+| Secret `STRIPE_WEBHOOK_SECRET` | Signing secret (`whsec_…`) | Stripe → Developers → Webhooks, endpoint = the `stripeWebhook` function URL. Choose these events: `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`, `invoice.payment_succeeded` (memberships stay in sync only with all four) |
+| `branding.config.json` → `company.email`, `company.googleReviewLink` | Office email and Google review link | Sheet lines OFFICE_EMAIL and GOOGLE_REVIEW_LINK. While they're `[INSERT…]` the app hides them |
 | `functions/.env` → `TWILIO_ACCOUNT_SID`, `TWILIO_PHONE_NUMBER` | Account SID (`AC…`) and the number you bought | Twilio console home page; Phone Numbers → Active numbers |
 | Secret `TWILIO_AUTH_TOKEN` | Auth token (type `none` until calls are set up) | Twilio console home page → Account Info |
 | `branding.config.json` → `infrastructure.mapTiles` (optional) | A map tile URL with your key | Any raster tile service; blank = free OpenStreetMap tiles for testing |
@@ -33,9 +34,26 @@ The secrets are typed into Cloud Shell, never into a file:
     firebase functions:secrets:set STRIPE_WEBHOOK_SECRET
     firebase functions:secrets:set TWILIO_AUTH_TOKEN      # type none if calls aren't set up yet
 
+`deploy-dispatch.sh` sets `TWILIO_AUTH_TOKEN` to `none` by itself if it was never set, so a deploy
+never stops to ask for it.
+
+## Twilio settings (if private calls are used)
+- **Calls back to the number:** riders and drivers will call the Twilio number back. In Twilio →
+  Phone Numbers → Active numbers → the number → Voice → "A call comes in", forward it to the office
+  ((706) 322-0700) so those calls reach a person.
+- **Recording retention:** calls are recorded. Pick how long to keep them (90 days suggested) and set
+  it in Twilio (Voice → Settings / recording retention or a scheduled delete). The privacy policy
+  should state the same period; see `docs/LAWYER-REVIEW.md`.
+
 ## Go live
     bash scripts/deploy-dispatch.sh
+    # Malcolm signs up in the app once with his owner email, then:
     node scripts/make-dispatcher.mjs owner@his-email.com     # once: gives him the dispatcher/owner login
+
+Mechanics: the owner gives them access on the Shop board ("Give a mechanic access"); they sign out
+and back in to see it.
+
+Before launch, Malcolm's lawyer should go through `docs/LAWYER-REVIEW.md`.
 
 Then in the app: draw the zones, add the cars, approve the drivers (see DRIVER-MODE.md).
 

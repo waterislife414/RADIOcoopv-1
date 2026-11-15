@@ -60,7 +60,9 @@ export default function RiderPickup({ ride, rideId }) {
   }
 
   const clock = waitClock(ride, now, RIDE_RULES);
-  const eta = ride.eta?.minutes;
+  // Rides the dispatcher sent by radio have no driver GPS: no ETA, map or alerts.
+  const appRun = ride.appHandled !== false;
+  const eta = appRun ? ride.eta?.minutes : null;
   const points = [
     ride.driverPos && { key: "car", ...ride.driverPos, color: "#0f172a", label: `\u{1F695} ${ride.carNumber || ""}`.trim() },
     pickupPoint(ride) && { key: "pickup", ...pickupPoint(ride), color: "#2563eb", label: "P" },
@@ -86,6 +88,9 @@ export default function RiderPickup({ ride, rideId }) {
       {waiting && ride.arrivedAt != null && (
         <div className="rounded-2xl bg-emerald-100 border-2 border-emerald-500 p-4 text-emerald-950 space-y-3" role="status">
           <p className="text-2xl font-extrabold">{car} is here!</p>
+          {ride.arrivedNear === false && (
+            <p className="text-sm font-semibold">Your driver says they&rsquo;ve arrived, but their phone looks a little way off. Look around for {car}.</p>
+          )}
           {!ride.riderReply ? (
             <>
               <p className="font-semibold">Is your driver there?</p>
@@ -113,26 +118,30 @@ export default function RiderPickup({ ride, rideId }) {
         </div>
       )}
 
-      {ride.perks?.liveMap && points.length > 0 && <RideMap points={points} label={`Map showing ${car} and your pickup`} />}
-      {!ride.perks?.liveMap && waiting && (
-        <Link to={`/fast-pass?ride=${encodeURIComponent(rideId)}`} className="block text-center text-sm font-semibold text-blue-700 underline">
+      {appRun && ride.perks?.liveMap && points.length > 0 && <RideMap points={points} label={`Map showing ${car} and your pickup`} />}
+      {appRun && !ride.perks?.liveMap && waiting && (
+        <Link
+          to={`/fast-pass?ride=${encodeURIComponent(rideId)}`}
+          className="flex items-center justify-center min-h-[48px] rounded-xl border-2 border-blue-300 bg-white text-center text-sm font-bold text-blue-700 px-3"
+        >
           Watch your driver on the map and call them: {PASS.title}, {PASS.price}
         </Link>
       )}
-      {ride.perks?.callDriver && <CallButton rideId={rideId} label={`Call ${car}`} />}
+      {appRun && waiting && ride.perks?.callDriver && <CallButton rideId={rideId} label={`Call ${car}`} />}
+      {!appRun && waiting && <p className="text-sm text-slate-600">Our dispatcher sent your car by radio and will call you if needed.</p>}
 
       {waiting && ride.shareLocation !== false && (
         <p className="text-sm text-slate-600">
           {sharing === "on" && !paused && (
             <>
               {"\u{1F4CD}"} Sharing your location with your driver until pickup.{" "}
-              <button type="button" className="underline font-semibold min-h-[44px] px-2" onClick={() => setPaused(true)}>
+              <button type="button" className="underline font-semibold min-h-[48px] px-3" onClick={() => setPaused(true)}>
                 Stop
               </button>
             </>
           )}
           {paused && (
-            <button type="button" className="underline font-semibold" onClick={() => setPaused(false)}>
+            <button type="button" className="w-full min-h-[48px] rounded-xl border-2 border-slate-300 bg-white font-semibold" onClick={() => setPaused(false)}>
               {"\u{1F4CD}"} Share my location again
             </button>
           )}

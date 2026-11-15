@@ -1,7 +1,7 @@
 // While a ride is on: the rider's live location for the driver, "I'm at the
 // car" replies, place in line (with the Day Pass offer), the Day Pass added
 // to a waiting ride, and private calls between rider and driver.
-const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onCall, onRequest, HttpsError } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 const BRANDING = require("./branding.json");
 const E = require("./dispatchEngine");
@@ -101,10 +101,13 @@ exports.queueStatus = onCall(async (request) => {
   const ms = (r) => (r.timestamp?.toMillis ? r.timestamp.toMillis() : Number(r.createdMs) || 0);
   const waiting = others.docs
     .map((d) => ({ id: d.id, ...d.data() }))
-    .filter((r) => !r.driverId && r.dispatchState !== "scheduled")
+    // Same line only: app rides wait for app drivers, radio rides for the dispatcher.
+    .filter((r) => !r.driverId && r.dispatchState !== "scheduled" && (r.appHandled !== false) === (ride.appHandled !== false))
     .map((r) => ({ id: r.id, priority: r.priority || null, createdMs: ms(r) }));
   const position = T.queuePosition({ id: rideId, priority: ride.priority || null, createdMs: ms(ride) }, waiting);
-  return { waiting: true, position, hasPriority, premium: ride.priority === "premium" };
+  // Map and calling only work on app rides (signed in, card, location on);
+  // a radio ride's Day Pass just moves it up the dispatcher's list.
+  return { waiting: true, position, hasPriority, premium: ride.priority === "premium", appRide: ride.appHandled !== false && !!uid };
 });
 
 /** Put a paid Priority Day Pass on a ride that's already waiting: it moves up the line. */
@@ -137,6 +140,18 @@ exports.applyDayPass = onCall(async (request) => {
   await E.startDispatch(rideId); // no-op unless it's still waiting
   return { ok: true };
 });
+
+// The person who answers hears the recording notice too, before they're
+// connected (Twilio plays this page's message to them).
+exports.callNotice = onRequest((req, res) => {
+  const say = CALLING.answerNotice || `This call is from ${BRANDING.companyName || "your taxi company"} and may be recorded for quality and safety.`;
+  res.set("Content-Type", "text/xml");
+  res.send(`<?xml version="1.0" encoding="UTF-8"?><Response><Say>${xml(say)}</Say></Response>`);
+});
+function noticeUrl() {
+  if (CALLING.noticeUrl) return CALLING.noticeUrl;
+  return `https://us-central1-${process.env.GCLOUD_PROJECT || ""}.cloudfunctions.net/callNotice`;
+}
 
 /**
  * Private call: Twilio rings the caller's phone from the company number,
@@ -172,7 +187,11 @@ exports.startMaskedCall = onCall({ secrets: [TWILIO_AUTH_TOKEN] }, async (reques
   const to = isDriver ? riderPhone : driverPhone;
   const otherLabel = isDriver ? "your rider" : `Car ${ride.carNumber || ""}`.trim();
   const mode = callMode();
-  if (mode !== "live") return { mode, otherLabel, officePhone: BRANDING.companyPhoneDisplay || null };
+  // Calls not set up yet: a driver can still dial his rider directly (he
+  // could before private calling existed); a rider gets the office number.
+  if (mode !== "live") {
+    return { mode, otherLabel, officePhone: BRANDING.companyPhoneDisplay || null, ...(isDriver && riderPhone ? { directTel: riderPhone } : {}) };
+  }
   if (!from || !to) throw new HttpsError("failed-precondition", "We don't have a phone number for this ride. Please call the office.");
   // Count the call and check the limit in one step, so parallel taps can't go over.
   await db().runTransaction(async (tx) => {
@@ -190,7 +209,7 @@ exports.startMaskedCall = onCall({ secrets: [TWILIO_AUTH_TOKEN] }, async (reques
   const limit = Math.max(1, CALLING.maxCallMinutes || 10) * 60;
   const twiml =
     `<Response><Say>${xml(CALLING.greeting || "Connecting you now. This call may be recorded for quality and safety.")}</Say>` +
-    `<Dial callerId="${xml(number)}" timeLimit="${limit}" answerOnBridge="true"${record}><Number>${xml(to)}</Number></Dial></Response>`;
+    `<Dial callerId="${xml(number)}" timeLimit="${limit}" answerOnBridge="true"${record}><Number url="${xml(noticeUrl())}">${xml(to)}</Number></Dial></Response>`;
   const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(sid)}/Calls.json`, {
     method: "POST",
     headers: {

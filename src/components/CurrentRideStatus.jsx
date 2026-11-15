@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { collection, doc, onSnapshot, query, where, orderBy, limit, updateDoc } from "firebase/firestore";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
@@ -296,10 +297,19 @@ function CancelOrCall({ ride, rideId, onCancelled }) {
   );
 }
 
+// Plain words for why the office (not the app) is sending a ride.
+const OFFICE_WHY = {
+  guest: "booked without an account",
+  id: "your ID isn't checked yet",
+  location: "location is off",
+  cash: "paying cash",
+  terms: "the terms weren't agreed",
+};
+
+/** Up to 3 open rides (someone may book for a relative too), newest first. */
 function CurrentRideStatusInner() {
-  const { currentUser, userProfile } = useAuth();
-  const [ride, setRide] = useState(null);
-  const [rideId, setRideId] = useState(null);
+  const { currentUser } = useAuth();
+  const [rides, setRides] = useState([]);
   const [cancelled, setCancelled] = useState(null);
 
   useEffect(() => {
@@ -309,22 +319,12 @@ function CurrentRideStatusInner() {
       where("customerId", "==", currentUser.uid),
       where("status", "in", ["pending", "dispatched", "in_transit", "finished"]),
       orderBy("timestamp", "desc"),
-      limit(1)
+      limit(3)
     );
-    const unsub = onSnapshot(q, (snap) => {
-      if (snap.empty) {
-        setRide(null);
-        setRideId(null);
-      } else {
-        const docSnap = snap.docs[0];
-        setRide(docSnap.data());
-        setRideId(docSnap.id);
-      }
-    });
-    return unsub;
+    return onSnapshot(q, (snap) => setRides(snap.docs.map((d) => ({ id: d.id, data: d.data() }))));
   }, [currentUser]);
 
-  if (currentUser && !ride && cancelled) {
+  if (currentUser && !rides.length && cancelled) {
     return (
       <div className="border-2 border-slate-200 bg-slate-50 rounded-2xl p-5 mb-6 text-center" role="status">
         <p className="font-bold text-lg text-slate-800">Your ride was cancelled.</p>
@@ -334,15 +334,26 @@ function CurrentRideStatusInner() {
       </div>
     );
   }
-  if (!currentUser || !ride) return null;
+  if (!currentUser || !rides.length) return null;
+  return (
+    <>
+      {rides.map((r) => (
+        <RideStatusCard key={r.id} ride={r.data} rideId={r.id} onCancelled={setCancelled} many={rides.length > 1} />
+      ))}
+    </>
+  );
+}
 
+function RideStatusCard({ ride, rideId, onCancelled, many }) {
+  const { userProfile } = useAuth();
   const isPaid = ride.finalFare != null;
+  const office = ride.appHandled === false;
   const info = (ride.status === "dispatched" && ride.arrivedAt != null ? STATUS_LABELS.arrived : STATUS_LABELS[ride.status]) || STATUS_LABELS.pending;
 
   return (
     <div className="border-2 border-blue-200 bg-blue-50 rounded-2xl p-5 mb-6 text-left">
       <p className="text-xs font-bold tracking-widest text-blue-600 uppercase mb-2">
-        Current Ride
+        {many ? `Ride to ${ride.dropoff || "your destination"}` : "Current Ride"}
       </p>
 
       {!isPaid && (
@@ -355,11 +366,22 @@ function CurrentRideStatusInner() {
           </div>
           <p className="font-bold text-lg text-slate-800">{info.label}</p>
           <p className="text-sm text-slate-600 mt-0.5 mb-1">{info.detail}</p>
+          {office && ride.status === "pending" && (
+            <p className="text-sm text-slate-700 mb-2">
+              Our dispatcher is sending your car{(ride.officeWhy || []).length ? ` (${ride.officeWhy.map((w) => OFFICE_WHY[w] || w).join(", ")})` : ""}
+              {" "}and may call you.
+              {(ride.officeWhy || []).includes("id") && (
+                <Link to="/profile#verify-id" className="block font-semibold text-blue-700 underline mt-1">
+                  Verify your ID to get app rides
+                </Link>
+              )}
+            </p>
+          )}
           {ride.status === "pending" && !ride.driverId && <LineStatus rideId={rideId} />}
           {["dispatched", "in_transit"].includes(ride.status) && <RiderPickup ride={ride} rideId={rideId} />}
           {userProfile?.feesOwedCents > 0 && (
             <p className="text-sm text-red-700 mt-2">
-              {money(userProfile.feesOwedCents)} in cancel or no-show fees from an earlier ride is added to your next card payment.
+              {money(userProfile.feesOwedCents)} in fees from an earlier ride may be added to your next card payment in the app.
             </p>
           )}
         </>
@@ -379,7 +401,7 @@ function CurrentRideStatusInner() {
         </div>
       )}
 
-      {!isPaid && ["pending", "dispatched"].includes(ride.status) && <CancelOrCall ride={ride} rideId={rideId} onCancelled={setCancelled} />}
+      {!isPaid && ["pending", "dispatched"].includes(ride.status) && <CancelOrCall ride={ride} rideId={rideId} onCancelled={onCancelled} />}
 
       {["in_transit", "finished"].includes(ride.status) && !isPaid && ride.paymentMethod !== "card" && (
         <p className="mt-4 pt-4 border-t border-blue-200 font-semibold text-slate-700">

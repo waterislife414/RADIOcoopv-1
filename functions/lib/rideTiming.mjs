@@ -109,6 +109,10 @@ export function noShowCheck(ride, nowMs, rules = DEFAULT_RULES) {
   const near = Number.isFinite(ride.arrivedDistM) && ride.arrivedDistM <= rules.nearPickupMeters;
   // Riders who need extra time (accessible vehicle, or flagged by the office) never pay it.
   if (ride.extraTime || ride.needsAccessibleVehicle) return { allowed: true, feeCents: 0, near, waived: true };
+  // The rider tapped "I'm at the car" after he arrived: no fee; the office sorts it out.
+  if (ride.riderReply?.reply === "here" && ride.riderReply.at >= ride.arrivedAt) {
+    return { allowed: true, feeCents: 0, near, disputed: true };
+  }
   return { allowed: true, feeCents: near ? Math.round(rules.noShowFee * 100) : 0, near };
 }
 

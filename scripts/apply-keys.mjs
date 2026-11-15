@@ -46,7 +46,13 @@ check("FIREBASE_API_KEY", /^AIza[0-9A-Za-z_-]{30,}$/, "starts AIza");
 check("STRIPE_PUBLISHABLE_KEY", /^pk_(live|test)_[0-9A-Za-z]+$/, "starts pk_live_");
 check("TWILIO_ACCOUNT_SID", /^AC[0-9a-f]{32}$/i, "AC + 32 letters/numbers");
 check("OWNER_LOGIN_EMAIL", /^[^@\s]+@[^@\s]+\.[^@\s]+$/, "an email address");
-check("SHOP_LOGIN_EMAIL", /^[^@\s]+@[^@\s]+\.[^@\s]+$/, "an email address");
+check("OFFICE_EMAIL", /^[^@\s]+@[^@\s]+\.[^@\s]+$/, "an email address");
+check("GOOGLE_REVIEW_LINK", /^https:\/\/\S+$/, "a link starting https://");
+check("FIREBASE_MEASUREMENT_ID", /^G-[A-Z0-9]+$/, "starts G-");
+if (vals.SHOP_LOGIN_EMAIL) {
+  warn("SHOP_LOGIN_EMAIL isn't used: the owner gives a mechanic access with the Shop board's \u201cGive a mechanic access\u201d box.");
+  delete vals.SHOP_LOGIN_EMAIL;
+}
 if (vals.TWILIO_PHONE_NUMBER) {
   const d = vals.TWILIO_PHONE_NUMBER.replace(/\D/g, "");
   const e164 = d.length === 10 ? `+1${d}` : d.length === 11 && d.startsWith("1") ? `+${d}` : null;
@@ -56,10 +62,6 @@ if (vals.TWILIO_PHONE_NUMBER) {
     delete vals.TWILIO_PHONE_NUMBER;
   }
 }
-if (vals.FIREBASE_PROJECT_ID) {
-  vals.FIREBASE_AUTH_DOMAIN ||= `${vals.FIREBASE_PROJECT_ID}.firebaseapp.com`;
-}
-
 // branding.config.json
 const brandPath = join(root, "branding.config.json");
 const b = JSON.parse(readFileSync(brandPath, "utf8"));
@@ -70,12 +72,37 @@ const set = (obj, key, v, label) => {
   obj[key] = v;
 };
 const fb = (b.infrastructure.firebase ||= {});
-set(fb, "apiKey", vals.FIREBASE_API_KEY, "Firebase apiKey");
-set(fb, "authDomain", vals.FIREBASE_AUTH_DOMAIN, "Firebase authDomain");
-set(fb, "projectId", vals.FIREBASE_PROJECT_ID, "Firebase projectId");
-set(fb, "storageBucket", vals.FIREBASE_STORAGE_BUCKET, "Firebase storageBucket");
-set(fb, "messagingSenderId", vals.FIREBASE_MESSAGING_SENDER_ID, "Firebase messagingSenderId");
-set(fb, "appId", vals.FIREBASE_APP_ID, "Firebase appId");
+// A new Firebase project needs all of its web-app values at once; otherwise
+// the app would end up half on the old project and half on the new one.
+const FB_REQUIRED = [
+  ["FIREBASE_API_KEY", "apiKey"],
+  ["FIREBASE_APP_ID", "appId"],
+  ["FIREBASE_MESSAGING_SENDER_ID", "messagingSenderId"],
+  ["FIREBASE_STORAGE_BUCKET", "storageBucket"],
+];
+const newProject = !!vals.FIREBASE_PROJECT_ID && vals.FIREBASE_PROJECT_ID !== fb.projectId;
+const fbMissing = newProject ? FB_REQUIRED.filter(([k]) => !vals[k]).map(([k]) => k) : [];
+if (fbMissing.length) {
+  warn(
+    `New Firebase project, but ${fbMissing.join(", ")} ${fbMissing.length === 1 ? "is" : "are"} blank. ` +
+      "Nothing from section 1 was used, so the app stays fully on the old project. Fill in every Firebase line and run it again."
+  );
+} else {
+  if (newProject) vals.FIREBASE_AUTH_DOMAIN ||= `${vals.FIREBASE_PROJECT_ID}.firebaseapp.com`;
+  set(fb, "apiKey", vals.FIREBASE_API_KEY, "Firebase apiKey");
+  set(fb, "authDomain", vals.FIREBASE_AUTH_DOMAIN, "Firebase authDomain");
+  set(fb, "projectId", vals.FIREBASE_PROJECT_ID, "Firebase projectId");
+  set(fb, "storageBucket", vals.FIREBASE_STORAGE_BUCKET, "Firebase storageBucket");
+  set(fb, "messagingSenderId", vals.FIREBASE_MESSAGING_SENDER_ID, "Firebase messagingSenderId");
+  set(fb, "appId", vals.FIREBASE_APP_ID, "Firebase appId");
+  if (vals.FIREBASE_MEASUREMENT_ID) set(fb, "measurementId", vals.FIREBASE_MEASUREMENT_ID, "Firebase analytics ID");
+  else if (newProject && fb.measurementId) {
+    delete fb.measurementId; // the old project's analytics ID must not follow the app
+    changed.push("old analytics ID removed");
+  }
+}
+set(b.company, "email", vals.OFFICE_EMAIL, "office email");
+set(b.company, "googleReviewLink", vals.GOOGLE_REVIEW_LINK, "Google review link");
 set(b.infrastructure, "stripePublishableKey", vals.STRIPE_PUBLISHABLE_KEY, "Stripe publishable key");
 set(b.dispatch, "pushVapidKey", vals.FIREBASE_WEB_PUSH_KEY, "Web Push key");
 if (vals.MAP_TILE_URL) {
@@ -86,7 +113,7 @@ if (vals.OFFICE_PHONE) {
   const d = vals.OFFICE_PHONE.replace(/\D/g, "");
   if (d.length === 10) {
     set(b.company, "phoneDisplay", `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`, "office phone");
-    set(b.company, "phoneTel", `+1${d}`, "office phone link");
+    set(b.company, "phoneTel", d, "office phone link");
   } else warn("OFFICE_PHONE should be 10 digits. Skipped.");
 }
 const num = (k) => {
@@ -146,11 +173,24 @@ console.log(changed.length ? `Updated: ${changed.join(", ")}.` : "Nothing new to
 for (const p of problems) console.log(`!  ${p}`);
 const missing = ["FIREBASE_PROJECT_ID", "FIREBASE_API_KEY", "FIREBASE_APP_ID", "STRIPE_PUBLISHABLE_KEY"].filter((k) => !vals[k]);
 if (missing.length) console.log(`Still blank (needed to go live): ${missing.join(", ")}`);
+const placeholders = [
+  ["office email", b.company.email],
+  ["Google review link", b.company.googleReviewLink],
+].filter(([, v]) => !v || String(v).startsWith("[INSERT"));
+if (placeholders.length) console.log(`Still a placeholder (hidden in the app until filled in): ${placeholders.map(([n]) => n).join(", ")}`);
+if (fbMissing.length) {
+  console.log("\nDon't deploy yet: finish section 1 (Firebase) and run this again.");
+  process.exit(0);
+}
 console.log(`
 Next, in Cloud Shell (you type the secret when it asks; it is never shown):
   firebase functions:secrets:set STRIPE_SECRET_KEY --project ${project}
   firebase functions:secrets:set STRIPE_WEBHOOK_SECRET --project ${project}
   firebase functions:secrets:set TWILIO_AUTH_TOKEN --project ${project}     (type none if calls aren't set up yet)
   bash scripts/deploy-dispatch.sh
-${vals.OWNER_LOGIN_EMAIL ? `  node scripts/make-dispatcher.mjs ${vals.OWNER_LOGIN_EMAIL}` : "  node scripts/make-dispatcher.mjs <owner email>"}
+
+Then, after Malcolm has signed up in the app once with his owner email:
+  node scripts/make-dispatcher.mjs ${vals.OWNER_LOGIN_EMAIL || "<owner email>"}
+
+Mechanics: the owner gives them access on the Shop board ("Give a mechanic access").
 `);

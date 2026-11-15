@@ -15,7 +15,7 @@ const PASS = BRAND.copy.dayPass;
  * up and have no priority, the Priority Day Pass offer pops up right after
  * booking and once more a few minutes later.
  */
-export default function LineStatus({ rideId, dark = false }) {
+export default function LineStatus({ rideId, dark = false, onDone }) {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [q, setQ] = useState(null);
@@ -37,6 +37,11 @@ export default function LineStatus({ rideId, dark = false }) {
       clearInterval(t);
     };
   }, [rideId]);
+
+  // Next up now, or priority already: no point offering it.
+  useEffect(() => {
+    if (offer && (!q?.waiting || q.hasPriority || q.position < 2)) setOffer(false);
+  }, [offer, q?.waiting, q?.hasPriority, q?.position]);
 
   useEffect(() => {
     if (!q?.waiting || q.hasPriority || q.position < 2) return undefined;
@@ -71,6 +76,7 @@ export default function LineStatus({ rideId, dark = false }) {
     setOffer(false);
   }
 
+  if (q && !q.waiting) onDone?.();
   if (!q?.waiting) return null;
   const next = q.position <= 1;
   return (
@@ -84,7 +90,7 @@ export default function LineStatus({ rideId, dark = false }) {
         {next ? "You’re next up!" : `You’re ${lineText(q.position)}`}
         {q.premium && <span className="block text-xs font-semibold">Premium: members dispatch first</span>}
         {!next && !q.hasPriority && (
-          <button type="button" onClick={() => setOffer(true)} className="block mx-auto mt-1 min-h-[44px] px-3 text-sm underline font-semibold">
+          <button type="button" onClick={() => setOffer(true)} className="block w-full mt-2 min-h-[48px] rounded-xl bg-white border-2 border-amber-400 px-3 text-base font-bold">
             Skip ahead for {PASS.price}
           </button>
         )}
@@ -96,7 +102,7 @@ export default function LineStatus({ rideId, dark = false }) {
             <p className="text-xs font-bold tracking-[0.3em] text-gold-400 uppercase">{PASS.title}</p>
             <p className="font-display text-2xl font-bold">{PASS.tagline}</p>
             <ul className="text-left space-y-1.5 text-slate-200">
-              {PASS.perks.map((p) => (
+              {(q.appRide ? PASS.perks : PASS.perks.slice(0, 1)).map((p) => (
                 <li key={p} className="flex gap-2">
                   <span className="text-gold-400" aria-hidden="true">
                     &#10003;
@@ -106,7 +112,9 @@ export default function LineStatus({ rideId, dark = false }) {
               ))}
             </ul>
             <p className="font-mono text-4xl font-bold text-gold-300">{PASS.price}</p>
-            <p className="text-xs text-slate-400">{PASS.fine}</p>
+            <p className="text-xs text-slate-400">
+              {q.appRide ? PASS.fine : "Moves this ride up our dispatcher\u2019s list. Premium members still go first."}
+            </p>
             {!currentUser && <p className="text-sm text-gold-200 font-semibold">As a guest: priority for this ride. Map and calling need a free account.</p>}
             <button
               type="button"

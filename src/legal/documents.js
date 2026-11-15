@@ -13,10 +13,17 @@ export const LEGAL_VERSION = BRAND.policies.legalVersion;
 const RR = { headsUpMinutes: 4, minFreeCancelMinutes: 1, lateCancelFee: 5, waitGraceMinutes: 2, noShowAfterMinutes: 7, noShowFee: 10, ...(BRAND.rideRules || {}) };
 const PASS = BRAND.copy.dayPass?.title || "Priority Day Pass";
 const dollars = (n) => `$${Number(n).toFixed(2)}`;
+const FARE = BRAND.pricing?.fare || {};
+const WAIT_RATE = Number.isFinite(FARE.WAIT_TIME_PER_MINUTE) ? `${dollars(FARE.WAIT_TIME_PER_MINUTE)} a minute` : "the posted waiting rate";
+const CARD_FEE = Number.isFinite(FARE.CARD_APP_FEE) ? FARE.CARD_APP_FEE : 2;
+const CARD_FEE_MEMBER = Number.isFinite(FARE.CARD_APP_FEE_MEMBER) ? FARE.CARD_APP_FEE_MEMBER : CARD_FEE;
+const PASS_PRICE = BRAND.copy.dayPass?.price || dollars(5);
+// Placeholder settings (like "[INSERT_EMAIL]") are never shown to customers.
+const isPlaceholder = (v) => !v || String(v).startsWith("[INSERT");
 
 const lease = BRAND.dispatch?.lease || {};
 const money = (cents) => `$${(cents / 100).toFixed(0)}`;
-const contact = `${COMPANY_NAME}, ${OFFICE_ADDRESS}. Phone ${COMPANY_PHONE_DISPLAY}${COMPANY_EMAIL ? `. Email ${COMPANY_EMAIL}` : ""}.`;
+const contact = `${COMPANY_NAME}, ${OFFICE_ADDRESS}. Phone ${COMPANY_PHONE_DISPLAY}${isPlaceholder(COMPANY_EMAIL) ? "" : `. Email ${COMPANY_EMAIL}`}.`;
 
 export const DOCUMENTS = {
   "rider-terms": {
@@ -47,12 +54,18 @@ export const DOCUMENTS = {
         h: "4. Fares and payment",
         p: [
           "The fare is set by the meter or by the rate quoted for trips outside the local area. Any price shown in the app before the ride is an estimate only.",
-          "If you pay by card, a hold may be placed on your card when you book, and the final fare, fees and any tip are charged after the ride. An app fee may apply to card payments.",
-          `Cancelling and no-shows on rides booked in the app with an account: you can cancel at no charge until your driver is about ${RR.headsUpMinutes} minutes away, which the app shows on your ride screen (and as a phone alert if you allow alerts), and always for the first ${RR.minFreeCancelMinutes} minute after a driver takes your ride. After that, cancelling costs ${dollars(RR.lateCancelFee)}. When your driver arrives, you get ${RR.waitGraceMinutes} minutes of free waiting; after that the meter runs for waiting time at the posted rate. If you are not at the car ${RR.noShowAfterMinutes} minutes after your driver arrives, your driver may cancel the ride as a no-show and you will be charged ${dollars(RR.noShowFee)}. A no-show fee is only charged when the app shows your driver was at the pickup or next to your phone's shared location. Cancel and no-show fees go to your driver for the trip out.`,
-          "Fees are taken from the hold on your card. If the hold can't cover a fee, or you pay from your account balance, it is added to your next card payment in the app. Riders who request an accessible vehicle, or who tell us they need extra time to reach or get into the car, are never charged no-show fees.",
-          "The app sends rides to drivers on its own for riders with an account, a checked ID, location sharing on and a card or account balance. Other rides (phone bookings, guests, cash, no location, or an ID we haven't checked yet) are dispatched by our office and are cancelled by calling us. Cancel and no-show fees do not apply to them.",
-          `The ${PASS} costs ${dollars(5)}. It moves your rides ahead of riders without priority (members on plans that dispatch first still go first), shows your driver on a map and lets you call your driver, for every ride you book until midnight (local time) on the day you buy it. A guest's pass covers one ride and moves it up the line; the map and calling need a free account. It does not promise a pickup time.`,
-          "All rides, memberships and add-on fees, including the Priority Day Pass, are non-refundable once a ride has been dispatched or completed, except where the law requires a refund.",
+          "If you pay by card, a hold may be placed on your card when you book. The card is saved for that ride, and the final fare, fees and any tip are charged to it after the ride.",
+          `Card fee: card payments in the app include a card fee of ${dollars(CARD_FEE)} (${dollars(CARD_FEE_MEMBER)} with a free account), shown before you pay.`,
+          `Cancelling (rides booked in the app with an account): it's free until your driver is about ${RR.headsUpMinutes} minutes away. The app tells you on your ride screen, and with a phone alert if you allow alerts.`,
+          `You can also always cancel free for ${RR.minFreeCancelMinutes} minute after a driver takes your ride.`,
+          `After that, cancelling costs ${dollars(RR.lateCancelFee)}.`,
+          `Waiting: when your driver arrives, the first ${RR.waitGraceMinutes} minutes of waiting are free. After that, waiting time is charged at ${WAIT_RATE}.`,
+          `No-show: if you are not at the car ${RR.noShowAfterMinutes} minutes after your driver arrives, your driver may cancel the ride as a no-show and you will be charged ${dollars(RR.noShowFee)}. A no-show fee is only charged when the app shows your driver was at the pickup or next to your phone's shared location.`,
+          "Cancel and no-show fees go to your driver for the trip out. They are taken from your card hold or saved card. Fees that can't be collected that way may be added to a later card payment in the app.",
+          "Riders who request an accessible vehicle, or who tell us they need extra time to reach or get into the car, are never charged wait time or no-show fees.",
+          "Who dispatches your ride: the app sends rides to drivers on its own for riders with an account, a checked ID, location sharing on and a card or account balance. Other rides (phone bookings, guests, cash, no location, or an ID we haven't checked yet) are dispatched by our office. Cancel and no-show fees do not apply to them. Once a driver is assigned to one of these rides, call us to cancel.",
+          `The ${PASS} costs ${PASS_PRICE}. It moves your rides ahead of riders without priority (members on plans that dispatch first still go first), shows your driver on a map and lets you call your driver, for every ride you book until midnight (local time) on the day you buy it. A guest's pass covers one ride and moves it up the line; the map and calling need a free account. It does not promise a pickup time. The ${PASS} is non-refundable once paid.`,
+          "All rides, memberships and add-on fees are non-refundable once a ride has been dispatched or completed, except where the law requires a refund.",
           `You agree to pay for every ride you take. Refusing to pay, using a fraudulent payment method, or leaving without paying may be theft of services under Georgia law (O.C.G.A. \u00a7 16-8-5) and may be reported to the police. ${COMPANY_NAME} may pursue every legal remedy to recover unpaid fares, fees, court costs and reasonable attorney's fees, and may refuse future service to anyone flagged for non-payment.`,
         ],
       },
@@ -67,6 +80,7 @@ export const DOCUMENTS = {
         h: "5a. Accessibility and service animals",
         p: [
           "Service animals ride with their owners at no extra charge, and riders with disabilities pay the same fares as everyone else. If you need a handicap-accessible vehicle, ask when you book; we will tell you what is available.",
+          "If you need extra time to reach or get into the car, tell us (call the office or ask when you book). You will not be charged wait time or no-show fees.",
         ],
       },
       {
@@ -145,7 +159,7 @@ export const DOCUMENTS = {
       {
         h: "4. Who we share it with",
         p: [
-          "Drivers and dispatchers, so the ride can happen. Our mechanics, for vehicle inspections and repairs. Companies that work for us, such as payment, hosting and messaging providers. The police, courts, regulators or insurers when we believe it is appropriate or required. A buyer or successor of the business. Anyone else where the law allows it for a legitimate business purpose.",
+          "Drivers and dispatchers, so the ride can happen. Our mechanics, for vehicle inspections and repairs. Companies that work for us, such as payment, hosting, messaging, phone-call (calls through our number) and map providers. The police, courts, regulators or insurers when we believe it is appropriate or required. A buyer or successor of the business. Anyone else where the law allows it for a legitimate business purpose.",
           "We do not sell your personal information.",
         ],
       },
@@ -231,6 +245,7 @@ export const DOCUMENTS = {
         h: "7. Your information, location and messages",
         p: [
           "You agree that we may collect, keep, use and share your information as described in the Privacy Policy, including your location while you are on the board, your license and driving record, and your lease, payment and ride records, for as long as we choose.",
+          "While you are on a call, the rider may see your car's location on a map in the app until the ride ends.",
           "Calls with riders through the company's number may be recorded for quality, safety and to settle disputes, and you agree to that recording. Never give a rider a reason to call your own phone. Tap \u201cI'm here\u201d only when you are at the pickup: the app records how close you were, and a no-show fee is only charged to the rider when you were there. Cancel and no-show fees collected on your calls are credited to your lease. Card fees, memberships and the Priority Day Pass belong to the company.",
           "You agree to receive calls, texts, emails and app alerts about calls, your lease and your account. These are part of the job and cannot be turned off while you drive for us. Promotional messages are sent only if you choose them, and you can stop those at any time by replying STOP.",
         ],

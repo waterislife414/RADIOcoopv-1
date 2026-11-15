@@ -119,7 +119,9 @@ async function freeDriver() {
   assert.equal((await call("queueStatus", { rideId: "p3" }, rider("u3"))).position, 1);
   const q1 = await call("queueStatus", { rideId: "p1" }, rider("u1"));
   assert.deepEqual([q1.waiting, q1.position, q1.hasPriority], [true, 2, false]);
-  assert.equal((await call("queueStatus", { rideId: "g1" }, undefined)).position, 3);
+  // The guest's radio ride waits in the dispatcher's own line, not behind app rides.
+  const gq = await call("queueStatus", { rideId: "g1" }, undefined);
+  assert.deepEqual([gq.position, gq.appRide], [1, false]);
   await rejects(call("queueStatus", { rideId: "p1" }, rider("u2")), /not found/);
 
   // Day Pass on a waiting ride: moves ahead of regular riders (still behind Premium),
@@ -133,7 +135,7 @@ async function freeDriver() {
   let ride = await get("rides/p1");
   assert.deepEqual([ride.priority, ride.perks, ride.fastPassId], ["vip", { liveMap: true, callDriver: true }, pass.id]);
   assert.equal((await call("queueStatus", { rideId: "p1" }, rider("u1"))).position, 2);
-  assert.equal((await call("queueStatus", { rideId: "g1" }, undefined)).position, 3);
+  assert.equal((await call("queueStatus", { rideId: "g1" }, undefined)).position, 1);
   const later = await book("p4", { fastPassId: pass.id, wantsPriorityPass: true });
   assert.deepEqual([later.priority, later.perks.callDriver], ["vip", true], "same pass, second ride today");
   for (const id of ["p3", "g1", "p4"]) await db.doc(`rides/${id}`).delete();
@@ -238,18 +240,23 @@ async function freeDriver() {
   assert.deepEqual([sent.body.get("To"), sent.body.get("From")], ["+17065550144", "+17065550000"]);
   const twiml = sent.body.get("Twiml");
   assert.match(twiml, /may be recorded/);
+  assert.match(twiml, /<Number url="https:\/\/us-central1-[^"]*\/callNotice">/, "the person answering hears the notice too");
   assert.match(twiml, /record="record-from-answer-dual"/);
-  assert.match(twiml, /<Number>\+17065550142<\/Number>/);
+  assert.match(twiml, /<Number url="[^"]*">\+17065550142<\/Number>/);
   assert.ok(!twiml.includes("7065550144"), "the driver's real number is never passed to the rider");
 
-  // Dispatcher: moving a car to a zone his GPS isn't in needs "move anyway";
-  // a call he gave out over the radio puts the car on call until drop-off.
+  // Dispatcher: an app driver only goes in the line of the zone his GPS shows
+  // (no override; stale GPS doesn't count); a call given out over the radio
+  // puts the car on call until drop-off.
   await db.doc("board/d1").set({ carNumber: "44", status: "ready", zoneId: "downtown", lineKey: 1, rideId: null }, { merge: true });
   await db.doc("driverLocations/d1").set({ ...PICKUP, zoneId: "downtown", at: Date.now(), live: true });
   await rejects(call("dispatcherBoardAction", { uid: "d1", action: "ready", zoneId: "north" }, ADMIN), /GPS shows Downtown, not North Highland/);
-  await call("dispatcherBoardAction", { uid: "d1", action: "ready", zoneId: "north", force: true }, ADMIN);
+  await rejects(call("dispatcherBoardAction", { uid: "d1", action: "ready", zoneId: "north", force: true }, ADMIN), /GPS shows Downtown/);
+  await db.doc("driverLocations/d1").set({ at: Date.now() - 10 * MIN }, { merge: true });
+  await call("dispatcherBoardAction", { uid: "d1", action: "ready", zoneId: "north" }, ADMIN);
   let bd = await get("board/d1");
-  assert.deepEqual([bd.zoneId, bd.movedAgainstGps], ["north", true]);
+  assert.deepEqual([bd.zoneId, bd.movedAgainstGps], ["north", false], "old GPS doesn't block");
+  await db.doc("driverLocations/d1").set({ at: Date.now() }, { merge: true });
   await call("dispatcherBoardAction", { uid: "d1", action: "ready", zoneId: "downtown" }, ADMIN);
   await call("dispatcherBoardAction", { uid: "d1", action: "radio_call", note: "Kroger on Macon Rd" }, ADMIN);
   bd = await get("board/d1");
@@ -257,6 +264,23 @@ async function freeDriver() {
   await call("driverDropOff", PICKUP, D1);
   bd = await get("board/d1");
   assert.deepEqual([bd.status === "on_call", bd.radioCall], [false, null]);
+
+  // Office settles a card fare bigger than the booking hold: the fare goes to
+  // the card the hold saved (one charge). With no saved card, the hold covers
+  // what it can and the rest is owed on the rider's account.
+  const hold = await call("createPaymentIntent", {}, rider("u2"));
+  assert.ok(hold.paymentIntentId && hold.clientSecret);
+  assert.ok((await get("users/u2")).stripeCustomerId, "rider gets a Stripe customer for the saved card");
+  await db.doc("rides/s1").set({ customerId: "u2", status: "finished", paymentMethod: "card", paymentIntentId: hold.paymentIntentId, driverId: "d1", timestamp: admin.firestore.Timestamp.now() });
+  await call("captureFare", { rideId: "s1", meterFare: 30, tipAmount: 0 }, ADMIN);
+  let s1 = await get("rides/s1");
+  assert.deepEqual([s1.stripeStatus, s1.balanceOwedCents ?? 0], ["succeeded", 0]);
+  await db.doc("rides/s2").set({ customerId: "u2", status: "finished", paymentMethod: "card", paymentIntentId: "pi_no_saved_card", driverId: "d1", timestamp: admin.firestore.Timestamp.now() });
+  await call("captureFare", { rideId: "s2", meterFare: 60, tipAmount: 0 }, ADMIN);
+  s1 = await get("rides/s2");
+  assert.equal(s1.stripeStatus, "succeeded");
+  assert.ok(s1.balanceOwedCents > 0, "part the hold couldn't cover is owed");
+  assert.ok((await get("users/u2")).feesOwed.some((f) => f.kind === "fare_balance" && f.rideId === "s2"));
 
   // Drivers agree to the current Driver Agreement before going online.
   await db.doc("drivers/d1").update({ agreement: { version: "old", docs: ["driver-agreement", "privacy"] } });

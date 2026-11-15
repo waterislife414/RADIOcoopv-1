@@ -7,7 +7,7 @@ import { quickFix } from "../../utils/quickFix";
 import CallButton from "../CallButton";
 import RideMap from "../RideMap";
 import { RIDE_RULES, useNow, money } from "../../utils/rideLive";
-import { waitClock, clockText } from "../../../functions/lib/rideTiming.mjs";
+import { waitClock, clockText, distanceMeters } from "../../../functions/lib/rideTiming.mjs";
 
 const pickedUp = httpsCallable(functions, "driverPickedUp");
 const driverEndCall = httpsCallable(functions, "driverEndCall");
@@ -185,12 +185,26 @@ export default function CurrentRide({ ride }) {
   const going = ride.status === "dispatched";
   const arrived = ride.arrivedAt != null;
   const noShowOpen = !ride.appRide || (arrived && clock?.noShowOpen);
+  const extraTime = !!(ride.extraTime || ride.needsAccessibleVehicle);
+  const riderSaysHere = ride.riderReply?.reply === "here" && ride.riderReply.at >= ride.arrivedAt;
 
   async function markArrived() {
     setBusy(true);
     setMsg("");
     try {
       const fix = await quickFix();
+      // Far from the pickup and the rider's phone? Ask before telling the rider "your driver is here".
+      const spots = [
+        Number.isFinite(ride.pickupLat) ? { lat: ride.pickupLat, lng: ride.pickupLng } : null,
+        ride.riderPos,
+        ride.bookedFrom,
+      ];
+      const dists = fix ? spots.map((p) => distanceMeters(fix, p)).filter((d) => Number.isFinite(d)) : [];
+      const away = dists.length ? Math.min(...dists) : null;
+      if (away != null && away > RIDE_RULES.nearPickupMeters) {
+        const miles = (away / 1609).toFixed(1);
+        if (!window.confirm(`You look ${miles} mi from the pickup. Tell the rider you're here anyway?`)) return;
+      }
       const { data } = await driverArrived({ rideId: ride.rideId, ...(fix || {}) });
       if (ride.appRide && data?.near === false) {
         setMsg("You look far from the pickup. A no-show fee is only charged when you're at the pickup.");
@@ -259,18 +273,22 @@ export default function CurrentRide({ ride }) {
           </button>
         )}
       </div>
-      {going && !arrived && (
+      {going && (!arrived || ride.arrivedNear === false) && (
         <button disabled={busy} onClick={markArrived} className="w-full rounded-2xl py-4 text-lg font-bold bg-amber-400 text-navy-950 disabled:opacity-50">
-          I&rsquo;m here
+          {arrived ? "I\u2019m at the pickup now" : "I\u2019m here"}
         </button>
       )}
       {going && arrived && clock && (
         <div className="rounded-2xl bg-white/10 p-4 space-y-1" data-testid="driver-wait">
           <p className="text-sm text-slate-300">Waiting at the pickup</p>
           <p className="text-3xl font-mono font-bold">{clockText(clock.waitedMs)}</p>
-          <p className={`font-bold ${clock.meterOn ? "text-amber-300" : "text-slate-200"}`}>
-            {clock.meterOn ? "\u25B6 Start your meter: wait time is running." : `Free wait. Start your meter at ${RIDE_RULES.waitGraceMinutes}:00.`}
-          </p>
+          {extraTime ? (
+            <p className="font-bold text-slate-200">This rider needs extra time: no wait time and no no-show fee.</p>
+          ) : (
+            <p className={`font-bold ${clock.meterOn ? "text-amber-300" : "text-slate-200"}`}>
+              {clock.meterOn ? "\u25B6 Start your meter: wait time is running." : `Free wait. Start your meter at ${RIDE_RULES.waitGraceMinutes}:00.`}
+            </p>
+          )}
           {ride.riderReply && (
             <p className="font-bold text-emerald-300">Rider says: {ride.riderReply.reply === "here" ? "\u201cI'm at the car\u201d" : "\u201cNeed a minute\u201d"}</p>
           )}
@@ -280,7 +298,13 @@ export default function CurrentRide({ ride }) {
           {ride.appRide && clock.noShowOpen && (
             <button type="button" onClick={() => setEnding("no_show")} className="w-full min-h-[52px] rounded-xl border-2 border-red-400 font-bold text-red-200 mt-2">
               Rider didn&rsquo;t show up{" "}
-              {!nearPickup(ride)
+              {extraTime
+                ? "(no fee)"
+                : riderSaysHere
+                  ? "(no fee: the rider says they're at the car. Call them first.)"
+                  : !Number.isFinite(ride.arrivedDistM)
+                    ? "(no fee: no GPS proof you were there)"
+                  : !nearPickup(ride)
                 ? "(no fee: you weren't at the pickup)"
                 : ride.cardHold
                   ? `(${money(RIDE_RULES.noShowFee * 100)} to you)`

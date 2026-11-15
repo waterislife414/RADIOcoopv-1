@@ -7,8 +7,8 @@ const addRadio = httpsCallable(functions, "addRadioCar");
 
 /**
  * Dispatcher moves a car on the board, puts it on a radio call, or adds a
- * radio-only car (car = null). The dispatcher can always step in; moving an
- * app driver to a zone his GPS isn't in asks for a second "Move anyway".
+ * radio-only car (car = null). The dispatcher can step in any time; the one
+ * thing he can't do is put an app driver in a zone his GPS says he isn't in.
  */
 export default function CarActionsModal({ car, zones, gps = null, onClose }) {
   const [zoneId, setZoneId] = useState(car?.zoneId || gps?.zoneId || zones[0]?.id || "");
@@ -25,7 +25,7 @@ export default function CarActionsModal({ car, zones, gps = null, onClose }) {
       await fn(data);
       onClose();
     } catch (e) {
-      if (e?.details?.needsForce) setConfirmMove({ data, text: e.message });
+      if (e?.details?.gpsBlocked) setConfirmMove({ data, text: e.message, gpsZoneId: e.details.gpsZoneId, gpsZoneLabel: e.details.gpsZoneLabel });
       else setMsg(e?.message || "Couldn't do that.");
       setBusy(false);
     }
@@ -63,14 +63,19 @@ export default function CarActionsModal({ car, zones, gps = null, onClose }) {
             {confirmMove ? (
               <div className="rounded-xl border-2 border-amber-400 bg-amber-50 p-3 space-y-2">
                 <p className="font-bold text-amber-900">{confirmMove.text}</p>
-                <p className="text-sm text-amber-900">Move him anyway?</p>
                 <div className="grid grid-cols-2 gap-2">
                   <button disabled={busy} onClick={() => setConfirmMove(null)} className="rounded-xl py-3 font-bold border-2 border-slate-300 bg-white">
-                    Don&rsquo;t move
+                    OK
                   </button>
-                  <button disabled={busy} onClick={() => run(act, { ...confirmMove.data, force: true })} className="rounded-xl py-3 font-bold bg-amber-500 text-navy-950">
-                    Move anyway
-                  </button>
+                  {confirmMove.gpsZoneId && (
+                    <button
+                      disabled={busy}
+                      onClick={() => run(act, { ...confirmMove.data, zoneId: confirmMove.gpsZoneId })}
+                      className="rounded-xl py-3 font-bold bg-amber-500 text-navy-950"
+                    >
+                      Put him in {confirmMove.gpsZoneLabel}
+                    </button>
+                  )}
                 </div>
               </div>
             ) : null}

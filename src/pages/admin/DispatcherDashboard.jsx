@@ -212,7 +212,7 @@ export default function DispatcherDashboard() {
   }
 
   // Line order: Premium, then Day Pass, then by booking time.
-  const priorityTier = (ride) => (customerStatusMap[ride.customerId]?.tier === "PREMIUM" || ride.priority === "premium" ? 0 : ride.wantsPriorityPass ? 1 : 2);
+  const priorityTier = (ride) => (customerStatusMap[ride.customerId]?.tier === "PREMIUM" || ride.priority === "premium" ? 0 : ride.priority === "vip" ? 1 : 2);
   const sorted = [...pending].sort(
     (a, b) => priorityTier(a) - priorityTier(b) || (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0)
   );
@@ -271,55 +271,45 @@ export default function DispatcherDashboard() {
       <div className="px-6 pt-4 max-w-6xl mx-auto empty:hidden">
         <AlertsBanner />
       </div>
-
-      <div className="px-6 pt-6 max-w-6xl mx-auto empty:hidden">
-        <DriverApplicationsPanel />
-      </div>
-
       {pendingIdVerifications.length > 0 && (
-        <div className="px-6 pt-6 max-w-6xl mx-auto">
-          <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-5">
-            <h2 className="font-bold text-lg text-amber-800 mb-3">
-              Pending ID Verifications ({pendingIdVerifications.length})
-            </h2>
-            <div className="space-y-3">
-              {pendingIdVerifications.map((u) => (
-                <div
-                  key={u.id}
-                  className="bg-white rounded-xl p-4 flex items-center justify-between gap-3"
-                >
-                  <div>
-                    <p className="font-bold text-slate-800">
-                      {u.firstName} {u.lastName}
-                    </p>
-                    <p className="text-sm text-slate-500">DOB on file: {u.dob}</p>
-                    <a
-                      href={u.idImageUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-blue-600 font-semibold underline"
-                    >
-                      View uploaded ID photo
-                    </a>
-                  </div>
-                  <button
-                    onClick={() => approveIdVerification(u.id)}
-                    className="bg-emerald-600 text-white font-bold text-sm px-4 py-2.5 rounded-xl whitespace-nowrap"
-                  >
-                    Verified
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
+        <div className="px-6 pt-3 max-w-6xl mx-auto">
+          <a href="#id-checks" className="block rounded-xl bg-amber-100 border-2 border-amber-300 px-4 py-2 font-semibold text-amber-900">
+            {pendingIdVerifications.length} rider{pendingIdVerifications.length === 1 ? "" : "s"} waiting for an ID check. Once checked, the app
+            handles their card rides. &darr;
+          </a>
         </div>
       )}
 
       <div className="px-6 pt-6 max-w-6xl mx-auto space-y-4">
         <LeaseAlert />
         <QuickEntry zones={liveBoard.zones} board={liveBoard.drivers} />
-        <DispatchModePanel />
       </div>
+
+      {/* The calls that need him come first: phone calls, cash, guests, no GPS, ID not checked, nobody took it. */}
+      <section className="px-6 pt-6 max-w-6xl mx-auto" data-testid="send-by-radio">
+          <div>
+          <h2 className="font-bold text-xl text-slate-700">
+            {"\u{1F4FB}"} Send by radio ({officeRides.length})
+          </h2>
+          <p className="text-sm text-slate-500 mb-3">Phone calls, cash, guests, no GPS, ID not checked yet, or nobody took it. These need you.</p>
+          <div className="space-y-3">
+            {officeRides.map((ride) => (
+              <RideCard
+                key={ride.id}
+                ride={ride}
+                customerStatus={customerStatusMap[ride.customerId]}
+                carFor={carFor}
+                zones={liveBoard.zones}
+                onSetZone={handleSetZone}
+                onChangeCar={setAssignRide}
+                onDispatchAdvance={handleDispatchAdvance}
+                onDismiss={requestDismiss}
+              />
+            ))}
+            {officeRides.length === 0 && <p className="text-base text-slate-500">Nothing to send right now.</p>}
+          </div>
+        </div>
+      </section>
 
       <section className="px-6 pt-6 max-w-6xl mx-auto">
         <div className="flex items-baseline gap-4 mb-3 flex-wrap">
@@ -348,28 +338,6 @@ export default function DispatcherDashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 max-w-6xl mx-auto">
         <section className="space-y-6">
-          <div>
-            <h2 className="font-bold text-xl text-slate-700">
-              {"\u{1F4FB}"} Send by radio ({officeRides.length})
-            </h2>
-            <p className="text-sm text-slate-500 mb-3">Phone calls, cash, guests, no GPS, ID not checked yet, or nobody took it. These need you.</p>
-            <div className="space-y-3">
-              {officeRides.map((ride) => (
-                <RideCard
-                  key={ride.id}
-                  ride={ride}
-                  customerStatus={customerStatusMap[ride.customerId]}
-                  carFor={carFor}
-                  zones={liveBoard.zones}
-                  onSetZone={handleSetZone}
-                  onChangeCar={setAssignRide}
-                  onDispatchAdvance={handleDispatchAdvance}
-                  onDismiss={requestDismiss}
-                />
-              ))}
-              {officeRides.length === 0 && <p className="text-base text-slate-500">Nothing to send right now.</p>}
-            </div>
-          </div>
           <div>
             <h2 className="font-bold text-xl text-slate-700">
               {"\u{1F4F1}"} App rides ({appRides.length})
@@ -459,6 +427,53 @@ export default function DispatcherDashboard() {
           onCharged={() => setWalletChargeRide(null)}
         />
       )}
+      {/* Less frequent: dispatch mode, new driver applications and ID checks. */}
+      <div className="px-6 pb-2 max-w-6xl mx-auto">
+        <DispatchModePanel />
+      </div>
+      <div className="px-6 pb-6 max-w-6xl mx-auto empty:hidden">
+        <DriverApplicationsPanel />
+      </div>
+
+      {pendingIdVerifications.length > 0 && (
+        <div className="px-6 pb-6 max-w-6xl mx-auto">
+          <div id="id-checks" className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-5">
+            <h2 className="font-bold text-lg text-amber-800 mb-3">
+              Pending ID Verifications ({pendingIdVerifications.length})
+            </h2>
+            <div className="space-y-3">
+              {pendingIdVerifications.map((u) => (
+                <div
+                  key={u.id}
+                  className="bg-white rounded-xl p-4 flex items-center justify-between gap-3"
+                >
+                  <div>
+                    <p className="font-bold text-slate-800">
+                      {u.firstName} {u.lastName}
+                    </p>
+                    <p className="text-sm text-slate-500">DOB on file: {u.dob}</p>
+                    <a
+                      href={u.idImageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 font-semibold underline"
+                    >
+                      View uploaded ID photo
+                    </a>
+                  </div>
+                  <button
+                    onClick={() => approveIdVerification(u.id)}
+                    className="bg-emerald-600 text-white font-bold text-sm px-4 py-2.5 rounded-xl whitespace-nowrap"
+                  >
+                    Verified
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

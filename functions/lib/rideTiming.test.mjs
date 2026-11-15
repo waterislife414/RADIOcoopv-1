@@ -87,3 +87,12 @@ test("driver credit is meter fare + tip only: card fee and the $5 pass stay with
   const ride = { paymentMethod: "card", stripeStatus: "succeeded", finalFare: 12.5, tipAmount: 2, cardFeeCents: 200, wantsPriorityPass: true, capturedAmountCents: 2150 };
   assert.deepEqual(cardCreditCents(ride, { includeTips: true }), { fareCents: 1250, tipCents: 200 });
 });
+
+test("no no-show fee when the rider said they're at the car after the driver arrived", () => {
+  const MIN = 60_000;
+  const base = { status: "dispatched", customerId: "u1", driverId: "d1", assignedAt: 0, arrivedAt: 0, arrivedDistM: 30 };
+  const said = { ...base, riderReply: { reply: "here", at: MIN } };
+  assert.deepEqual(T.noShowCheck(said, 8 * MIN, T.DEFAULT_RULES), { allowed: true, feeCents: 0, near: true, disputed: true });
+  const minute = { ...base, riderReply: { reply: "minute", at: MIN } };
+  assert.equal(T.noShowCheck(minute, 8 * MIN, T.DEFAULT_RULES).feeCents, 1000);
+});

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { collection, getDocs, limit, orderBy, query, where } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { useAuth } from "../context/AuthContext";
@@ -495,6 +495,18 @@ export default function TripDetails() {
                 <span className={`absolute top-1 w-5 h-5 bg-white rounded-full transition ${sharing ? "left-6" : "left-1"}`} />
               </button>
             </div>
+            {currentUser && userProfile && userProfile.idVerified !== true && (
+              <p className="rounded-xl bg-amber-50 border-2 border-amber-300 px-4 py-3 text-sm text-amber-900">
+                {userProfile.idImageUrl
+                  ? "Your ID is waiting for our office to check it. Until then, our dispatcher sends your rides."
+                  : "Your ID isn't checked yet, so our dispatcher sends this ride."}{" "}
+                {!userProfile.idImageUrl && (
+                  <Link to="/profile#verify-id" className="font-bold underline">
+                    Verify your ID to get app rides
+                  </Link>
+                )}
+              </p>
+            )}
             <p className={`text-xs -mt-2 ${sharing ? "text-slate-500" : "text-amber-800 font-semibold"}`}>
               {sharing
                 ? "Your driver sees where you are until pickup, so they can find you even if the address is off."

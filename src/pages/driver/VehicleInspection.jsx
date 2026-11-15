@@ -27,6 +27,8 @@ const ATTEST = {
 /** One photo slot: tap to open the camera. Shows a preview once taken. */
 function PhotoSlot({ label, hint, required, file, onFile }) {
   const preview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+  // Let go of each preview when it's replaced or the page closes (12+ photos add up on small phones).
+  useEffect(() => () => preview && URL.revokeObjectURL(preview), [preview]);
   return (
     <label className={`relative block rounded-2xl border-2 overflow-hidden cursor-pointer ${file ? "border-emerald-400" : required ? "border-gold-400/70" : "border-white/20"}`}>
       <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => onFile(e.target.files[0] || null)} />
@@ -196,7 +198,7 @@ export default function VehicleInspection() {
             {done.workOrders ? `${done.workOrders} repair${done.workOrders > 1 ? "s were" : " was"} sent to the shop.` : "Thank you."}
           </p>
           <button type="button" onClick={() => navigate(then === "online" ? "/driver?goOnline=1" : "/driver")} className={`${BTN} w-full mt-8 bg-gold-400 text-navy-950`}>
-            {then === "online" ? "Back to Go Online" : "Back to driver home"}
+            {then === "online" ? "Done: back to the driver screen" : "Back to driver home"}
           </button>
         </div>
       </div>

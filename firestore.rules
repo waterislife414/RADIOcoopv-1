@@ -35,6 +35,8 @@ service cloud.firestore {
       allow create: if isOwner(userId)
         && request.resource.data.get('walletBalance', 0) == 0
         && request.resource.data.get('subscriptionTier', null) == null
+        // Only the dispatcher marks an ID as checked (it decides app vs. radio dispatch).
+        && request.resource.data.get('idVerified', false) == false
         && !request.resource.data.keys().hasAny(userServerKeys().removeAll(['walletBalance', 'subscriptionTier']));
       allow update: if isAdmin()
         || (isOwner(userId)

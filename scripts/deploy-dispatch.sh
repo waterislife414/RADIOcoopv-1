@@ -23,6 +23,17 @@ gcloud services enable cloudtasks.googleapis.com cloudscheduler.googleapis.com -
 echo "== Security rules + database indexes"
 firebase deploy --only firestore:rules,firestore:indexes,storage --project "$PROJECT"
 
+echo "== Calling secret (private rider/driver calls)"
+# The server reads TWILIO_AUTH_TOKEN. If it was never set, set it to "none" so
+# the deploy doesn't stop to ask; calls then show the office number until the
+# real token is set (firebase functions:secrets:set TWILIO_AUTH_TOKEN). The value is never printed.
+if gcloud secrets describe TWILIO_AUTH_TOKEN --project "$PROJECT" >/dev/null 2>&1; then
+  echo "already set"
+else
+  printf 'none' | firebase functions:secrets:set TWILIO_AUTH_TOKEN --data-file=- --project "$PROJECT" >/dev/null
+  echo "not set yet: set to none (calls go through the office number until the real token is added)"
+fi
+
 echo "== Cloud Functions (Node 22). If asked to DELETE functions, answer N."
 firebase deploy --only functions --project "$PROJECT"
 

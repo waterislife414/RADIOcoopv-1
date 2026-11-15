@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
 import BrandHeader from "../components/BrandHeader";
 import ContactFooter from "../components/ContactFooter";
+import { RIDE_RULES } from "../utils/rideLive";
 import {
+  BRAND,
   COMPANY_PHONE_DISPLAY,
   COMPANY_PHONE_TEL,
   FARE_CONFIG,
@@ -10,6 +12,11 @@ import {
   SURROUNDING_SERVICE_CITIES,
   SERVICE_HOURS,
 } from "../config/constants";
+
+// Fees, minutes and the Day Pass come from the same settings the app charges by.
+const usd = (n) => `$${Number(n).toFixed(2).replace(/\.00$/, "")}`;
+const PASS = BRAND.copy.dayPass;
+const R = RIDE_RULES;
 
 const money = (n) => `$${Number(n).toFixed(2)}`;
 
@@ -64,7 +71,7 @@ const QA = [
     a: (
       <p>
         If you have an account, tap <strong>Cancel this ride</strong> on your ride (Home or My Account). It&rsquo;s free until your driver is
-        about 4 minutes away, then $5. If you booked by phone or as a guest, call{" "}
+        about {R.headsUpMinutes} minutes away, then {usd(R.lateCancelFee)}. If you booked by phone or as a guest, call{" "}
         <a className="font-bold text-blue-700 underline" href={`tel:${COMPANY_PHONE_TEL}`}>{COMPANY_PHONE_DISPLAY}</a>.
       </p>
     ),
@@ -94,10 +101,10 @@ const QA = [
     a: <p>Call the office with the time and place of your ride. We&rsquo;ll pass the message to your driver right away.</p>,
   },
   {
-    q: "What is the Priority Day Pass?",
+    q: `What is the ${PASS.title}?`,
     a: (
       <p>
-        For $5 you move up the line on every ride until midnight, watch your driver on the map and call them directly (private, no
+        For {PASS.price} you move up the line on every ride until midnight, watch your driver on the map and call them directly (private, no
         numbers shared). Premium members still dispatch first. Choose it when you book, or tap &ldquo;Skip ahead&rdquo; while you wait.
       </p>
     ),
@@ -106,9 +113,14 @@ const QA = [
     q: "Can I cancel? Is there a fee?",
     a: (
       <p>
-        Cancelling is free until we tell you your driver is about 4 minutes away. After that it costs $5, which goes to your driver.
-        Once your driver is there, the wait meter starts after 2 minutes, and after 7 minutes they can cancel as a no-show ($10). Phone
-        bookings are cancelled by calling us.
+        Cancelling is free until we tell you your driver is about {R.headsUpMinutes} minutes away. After that it costs{" "}
+        {usd(R.lateCancelFee)}, which goes to your driver. Once your driver is there, the first {R.waitGraceMinutes} minutes of waiting are
+        free; after that waiting time is charged. After {R.noShowAfterMinutes} minutes your driver can cancel as a no-show (
+        {usd(R.noShowFee)}). If you need extra time to get to the car, tell us and you won&rsquo;t pay wait or no-show fees.
+        <br />
+        <br />
+        These fees are only for app rides: signed in, ID checked, location on, paying by card. Phone, cash and guest rides are
+        sent by our dispatcher, have no cancel or no-show fees, and are cancelled by calling us once a driver is assigned.
       </p>
     ),
   },

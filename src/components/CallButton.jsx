@@ -61,10 +61,10 @@ export default function CallButton({ rideId, label, fallbackTel, dark = false, c
                   recorded for quality and safety.
                 </p>
               </>
-            ) : fallbackTel ? (
+            ) : sheet.directTel || fallbackTel ? (
               <>
                 <p className="text-lg font-bold">Private calling isn&rsquo;t set up yet</p>
-                <a href={`tel:${fallbackTel}`} className="block rounded-xl bg-emerald-600 text-white font-bold py-3">
+                <a href={`tel:${sheet.directTel || fallbackTel}`} className="block rounded-xl bg-emerald-600 text-white font-bold py-3">
                   Call directly (shows your number)
                 </a>
               </>
