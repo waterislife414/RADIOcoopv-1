@@ -9,7 +9,7 @@ const DOT = {
 };
 const TITLE = { green: "On call", red: "Waiting", "blue-ring": "You", "blue-filled": "You (on call)", moving: "Moving" };
 
-function Dot({ d, kind, showCars, dark, onClick }) {
+function Dot({ d, kind, showCars, dark, onClick, gpsWarn = null }) {
   const size = showCars ? "h-9 min-w-9 px-1.5 text-sm" : "h-7 w-7";
   const offered =
     d.status === "offered"
@@ -21,10 +21,22 @@ function Dot({ d, kind, showCars, dark, onClick }) {
     <Tag
       type={onClick ? "button" : undefined}
       onClick={onClick ? () => onClick(d) : undefined}
-      title={`${showCars ? `Car ${d.carNumber}${d.radioOnly ? " (radio)" : ""} · ` : ""}${d.status === "offered" ? "Being offered a call" : TITLE[kind]}`}
-      className={`inline-flex items-center justify-center rounded-full font-bold ${size} ${DOT[kind]} ${offered} ${radio} ${onClick ? "hover:scale-110 transition" : ""}`}
+      title={`${showCars ? `Car ${d.carNumber}${d.radioOnly ? " (radio)" : ""} · ` : ""}${
+        d.status === "offered" ? "Being offered a call" : d.radioCall ? "On a radio call" : TITLE[kind]
+      }${gpsWarn ? ` · GPS shows ${gpsWarn}` : ""}`}
+      className={`relative inline-flex items-center justify-center rounded-full font-bold ${size} ${DOT[kind]} ${offered} ${radio} ${onClick ? "hover:scale-110 transition" : ""}`}
     >
       {showCars ? d.carNumber : null}
+      {showCars && d.radioCall && (
+        <span className="absolute -top-2 -right-2 text-xs" aria-label="radio call">
+          {"\u{1F4FB}"}
+        </span>
+      )}
+      {showCars && gpsWarn && (
+        <span className="absolute -bottom-1.5 -right-1.5 h-4 w-4 rounded-full bg-amber-400 text-navy-950 text-[10px] leading-4 font-extrabold" aria-label={`GPS shows ${gpsWarn}`}>
+          !
+        </span>
+      )}
     </Tag>
   );
 }
@@ -34,10 +46,16 @@ function Dot({ d, kind, showCars, dark, onClick }) {
  * order. Driver view: own dot is blue (ring = waiting, filled = on call), no
  * car numbers, and only zones he's certified for. Dispatcher view: car numbers.
  */
-export default function ZoneBoard({ drivers, zones, viewer = null, variant = "driver", onCarClick = null }) {
+export default function ZoneBoard({ drivers, zones, viewer = null, variant = "driver", onCarClick = null, gps = null }) {
   const dark = variant === "driver";
   const showCars = variant === "dispatcher";
   const { moving, rows } = buildBoard({ drivers, zones, viewerId: viewer?.id ?? null, viewer });
+  // Dispatcher view: flag an app driver whose phone is in a different zone than his spot on the board.
+  const gpsWarnFor = (d) => {
+    const g = gps?.[d.id];
+    if (!g?.zoneId || !d.zoneId || d.radioOnly || g.zoneId === d.zoneId || Date.now() - (g.at || 0) > 5 * 60000) return null;
+    return zones.find((z) => z.id === g.zoneId)?.label || "another zone";
+  };
 
   const rowCls = dark ? "border-white/10" : "border-slate-200";
   const labelCls = dark ? "text-slate-200" : "text-slate-700";
@@ -61,7 +79,15 @@ export default function ZoneBoard({ drivers, zones, viewer = null, variant = "dr
           <div className="flex flex-wrap gap-1.5">
             {r.line.length === 0 && <span className={muted}>&mdash;</span>}
             {r.line.map((d) => (
-              <Dot key={d.id} d={d} kind={d.dot} showCars={showCars} dark={dark} onClick={onCarClick} />
+              <Dot
+                key={d.id}
+                d={d}
+                kind={d.dot}
+                showCars={showCars}
+                dark={dark}
+                onClick={onCarClick}
+                gpsWarn={gpsWarnFor(d)}
+              />
             ))}
           </div>
         </div>

@@ -5,7 +5,8 @@ results=[]
 def check(name, fn):
     try:
         r=fn()
-        ok = r is not False
+        # Pass = True, None, or another truthy non-string value. A string is a failure reason.
+        ok = (r is None or r is True or (bool(r) and not isinstance(r,str)))
         results.append((ok,name,"" if ok else (r if isinstance(r,str) else "failed")))
     except Exception as e:
         results.append((False,name,str(e).split("\n")[0][:160]))

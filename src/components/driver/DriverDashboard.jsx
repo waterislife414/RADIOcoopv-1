@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
-import { db } from "../../config/firebase";
+import { httpsCallable } from "firebase/functions";
+import { db, functions } from "../../config/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { COMPANY_WORDMARK } from "../../config/constants";
 import { CERT_LABELS } from "../../config/driverCerts";
@@ -40,7 +41,7 @@ function DriverNotice({ notice }) {
   return (
     <div className="rounded-2xl bg-gold-400 text-navy-950 p-4 font-bold flex items-start justify-between gap-3" role="status">
       <span>{notice.text}</span>
-      <button type="button" onClick={close} className="shrink-0 underline">
+      <button type="button" onClick={close} className="shrink-0 underline min-h-[48px] min-w-[48px]">
         OK
       </button>
     </div>
@@ -90,6 +91,15 @@ export default function DriverDashboard() {
     });
   }, [currentUser.uid]);
 
+  // Terms changed while he's on the board: take him off until he agrees, so
+  // he isn't offered calls on a screen that can't show them.
+  const needsAgreement = !!driver && driver.active !== false && !consentIsCurrent(driver.agreement, ["driver-agreement", "privacy"]);
+  useEffect(() => {
+    if (needsAgreement && (board?.status === "ready" || board?.status === "moving")) {
+      httpsCallable(functions, "driverGoOffline")({}).catch(() => {});
+    }
+  }, [needsAgreement, board?.status]);
+
   if (!driver) {
     return (
       <div className="min-h-screen bg-navy-950 flex items-center justify-center">
@@ -102,7 +112,7 @@ export default function DriverDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-navy-950 text-white pb-16">
+    <div className="min-h-screen bg-navy-950 text-white pb-32">
       <header className="px-5 pt-6 pb-5 border-b border-white/10">
         <div className="flex items-start justify-between gap-3 max-w-md mx-auto">
           <div>
@@ -111,7 +121,7 @@ export default function DriverDashboard() {
             <p className="text-slate-300 text-base">{driver.name}</p>
             <CertBadges certs={driver.certs} />
           </div>
-          <button onClick={logout} className="text-sm font-semibold text-slate-400 hover:text-white pt-1">
+          <button onClick={logout} className="min-h-[48px] px-3 mr-12 text-sm font-semibold text-slate-400 hover:text-white">
             Sign out
           </button>
         </div>
@@ -128,7 +138,7 @@ export default function DriverDashboard() {
 
         {offer && <OfferAlert offer={offer} warnings={driver.warnings ?? 0} />}
 
-        <DriverStatusPanel driver={driver} board={board} drivers={drivers} zones={zones} />
+        <DriverStatusPanel driver={driver} board={board} drivers={drivers} zones={zones} rideStatus={inbox.current?.status ?? null} />
 
         <DriverNotice notice={inbox.notice} />
         {board?.status === "on_call" && <CurrentRide ride={inbox.current} />}

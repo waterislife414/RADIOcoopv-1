@@ -67,7 +67,7 @@ export default function SignUp() {
             <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-5">
               <p className="text-sm text-blue-700">
                 You're signing up for the{" "}
-                <span className="font-bold">{tierInfo.name} Plan</span> (${tierInfo.price}
+                <span className="font-bold">{tierInfo.name} Plan</span> (${tierInfo.monthlyPrice}
                 /mo). You'll choose a payment method right after creating your account.
               </p>
             </div>
@@ -158,7 +158,7 @@ export default function SignUp() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4.5 rounded-2xl shadow-md transition disabled:opacity-50"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4 min-h-[56px] rounded-2xl shadow-md transition disabled:opacity-50"
             >
               {loading ? "Creating..." : "Create Account"}
             </button>

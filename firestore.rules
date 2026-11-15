@@ -27,7 +27,7 @@ service cloud.firestore {
     function userServerKeys() {
       return ['walletBalance', 'subscriptionTier', 'subscriptionStatus', 'stripeCustomerId',
               'stripeSubscriptionId', 'smsAddonStatus', 'birthdayCredits',
-              'dayPass', 'feesOwedCents', 'feesOwed'];
+              'dayPass', 'feesOwedCents', 'feesOwed', 'extraTime'];
     }
 
     match /users/{userId} {
@@ -60,7 +60,8 @@ service cloud.firestore {
               // Pickup timing, perks, fees and calls: server-written only.
               'perks', 'termsMissing', 'eta', 'headsUpAt', 'driverPos', 'riderPos', 'riderReply',
               'arrivedAt', 'arrivedDistM', 'arrivedFix', 'waitedMs', 'fee', 'calls',
-              'cancelFeeCents', 'cancelledBy', 'cancelledAt', 'earlierFeesCents', 'termsRead'];
+              'cancelFeeCents', 'cancelledBy', 'cancelledAt', 'earlierFeesCents', 'termsRead',
+              'appHandled', 'officeWhy', 'arrivedNear', 'settlingAt', 'extraTime', 'radioCall'];
     }
 
     match /rides/{rideId} {
@@ -74,7 +75,10 @@ service cloud.firestore {
       allow update: if isAdmin()
         || (isSignedIn() && resource.data.customerId == request.auth.uid && resource.data.status == 'pending'
             && !request.resource.data.diff(resource.data).affectedKeys()
-                  .hasAny(rideServerKeys().concat(['status', 'customerId', 'finalFare', 'paymentIntentId'])))
+                  .hasAny(rideServerKeys().concat(['status', 'customerId', 'finalFare', 'paymentIntentId',
+                          // Set at booking; they decide fees, priority and who dispatches it.
+                          'callIn', 'shareLocation', 'bookedFrom', 'consent', 'wantsPriorityPass', 'fastPassId',
+                          'paymentMethod', 'needsAccessibleVehicle'])))
         || (isSignedIn() && resource.data.customerId == request.auth.uid
             && resource.data.status in ['finished', 'archived']
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating']));

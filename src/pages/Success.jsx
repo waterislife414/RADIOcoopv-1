@@ -84,13 +84,13 @@ export default function Success() {
           <div className="grid grid-cols-1 gap-3.5 mb-8">
             <a
               href={`tel:${COMPANY_PHONE_TEL}`}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4.5 rounded-full shadow-md transition"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4 min-h-[56px] rounded-full shadow-md transition"
             >
               Call Office
             </a>
             <a
               href={`mailto:${COMPANY_EMAIL}`}
-              className="bg-slate-300 hover:bg-slate-400 text-slate-800 font-bold text-lg py-4.5 rounded-full shadow-md transition"
+              className="bg-slate-300 hover:bg-slate-400 text-slate-800 font-bold text-lg py-4 min-h-[56px] rounded-full shadow-md transition"
             >
               Email Us
             </a>
@@ -98,7 +98,7 @@ export default function Success() {
               href={GOOGLE_REVIEW_LINK}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-lg py-4.5 rounded-full transition"
+              className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-lg py-4 min-h-[56px] rounded-full transition"
             >
               Leave a Google Review
             </a>

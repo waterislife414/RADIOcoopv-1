@@ -10,23 +10,31 @@ const driverEmergency = httpsCallable(functions, "driverEmergency");
 export default function EmergencyButton() {
   const [open, setOpen] = useState(false);
   const [sent, setSent] = useState("");
+  const [sending, setSending] = useState(false);
 
+  // One alert per tap; for 911 it goes out right away with the phone's last
+  // known spot (no waiting on a fresh GPS reading), then the phone dials.
   async function alertOffice(called911) {
-    const fix = await quickFix(called911 ? 1500 : 4000);
+    if (sending) return;
+    setSending(true);
+    setSent("Alerting the office\u2026");
+    const fix = await quickFix(called911 ? 300 : 3000);
     try {
       await driverEmergency({ ...(fix || {}), called911 });
-      setSent("The office has been alerted with your location.");
+      setSent(fix ? "The office has been alerted with your location." : "The office has been alerted.");
     } catch {
       setSent(`Couldn't reach the office. Call ${COMPANY_PHONE_DISPLAY}.`);
+    } finally {
+      setSending(false);
     }
   }
 
   function call911() {
     alertOffice(true);
-    // Give the alert a moment to leave, then dial.
+    // Dial 911 almost at once; the alert is already on its way.
     setTimeout(() => {
       window.location.href = "tel:911";
-    }, 400);
+    }, 500);
   }
 
   return (
@@ -57,7 +65,7 @@ export default function EmergencyButton() {
               &#9742; Call 911
             </a>
             <p className="text-sm text-slate-300 text-center">Calling 911 here also alerts the office with your location.</p>
-            <button type="button" onClick={() => alertOffice(false)} className="w-full min-h-[56px] rounded-2xl border-2 border-red-400 text-red-200 font-bold text-lg">
+            <button type="button" onClick={() => alertOffice(false)} disabled={sending} className="disabled:opacity-50 w-full min-h-[56px] rounded-2xl border-2 border-red-400 text-red-200 font-bold text-lg">
               Alert the office only
             </button>
             <a href={`tel:${COMPANY_PHONE_TEL}`} className="flex items-center justify-center w-full min-h-[56px] rounded-2xl border-2 border-white/30 font-bold text-lg">

@@ -121,12 +121,16 @@ exports.dispatcherAssign = onCall(async (request) => {
       E.assignInTx(tx, c, { rideId, ride, uid, board, driver, customer, how: "dispatcher", zones, nowMs });
       return { uid, carNumber: board.carNumber, app: !board.radioOnly };
     }
+    // Sent by radio to a car that isn't in the app: no app driver on it.
     tx.update(rideRef(rideId), {
       status: "dispatched",
       dispatchState: "manual",
+      driverId: null,
+      carNumber: null,
       offer: null,
       offerDriverId: null,
       broadcastTo: [],
+      ...E.PICKUP_RESET,
     });
     (ride.broadcastTo || []).forEach((id) =>
       tx.set(inboxRef(id), { broadcasts: { [rideId]: FieldValue.delete() } }, { merge: true })
@@ -176,7 +180,9 @@ exports.dispatcherBoardAction = onCall(async (request) => {
   if (["ready", "front"].includes(action) && !zones.some((z) => z.id === zoneId)) {
     throw new HttpsError("invalid-argument", "Pick a zone.");
   }
-  if (!["ready", "front", "moving", "off", "remove"].includes(action)) throw new HttpsError("invalid-argument", "Unknown action.");
+  if (!["ready", "front", "moving", "off", "remove", "radio_call"].includes(action)) throw new HttpsError("invalid-argument", "Unknown action.");
+  const force = request.data?.force === true;
+  const note = String(request.data?.note || "").trim().slice(0, 120);
   const nowMs = Date.now();
 
   return db().runTransaction(async (tx) => {
@@ -192,15 +198,39 @@ exports.dispatcherBoardAction = onCall(async (request) => {
     }
     const line = zoneId ? (await tx.get(db().collection("board").where("zoneId", "==", zoneId))).docs.map((d) => ({ id: d.id, ...d.data() })) : [];
     const rideSnap = board.status === "on_call" && board.rideId ? await tx.get(rideRef(board.rideId)) : null;
+    const loc = board.radioOnly ? null : (await tx.get(db().collection("driverLocations").doc(uid))).data();
 
-    const patch = c.dispatcherMove(line, uid, action, zoneId, nowMs);
-    tx.update(boardRef(uid), { ...patch, rideId: null, updatedAt: serverNow(), movedByDispatcherAt: nowMs });
+    // An app driver's phone says where he really is: putting him in a
+    // different zone's line needs a second "move anyway".
+    const gpsFresh = loc && Number.isFinite(loc.at) && nowMs - loc.at < 5 * 60000 && loc.zoneId;
+    if (["ready", "front"].includes(action) && gpsFresh && loc.zoneId !== zoneId && !force) {
+      const here = zones.find((z) => z.id === loc.zoneId)?.label || "another zone";
+      const there = zones.find((z) => z.id === zoneId)?.label || "that zone";
+      throw new HttpsError("failed-precondition", `Car ${board.carNumber}'s GPS shows ${here}, not ${there}.`, {
+        needsForce: true,
+        gpsZoneId: loc.zoneId,
+        gpsZoneLabel: here,
+      });
+    }
+    if (action === "radio_call" && board.status === "on_call" && board.rideId) {
+      throw new HttpsError("failed-precondition", "He's on an app call. Drop that off first.");
+    }
+
+    const patch = c.dispatcherMove(line, uid, action, action === "radio_call" ? board.zoneId ?? loc?.zoneId ?? null : zoneId, nowMs);
+    tx.update(boardRef(uid), {
+      ...patch,
+      rideId: null,
+      radioCall: action === "radio_call" ? { note: note || null, at: nowMs, by: request.auth.uid } : null,
+      updatedAt: serverNow(),
+      movedByDispatcherAt: nowMs,
+      ...(action === "ready" || action === "front" ? { movedAgainstGps: !!(gpsFresh && loc.zoneId !== zoneId) } : {}),
+    });
     const ride = rideSnap?.data();
     if (ride && ["dispatched", "in_transit"].includes(ride.status) && ride.driverId === uid) {
       tx.update(rideSnap.ref, { status: "finished", droppedOffAt: nowMs, droppedOffBy: "dispatcher" });
     }
     if (!board.radioOnly) {
-      if (board.status === "on_call") tx.set(inboxRef(uid), { current: null }, { merge: true });
+      if (board.status === "on_call" && board.rideId) tx.set(inboxRef(uid), { current: null }, { merge: true });
       tx.set(db().collection("driverLocations").doc(uid), { live: c.isLive(patch.status), outOfZoneSince: null }, { merge: true });
     }
     return { ok: true, status: patch.status };

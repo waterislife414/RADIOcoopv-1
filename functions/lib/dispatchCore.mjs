@@ -235,6 +235,8 @@ export function dispatcherMove(drivers, driverId, action, zoneId, now = Date.now
   if (action === 'front') return applyDropOff(drivers, driverId, zoneId, 'front', now);
   if (action === 'moving') return { status: STATUS.MOVING, zoneId: null, lineKey: null };
   if (action === 'off') return { status: STATUS.OFFLINE, zoneId: null, lineKey: null };
+  // A call he took over the radio: green in his zone until he drops off.
+  if (action === 'radio_call') return { status: STATUS.ON_CALL, zoneId: zoneId ?? null, lineKey: null };
   return null;
 }
 

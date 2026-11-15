@@ -36,11 +36,13 @@ async function chargeRideFee({ stripe, ride, rideId, cents, kind }) {
       const capturable = intent.amount_capturable ?? intent.amount ?? 0;
       if (intent.status === "requires_capture" && capturable > 0) {
         chargedCents = Math.min(cents, capturable);
-        await stripe.paymentIntents.capture(ride.paymentIntentId, { amount_to_capture: chargedCents });
+        await stripe.paymentIntents.capture(ride.paymentIntentId, { amount_to_capture: chargedCents }, { idempotencyKey: `fee_${rideId}` });
       }
     } catch (e) {
+      // A timeout can hide a capture that went through: look before calling it unpaid.
       console.warn("fee capture failed", rideId, e?.message);
-      chargedCents = 0;
+      const again = await stripe.paymentIntents.retrieve(ride.paymentIntentId).catch(() => null);
+      chargedCents = again?.status === "succeeded" ? Math.min(cents, again.amount_received ?? 0) : 0;
     }
   }
   const owedCents = cents - chargedCents;
@@ -67,7 +69,12 @@ async function chargeRideFee({ stripe, ride, rideId, cents, kind }) {
 /** After an owed fee is collected on a later card payment: clear it and pay each driver. */
 async function settleOwedFees(uid, owed) {
   if (!uid || !owed?.length) return;
-  await db().collection("users").doc(uid).update({ feesOwedCents: 0, feesOwed: [] });
+  // Take off exactly what was collected; a fee added meanwhile stays owed.
+  const cents = owed.reduce((n, f) => n + (f.cents || 0), 0);
+  await db()
+    .collection("users")
+    .doc(uid)
+    .update({ feesOwedCents: FieldValue.increment(-cents), feesOwed: FieldValue.arrayRemove(...owed) });
   for (const f of owed) await creditDriverFee(f.driverId, `${f.rideId}_owed`, f.cents, f.kind);
 }
 

@@ -38,7 +38,8 @@ async function runTimer(match) {
 }
 async function newRide(id, extra) {
   const consent = { version: require("../../functions/branding.json").legalVersion, docs: ["terms", "privacy"] };
-  const data = { status: "pending", pickup: "100 Test St", dropoff: "", customerId: "guest", firstName: "Pat", phone: "7065550100", paymentMethod: "cash", consent, timestamp: admin.firestore.Timestamp.now(), ...extra };
+  // An app-handled booking: verified rider, card hold, agreed to the terms.
+  const data = { status: "pending", pickup: "100 Test St", dropoff: "", customerId: "rider1", firstName: "Pat", phone: "7065550100", paymentMethod: "card", paymentIntentId: `pi_${id}`, consent, timestamp: admin.firestore.Timestamp.now(), ...extra };
   await db.doc(`rides/${id}`).set(data);
   // assignRideZone with a preset zone (no geocoding)
   await f.assignRideZone.run({ data: { data: () => data, ref: db.doc(`rides/${id}`) }, params: { rideId: id } });
@@ -51,6 +52,7 @@ async function boardChanged(uid, before) {
 (async () => {
   await require("./reset.cjs")(db);
   await db.doc("settings/dispatch").set({ mode: "auto" });
+  await db.doc("users/rider1").set({ firstName: "Pat", idVerified: true });
   await db.doc("zones/rose-hill").set({ label: "Rose Hill", order: 1, points: sq(RH.lat, RH.lng) });
   await db.doc("zones/east").set({ label: "East", order: 2, points: sq(EAST.lat, EAST.lng) });
   await db.doc("zones/fort-benning").set({ label: "Fort Benning", order: 3, requiresCert: "base", points: sq(FB.lat, FB.lng) });

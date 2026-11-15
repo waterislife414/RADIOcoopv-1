@@ -13,6 +13,17 @@ const pickedUp = httpsCallable(functions, "driverPickedUp");
 const driverEndCall = httpsCallable(functions, "driverEndCall");
 const driverArrived = httpsCallable(functions, "driverArrived");
 
+/** True if this sound already played for this ride (survives leaving the screen and coming back). */
+function ringOnce(key) {
+  try {
+    if (sessionStorage.getItem(`rc-rang-${key}`)) return true;
+    sessionStorage.setItem(`rc-rang-${key}`, "1");
+  } catch {
+    // No storage: may ring again, harmless.
+  }
+  return false;
+}
+
 const nearPickup = (ride) => Number.isFinite(ride.arrivedDistM) && ride.arrivedDistM <= RIDE_RULES.nearPickupMeters;
 
 /** Where the rider's phone is (live, or where they booked from) next to the pickup and this car. */
@@ -133,7 +144,7 @@ function EndCallSheet({ ride, onClose, initialReason = null, noShowOpen = true }
             </button>
           </>
         )}
-        <button type="button" onClick={() => onClose(false)} className="w-full py-2 text-slate-300 font-semibold">
+        <button type="button" onClick={() => onClose(false)} className="w-full min-h-[52px] py-2 text-slate-300 font-semibold">
           Keep the call
         </button>
       </div>
@@ -160,12 +171,12 @@ export default function CurrentRide({ ride }) {
   useEffect(() => {
     if (ride?.status === "dispatched" && clock?.meterOn && meterRung.current !== ride.rideId) {
       meterRung.current = ride.rideId;
-      ring(2);
+      if (!ringOnce(`meter-${ride.rideId}`)) ring(2);
     }
   }, [clock?.meterOn, ride?.rideId, ride?.status]);
   // Ring when dispatch hands him a call (he didn't tap Accept, so he may not be looking).
   useEffect(() => {
-    if (ride?.how === "dispatcher" && rung.current !== ride.rideId && Date.now() - (ride.assignedAt || 0) < 60_000) {
+    if (ride?.how === "dispatcher" && rung.current !== ride.rideId && Date.now() - (ride.assignedAt || 0) < 60_000 && !ringOnce(`assign-${ride.rideId}`)) {
       rung.current = ride.rideId;
       ring(3);
     }
@@ -213,7 +224,7 @@ export default function CurrentRide({ ride }) {
         <p className="text-sm text-slate-500">From</p>
         <p className="text-xl font-bold">{ride.pickup}</p>
         {going && (
-          <a href={navUrl(ride.pickupLat, ride.pickupLng, ride.pickup)} target="_blank" rel="noopener noreferrer" className="text-sky-300 font-semibold">
+          <a href={navUrl(ride.pickupLat, ride.pickupLng, ride.pickup)} target="_blank" rel="noopener noreferrer" className="mt-2 flex items-center justify-center w-full min-h-[56px] rounded-2xl bg-sky-500 text-navy-950 font-extrabold text-lg">
             Navigate &rarr;
           </a>
         )}
@@ -239,7 +250,9 @@ export default function CurrentRide({ ride }) {
       {ride.cardHold && <p className="text-sm text-emerald-300 font-semibold">{"\u2713"} Card on file: the fare is covered.</p>}
       {going && ride.paymentMethod === "cash" && <p className="text-sm text-amber-300 font-semibold">Cash rider. Collecting up front is your call.</p>}
       <div className="grid grid-cols-2 gap-2">
-        {ride.riderPhone && <CallButton rideId={ride.rideId} label="Call rider" fallbackTel={ride.riderPhone} dark />}
+        {(ride.riderPhone || ride.riderPhoneLast4) && (
+          <CallButton rideId={ride.rideId} label="Call rider" fallbackTel={ride.riderPhone || null} dark />
+        )}
         {going && (
           <button type="button" onClick={() => setFinding(true)} className="w-full min-h-[52px] rounded-xl font-bold bg-white/10 border-2 border-white/25">
             {"\u{1F4CD}"} Find rider
@@ -266,7 +279,12 @@ export default function CurrentRide({ ride }) {
           )}
           {ride.appRide && clock.noShowOpen && (
             <button type="button" onClick={() => setEnding("no_show")} className="w-full min-h-[52px] rounded-xl border-2 border-red-400 font-bold text-red-200 mt-2">
-              Rider didn&rsquo;t show up {nearPickup(ride) ? `(${money(RIDE_RULES.noShowFee * 100)} to you)` : "(no fee: you weren't at the pickup)"}
+              Rider didn&rsquo;t show up{" "}
+              {!nearPickup(ride)
+                ? "(no fee: you weren't at the pickup)"
+                : ride.cardHold
+                  ? `(${money(RIDE_RULES.noShowFee * 100)} to you)`
+                  : `(rider owes ${money(RIDE_RULES.noShowFee * 100)})`}
             </button>
           )}
         </div>

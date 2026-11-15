@@ -134,15 +134,28 @@ exports.driverArrived = onCall(async (request) => {
   const rules = T.rulesFrom(BRANDING.rideRules);
   const nowMs = Date.now();
   return db().runTransaction(async (tx) => {
-    const ride = (await tx.get(rideRef(rideId))).data();
+    const [rs, ls] = await Promise.all([tx.get(rideRef(rideId)), tx.get(db().collection("driverLocations").doc(uid))]);
+    const ride = rs.data();
     if (!ride || ride.driverId !== uid) throw new HttpsError("failed-precondition", "That isn't your call.");
     if (ride.status !== "dispatched") throw new HttpsError("failed-precondition", "This call isn't waiting on a pickup.");
     if (ride.arrivedAt != null) return { arrivedAt: ride.arrivedAt, arrivedDistM: ride.arrivedDistM ?? null };
-    const dists = [T.distanceMeters(fix, T.pickupPoint(ride)), T.distanceMeters(fix, ride.riderPos), T.distanceMeters(fix, ride.bookedFrom)].filter(
-      (d) => Number.isFinite(d)
-    );
+    // Where he is: his last GPS ping when it's recent (the same feed the board
+    // uses), else what his phone sent with the tap.
+    const loc = ls.data();
+    const pinged = loc && Number.isFinite(loc.at) && nowMs - loc.at < 2 * 60000 && Number.isFinite(loc.lat) ? { lat: loc.lat, lng: loc.lng } : null;
+    const at = pinged || fix;
+    // Near the pickup address, or next to the rider's phone (when they share it).
+    const dists = [T.distanceMeters(at, T.pickupPoint(ride)), T.distanceMeters(at, ride.riderPos)].filter((d) => Number.isFinite(d));
     const arrivedDistM = dists.length ? Math.round(Math.min(...dists)) : null;
-    tx.update(rideRef(rideId), { arrivedAt: nowMs, arrivedDistM, arrivedFix: fix, headsUpAt: ride.headsUpAt ?? nowMs });
+    const near = arrivedDistM != null && arrivedDistM <= rules.nearPickupMeters;
+    tx.update(rideRef(rideId), {
+      arrivedAt: nowMs,
+      arrivedDistM,
+      arrivedFix: at,
+      arrivedNear: near,
+      // Only a real arrival ends free cancelling.
+      ...(near ? { headsUpAt: ride.headsUpAt ?? nowMs } : {}),
+    });
     tx.set(inboxRef(uid), { current: { arrivedAt: nowMs, arrivedDistM } }, { merge: true });
     return { arrivedAt: nowMs, arrivedDistM, near: arrivedDistM == null ? null : arrivedDistM <= rules.nearPickupMeters };
   });

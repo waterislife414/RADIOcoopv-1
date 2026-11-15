@@ -5,6 +5,7 @@ import { functions } from "../config/firebase";
 import { BRAND } from "../config/constants";
 import { lineText } from "../../functions/lib/rideTiming.mjs";
 import { RIDE_RULES } from "../utils/rideLive";
+import { useAuth } from "../context/AuthContext";
 
 const queueStatus = httpsCallable(functions, "queueStatus");
 const PASS = BRAND.copy.dayPass;
@@ -16,6 +17,7 @@ const PASS = BRAND.copy.dayPass;
  */
 export default function LineStatus({ rideId, dark = false }) {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [q, setQ] = useState(null);
   const [offer, setOffer] = useState(false);
   const firstShown = useRef(null);
@@ -82,7 +84,7 @@ export default function LineStatus({ rideId, dark = false }) {
         {next ? "You’re next up!" : `You’re ${lineText(q.position)}`}
         {q.premium && <span className="block text-xs font-semibold">Premium: members dispatch first</span>}
         {!next && !q.hasPriority && (
-          <button type="button" onClick={() => setOffer(true)} className="block mx-auto mt-1 text-sm underline font-semibold">
+          <button type="button" onClick={() => setOffer(true)} className="block mx-auto mt-1 min-h-[44px] px-3 text-sm underline font-semibold">
             Skip ahead for {PASS.price}
           </button>
         )}
@@ -105,6 +107,7 @@ export default function LineStatus({ rideId, dark = false }) {
             </ul>
             <p className="font-mono text-4xl font-bold text-gold-300">{PASS.price}</p>
             <p className="text-xs text-slate-400">{PASS.fine}</p>
+            {!currentUser && <p className="text-sm text-gold-200 font-semibold">As a guest: priority for this ride. Map and calling need a free account.</p>}
             <button
               type="button"
               onClick={() => navigate(`/fast-pass?ride=${encodeURIComponent(rideId)}`)}

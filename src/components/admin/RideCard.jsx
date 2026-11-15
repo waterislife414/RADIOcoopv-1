@@ -1,3 +1,20 @@
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "../../config/firebase";
+
+/** Office marks a rider who needs extra time getting to the car: no wait or no-show fees from then on. */
+function ExtraTimeToggle({ ride, on }) {
+  if (!ride.customerId || ride.customerId === "guest") return null;
+  async function flip() {
+    await updateDoc(doc(db, "users", ride.customerId), { extraTime: !on });
+    if (["pending", "dispatched"].includes(ride.status)) await updateDoc(doc(db, "rides", ride.id), { extraTime: !on });
+  }
+  return (
+    <button type="button" onClick={flip} className={`text-xs font-bold px-2 py-0.5 rounded-full border ${on ? "bg-sky-600 text-white border-sky-600" : "border-slate-300 text-slate-600"}`}>
+      {on ? "\u267F Extra time: no wait/no-show fees" : "Needs extra time?"}
+    </button>
+  );
+}
+
 const TAG_STYLES = {
   cash: "bg-slate-700 text-white",
   card: "bg-blue-600 text-white",
@@ -77,6 +94,9 @@ function AutoDispatchLine({ ride, carFor }) {
   );
 }
 
+// Why a booking came to the dispatcher instead of running on its own.
+const WHY = { guest: "guest", id: "ID not checked", location: "no GPS", cash: "cash", terms: "no terms" };
+
 export default function RideCard({ ride, customerStatus, carFor, zones, onSetZone, onChangeCar, onDispatchAdvance, onDismiss, onCaptureFare, onChargeWallet, onArchive }) {
   const isPending = ride.status === "pending";
   const isInTransit = ride.status === "in_transit";
@@ -102,15 +122,19 @@ export default function RideCard({ ride, customerStatus, carFor, zones, onSetZon
           <p className="font-bold text-lg text-slate-900">{customerName(ride)}</p>
           <div className="flex items-center gap-2">
             <StatusBadge status={customerStatus} />
+            <ExtraTimeToggle ride={ride} on={!!(customerStatus?.extraTime || ride.extraTime)} />
             {ride.wantsPriorityPass && (
               <span className="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-gold-400 text-navy-950">
                 &#9733; Day Pass{ride.fastPassId ? " \u00b7 paid" : ""}
               </span>
             )}
             {ride.dispatchState === "office" && (
-              <span className="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-900" title="No location shared: dispatch by radio">
-                Call-in
+              <span className="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-900" title="Send by radio">
+                Call-in{(ride.officeWhy || []).length ? ` \u00b7 ${ride.officeWhy.map((w) => WHY[w] || w).join(", ")}` : ""}
               </span>
+            )}
+            {ride.appHandled === true && (
+              <span className="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-sky-100 text-sky-800">App ride</span>
             )}
             {ride.termsMissing && (
               <span className="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-red-600 text-white" title="This rider hasn't agreed to the current terms">

@@ -63,8 +63,8 @@ const QA = [
     q: "How do I cancel?",
     a: (
       <p>
-        If you have an account, open <strong>My Account</strong> and tap <strong>Cancel this ride</strong> before a driver is assigned &mdash; no
-        charge. After a driver is on the way, or if you booked as a guest, call{" "}
+        If you have an account, tap <strong>Cancel this ride</strong> on your ride (Home or My Account). It&rsquo;s free until your driver is
+        about 4 minutes away, then $5. If you booked by phone or as a guest, call{" "}
         <a className="font-bold text-blue-700 underline" href={`tel:${COMPANY_PHONE_TEL}`}>{COMPANY_PHONE_DISPLAY}</a>.
       </p>
     ),

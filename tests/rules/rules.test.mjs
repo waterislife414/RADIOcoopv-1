@@ -71,6 +71,10 @@ test("riders: book a ride, but never set dispatch or money fields", async () => 
   await assertSucceeds(setDoc(doc(rider(), "rides/loc"), ride({ customerId: "rider1", shareLocation: true, bookedFrom: { lat: 32.4, lng: -84.9 } })));
   await assertSucceeds(setDoc(doc(rider(), "rides/callin"), ride({ customerId: "rider1", shareLocation: false, callIn: true })));
   await assertFails(updateDoc(doc(rider(), "rides/mine"), { perks: { liveMap: true } }));
+  // After booking, a rider can't flip what decides fees, priority or who dispatches it.
+  for (const bad of [{ callIn: true }, { wantsPriorityPass: false }, { consent: null }, { paymentMethod: "card" }, { shareLocation: false }]) {
+    await assertFails(updateDoc(doc(rider(), "rides/mine"), bad));
+  }
   await assertSucceeds(updateDoc(doc(rider(), "rides/mine"), { dropoff: "C" }));
   await assertFails(updateDoc(doc(rider(), "rides/mine"), { status: "dispatched" }));
   await assertFails(updateDoc(doc(rider(), "rides/mine"), { dispatchState: "assigned" }));

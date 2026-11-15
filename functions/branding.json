@@ -138,7 +138,14 @@
     "avgCitySpeedMph": 25,
     "roadFactor": 1.35,
     "feesGoToDriver": true,
-    "upsellAgainAfterMinutes": 4
+    "upsellAgainAfterMinutes": 4,
+    "appHandles": {
+      "_note": "Rides the app runs on its own (driver and rider work it out). Everything else goes to the dispatcher to send by radio: phone calls, guests, cash, no GPS, ID not verified yet.",
+      "requireAccount": true,
+      "requireVerifiedId": true,
+      "requireLocation": true,
+      "requireCardOrWallet": true
+    }
   },
   "ridePerks": {
     "_note": "Who gets the live driver map and the private Call-your-driver button. DAY_PASS = the $5 Priority Day Pass. Drivers can always call their rider.",

@@ -75,6 +75,7 @@ const applyDayPass = httpsCallable(functions, "applyDayPass");
 const PASS = BRAND.copy.dayPass;
 
 function PassCard() {
+  const { currentUser } = useAuth();
   return (
     <div className="rounded-3xl bg-navy-950 text-white p-6 text-center shadow-luxury mb-6">
       <p className="text-xs font-bold tracking-[0.3em] text-gold-400 uppercase">&#9733; {PASS.title}</p>
@@ -91,6 +92,9 @@ function PassCard() {
       </ul>
       <p className="font-mono text-4xl font-bold text-gold-300 mt-4">{PASS.price}</p>
       <p className="text-xs text-slate-400 mt-1">{PASS.fine}</p>
+      {!currentUser && (
+        <p className="text-sm text-gold-200 mt-3 font-semibold">As a guest, the pass moves this ride up the line. The map and calling need a free account.</p>
+      )}
     </div>
   );
 }
@@ -108,6 +112,17 @@ export default function FastPass() {
   const waitingRideId = params.get("ride");
   const [err, setErr] = useState("");
   const back = currentUser ? "/" : "/success";
+  // Saying no here counts as seeing the offer (it shows twice at most).
+  function declineAndGoBack() {
+    try {
+      const key = `rc-line-offer-${waitingRideId}`;
+      const seen = JSON.parse(sessionStorage.getItem(key) || "{}");
+      sessionStorage.setItem(key, JSON.stringify({ count: (seen.count || 0) + 1, at: Date.now() }));
+    } catch {
+      // Private mode: harmless.
+    }
+    navigate(back);
+  }
 
   if (waitingRideId) {
     return (
@@ -124,13 +139,14 @@ export default function FastPass() {
                     await applyDayPass({ rideId: waitingRideId, passId: id });
                     navigate(back, { replace: true });
                   } catch (e) {
-                    setErr(`Paid, but ${e?.message || "it couldn't be added to this ride"}. Your pass still works on your next ride today.`);
+                    setErr(`Paid. ${e?.message || "It couldn't be added to this ride."} Your pass still works on your next ride today.`);
+                    setTimeout(() => navigate(back, { replace: true }), 4000);
                   }
                 }}
               />
             </Elements>
             {err && <p className="text-sm text-red-700 mt-3">{err}</p>}
-            <button type="button" onClick={() => navigate(back)} className="w-full mt-4 text-slate-500 font-semibold py-3">
+            <button type="button" onClick={declineAndGoBack} className="w-full mt-4 min-h-[48px] text-slate-500 font-semibold py-3">
               No thanks, I&rsquo;ll wait
             </button>
           </div>

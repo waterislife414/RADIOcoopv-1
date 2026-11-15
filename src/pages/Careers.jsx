@@ -263,7 +263,7 @@ export default function Careers() {
                 <p className="text-xs text-slate-500">Checking these boxes serves as my electronic signature.</p>
               </div>
 
-              <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4.5 rounded-2xl shadow-md transition">
+              <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4 min-h-[56px] rounded-2xl shadow-md transition">
                 Next &rarr;
               </button>
             </form>
@@ -279,7 +279,7 @@ export default function Careers() {
                 <button type="button" onClick={() => { setStep(1); setError(""); }} className="px-5 rounded-2xl border-2 border-slate-300 font-bold text-slate-600">
                   &larr; Back
                 </button>
-                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4.5 rounded-2xl shadow-md transition">
+                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4 min-h-[56px] rounded-2xl shadow-md transition">
                   Next: Screening Questions &rarr;
                 </button>
               </div>
@@ -312,7 +312,7 @@ export default function Careers() {
                 <button type="button" onClick={() => { setStep(2); setError(""); }} className="px-5 rounded-2xl border-2 border-slate-300 font-bold text-slate-600">
                   &larr; Back
                 </button>
-                <button type="submit" disabled={submitting} className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4.5 rounded-2xl shadow-md transition disabled:opacity-50">
+                <button type="submit" disabled={submitting} className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4 min-h-[56px] rounded-2xl shadow-md transition disabled:opacity-50">
                   {submitting ? "Submitting..." : "Review Agreement & Submit"}
                 </button>
               </div>

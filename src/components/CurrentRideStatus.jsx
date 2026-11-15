@@ -17,6 +17,8 @@ const STATUS_LABELS = {
   pending: { label: "Request received", detail: "Finding you a driver.", pct: 20 },
   dispatched: { label: "Driver assigned!", detail: "Your driver is coming to the pickup.", pct: 55 },
   in_transit: { label: "On your ride", detail: "Enjoy the ride.", pct: 85 },
+  finished: { label: "Ride complete", detail: "Thanks for riding with us.", pct: 100 },
+  arrived: { label: "Your driver is here", detail: "Head to the car.", pct: 70 },
 };
 
 const TIP_PRESETS = [15, 20, 25];
@@ -106,7 +108,7 @@ function SettleFareForm({ ride, rideId }) {
                 setTipPercent(pct);
                 setUseCustomTip(false);
               }}
-              className={`flex-1 py-2.5 rounded-full text-sm font-bold transition ${
+              className={`flex-1 min-h-[48px] py-2.5 rounded-full text-base font-bold transition ${
                 !useCustomTip && tipPercent === pct
                   ? "bg-blue-600 text-white"
                   : "bg-slate-100 text-slate-700"
@@ -118,7 +120,7 @@ function SettleFareForm({ ride, rideId }) {
           <button
             type="button"
             onClick={() => setUseCustomTip(true)}
-            className={`flex-1 py-2.5 rounded-full text-sm font-bold transition ${
+            className={`flex-1 min-h-[48px] py-2.5 rounded-full text-base font-bold transition ${
               useCustomTip ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"
             }`}
           >
@@ -217,7 +219,7 @@ const cancelMyRide = httpsCallable(functions, "cancelMyRide");
  * Cancel: free until the "driver is about 4 minutes away" alert, then the
  * late-cancel fee (it goes to the driver). Call-in rides cancel by phone.
  */
-function CancelOrCall({ ride, rideId }) {
+function CancelOrCall({ ride, rideId, onCancelled }) {
   const now = useNow(1000);
   const [ask, setAsk] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -236,7 +238,8 @@ function CancelOrCall({ ride, rideId }) {
     setBusy(true);
     setMsg("");
     try {
-      await cancelMyRide({ rideId, acceptFeeCents: shownFee });
+      const { data } = await cancelMyRide({ rideId, acceptFeeCents: shownFee });
+      onCancelled?.({ feeCents: data?.feeCents || 0, at: Date.now() });
     } catch (e) {
       // The driver got close while they were deciding: show the new price.
       const fee = e?.details?.feeCents;
@@ -259,7 +262,11 @@ function CancelOrCall({ ride, rideId }) {
             Cancel this ride
           </button>
           {ride.status === "dispatched" && quote.feeCents === 0 && (
-            <p className="text-xs text-slate-500 text-center">Free to cancel until your driver is about {RIDE_RULES.headsUpMinutes} minutes away.</p>
+            <p className="text-xs text-slate-500 text-center">
+              {quote.freeUntil
+                ? `Free to cancel for ${Math.max(1, Math.ceil((quote.freeUntil - now) / 1000))} more seconds.`
+                : `Free to cancel until your driver is about ${RIDE_RULES.headsUpMinutes} minutes away.`}
+            </p>
           )}
         </>
       )}
@@ -293,6 +300,7 @@ function CurrentRideStatusInner() {
   const { currentUser, userProfile } = useAuth();
   const [ride, setRide] = useState(null);
   const [rideId, setRideId] = useState(null);
+  const [cancelled, setCancelled] = useState(null);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -316,10 +324,20 @@ function CurrentRideStatusInner() {
     return unsub;
   }, [currentUser]);
 
+  if (currentUser && !ride && cancelled) {
+    return (
+      <div className="border-2 border-slate-200 bg-slate-50 rounded-2xl p-5 mb-6 text-center" role="status">
+        <p className="font-bold text-lg text-slate-800">Your ride was cancelled.</p>
+        <p className="text-sm text-slate-600 mt-1">
+          {cancelled.feeCents > 0 ? `A ${money(cancelled.feeCents)} cancel fee went to your driver.` : "No charge."}
+        </p>
+      </div>
+    );
+  }
   if (!currentUser || !ride) return null;
 
   const isPaid = ride.finalFare != null;
-  const info = STATUS_LABELS[ride.status] || STATUS_LABELS.pending;
+  const info = (ride.status === "dispatched" && ride.arrivedAt != null ? STATUS_LABELS.arrived : STATUS_LABELS[ride.status]) || STATUS_LABELS.pending;
 
   return (
     <div className="border-2 border-blue-200 bg-blue-50 rounded-2xl p-5 mb-6 text-left">
@@ -361,9 +379,14 @@ function CurrentRideStatusInner() {
         </div>
       )}
 
-      {!isPaid && ride.status !== "in_transit" && <CancelOrCall ride={ride} rideId={rideId} />}
+      {!isPaid && ["pending", "dispatched"].includes(ride.status) && <CancelOrCall ride={ride} rideId={rideId} onCancelled={setCancelled} />}
 
-      {ride.status === "in_transit" && !isPaid && (
+      {["in_transit", "finished"].includes(ride.status) && !isPaid && ride.paymentMethod !== "card" && (
+        <p className="mt-4 pt-4 border-t border-blue-200 font-semibold text-slate-700">
+          {ride.paymentMethod === "wallet" ? "Your fare comes out of your account balance." : "Pay your driver in cash when you arrive."}
+        </p>
+      )}
+      {ride.status === "in_transit" && !isPaid && ride.paymentMethod === "card" && (
         <div className="mt-4 pt-4 border-t border-blue-200">
           <p className="text-base font-bold text-slate-800 mb-3">Settle Your Fare</p>
           <SettleFareForm ride={ride} rideId={rideId} />

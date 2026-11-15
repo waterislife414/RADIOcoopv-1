@@ -95,6 +95,7 @@ exports.driverEndCall = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request)
         dispatchState: "pending_next",
         triedDriverIds: FieldValue.arrayUnion(uid),
         endReport: report,
+        ...E.PICKUP_RESET,
       });
     } else {
       // Rider is in the car: the office sends another car to where they are.
@@ -105,6 +106,7 @@ exports.driverEndCall = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request)
         dispatchState: "escalated",
         triedDriverIds: FieldValue.arrayUnion(uid),
         endReport: report,
+        ...E.PICKUP_RESET,
         pickupNote: `Rider is waiting with car ${driver.carNumber || ""}${fix ? ` at ${fix.lat.toFixed(5)},${fix.lng.toFixed(5)}` : ""}.`,
         ...(fix ? { pickupLat: fix.lat, pickupLng: fix.lng } : {}),
       });
@@ -191,12 +193,11 @@ exports.driverEndCall = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request)
       cents: out.noShowFeeCents,
       kind: "no_show_fee",
     });
-    if (fee.chargedCents > 0) {
-      await db().collection("driverInbox").doc(uid).set(
-        { notice: { text: `No-show recorded. $${(fee.chargedCents / 100).toFixed(2)} goes to your lease credit.`, at: Date.now() } },
-        { merge: true }
-      );
-    }
+    const text =
+      fee.chargedCents > 0
+        ? `No-show recorded. $${(fee.chargedCents / 100).toFixed(2)} goes to your lease credit.`
+        : `No-show recorded. The rider owes the $${(out.noShowFeeCents / 100).toFixed(2)}; it goes to your lease credit when they pay.`;
+    await db().collection("driverInbox").doc(uid).set({ notice: { text, at: Date.now() } }, { merge: true });
   } else if (out.outcome === "cancel" && out.ride.paymentMethod === "card" && out.ride.paymentIntentId) {
     try {
       await require("stripe")(STRIPE_SECRET_KEY.value()).paymentIntents.cancel(out.ride.paymentIntentId);

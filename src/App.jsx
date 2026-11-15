@@ -7,6 +7,7 @@ import { RequireAdmin, RequireAuth, RequireDriverSignIn } from "./components/Pro
 import About from "./pages/About";
 import DriverAgreement from "./pages/DriverAgreement";
 import AdStrip from "./components/AdStrip";
+import DriverCallLayer from "./components/driver/DriverCallLayer";
 import SiteMenu from "./components/SiteMenu";
 import Home from "./pages/Home";
 import Careers from "./pages/Careers";
@@ -60,6 +61,7 @@ export default function App() {
         <BrowserRouter>
           <AdStrip position="top" />
           <SiteMenu />
+          <DriverCallLayer />
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />

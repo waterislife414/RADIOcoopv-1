@@ -55,6 +55,7 @@ function BillingToggle({ billingCycle, setBillingCycle, tierInfo }) {
 }
 
 function CheckoutForm({ tierKey, tierInfo, billingCycle }) {
+  const { currentUser, refreshProfile } = useAuth();
   const stripe = useStripe();
   const elements = useElements();
   const navigate = useNavigate();
@@ -97,7 +98,7 @@ function CheckoutForm({ tierKey, tierInfo, billingCycle }) {
       const paymentMethodId = result.setupIntent.payment_method;
       const startSub = httpsCallable(functions, "startSubscription");
       await startSub({ tier: tierKey, billingCycle, paymentMethodId });
-
+      if (currentUser) await refreshProfile(currentUser.uid);
       navigate("/profile");
     } catch (err) {
       setError(

@@ -19,7 +19,13 @@ function requireAdmin(request) {
 }
 
 const clean = (v, max = 200) => String(v ?? "").trim().replace(/\s+/g, " ").slice(0, max);
-const digits = (v) => String(v ?? "").replace(/\D/g, "");
+// 10-digit US number: a leading 1 (country code) and extensions are dropped, so
+// "+1 (706) 555-0100" and "706-555-0100 ext 9" match the same caller and block list.
+const digits = (v) => {
+  let d = String(v ?? "").replace(/\D/g, "");
+  if (d.length >= 11 && d.startsWith("1")) d = d.slice(1);
+  return d.length > 10 ? d.slice(0, 10) : d;
+};
 
 /** Most-used places first; bump this one. */
 function mergePlaces(places = [], texts, nowMs) {

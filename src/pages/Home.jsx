@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import CurrentRideStatus from "../components/CurrentRideStatus";
 import { useAuth } from "../context/AuthContext";
 import {
   COMPANY_PHONE_DISPLAY,
@@ -72,6 +73,17 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col bg-navy-950 text-white">
+      {/* A ride on the way comes first. */}
+      {signedIn && (
+        <div className="px-4 pt-4 max-w-md mx-auto w-full text-slate-800 empty:hidden">
+          <CurrentRideStatus />
+          {userProfile.feesOwedCents > 0 && (
+            <p className="rounded-xl bg-red-50 border-2 border-red-300 text-red-800 p-3 text-sm font-semibold mb-4">
+              You owe ${(userProfile.feesOwedCents / 100).toFixed(2)} in cancel or no-show fees. It&rsquo;s added to your next card payment.
+            </p>
+          )}
+        </div>
+      )}
       {/* 1. Who we are */}
       <div className="relative overflow-hidden">
         <img src="/images/hero-fleet.jpg" alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover object-[center_35%]" />

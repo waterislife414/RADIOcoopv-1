@@ -51,6 +51,15 @@ export default function DispatcherDashboard() {
   const liveBoard = useLiveBoard();
   const [assignRide, setAssignRide] = useState(null);
   const [carAction, setCarAction] = useState(null); // board entry, or "new" for a radio car
+  const [gps, setGps] = useState({}); // driver uid -> { zoneId, at } from his phone
+
+  useEffect(
+    () =>
+      onSnapshot(collection(db, "driverLocations"), (snap) =>
+        setGps(Object.fromEntries(snap.docs.map((d) => [d.id, { zoneId: d.data().zoneId || null, at: d.data().at || 0 }])))
+      ),
+    []
+  );
   const carFor = (uid) => liveBoard.drivers.find((d) => d.id === uid)?.carNumber;
   const boardCounts = liveBoard.drivers.reduce((m, d) => ({ ...m, [d.status]: (m[d.status] || 0) + 1 }), {});
   const [pendingIdVerifications, setPendingIdVerifications] = useState([]);
@@ -130,10 +139,11 @@ export default function DispatcherDashboard() {
       try {
         const userSnap = await getDoc(doc(db, "users", uid));
         const tier = userSnap.exists() ? userSnap.data().subscriptionTier : null;
+        const extraTime = userSnap.exists() ? userSnap.data().extraTime === true : false;
         const perk = await getRideCountAndPerk(uid);
         setCustomerStatusMap((prev) => ({
           ...prev,
-          [uid]: { tier, hasFreeRideNow: perk.hasFreeRideNow },
+          [uid]: { tier, extraTime, hasFreeRideNow: perk.hasFreeRideNow },
         }));
       } catch (err) {
         // Non-fatal — card just shows no membership badge.
@@ -200,6 +210,16 @@ export default function DispatcherDashboard() {
   async function handleArchive(ride) {
     await updateDoc(doc(db, "rides", ride.id), { status: "archived" });
   }
+
+  // Line order: Premium, then Day Pass, then by booking time.
+  const priorityTier = (ride) => (customerStatusMap[ride.customerId]?.tier === "PREMIUM" || ride.priority === "premium" ? 0 : ride.wantsPriorityPass ? 1 : 2);
+  const sorted = [...pending].sort(
+    (a, b) => priorityTier(a) - priorityTier(b) || (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0)
+  );
+  // The dispatcher's own list: anything the app isn't running by itself, or that nobody took.
+  const needsDispatcher = (r) => r.appHandled !== true || r.dispatchState === "escalated";
+  const officeRides = sorted.filter(needsDispatcher);
+  const appRides = sorted.filter((r) => !needsDispatcher(r));
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -308,7 +328,9 @@ export default function DispatcherDashboard() {
             {(boardCounts.ready || 0) + (boardCounts.offered || 0)} waiting &middot; {boardCounts.on_call || 0} on call
             &middot; {boardCounts.moving || 0} moving
           </p>
-          <p className="text-xs text-slate-500">Tap a car to move it.</p>
+          <p className="text-xs text-slate-500">
+            Tap a car to move it or give it a radio call. {"\u{1F4FB}"} = radio call &middot; <b>!</b> = GPS in another zone
+          </p>
           {liveBoard.zones.length > 0 && (
             <button onClick={() => setCarAction("new")} className="ml-auto text-sm font-semibold text-blue-700">
               + Radio car
@@ -320,43 +342,55 @@ export default function DispatcherDashboard() {
             No zones yet. Set them up in <Link to="/admin/zones" className="text-blue-600 underline">Zones</Link>.
           </p>
         ) : (
-          <ZoneBoard drivers={liveBoard.drivers} zones={liveBoard.zones} variant="dispatcher" onCarClick={setCarAction} />
+          <ZoneBoard drivers={liveBoard.drivers} zones={liveBoard.zones} variant="dispatcher" onCarClick={setCarAction} gps={gps} />
         )}
       </section>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 max-w-6xl mx-auto">
-        <section>
-          <h2 className="font-bold text-xl text-slate-700 mb-3">
-            New Requests ({pending.length})
-          </h2>
-          <div className="space-y-3">
-            {[...pending]
-              .sort((a, b) => {
-                function priorityTier(ride) {
-                  if (customerStatusMap[ride.customerId]?.tier === "PREMIUM") return 0;
-                  if (ride.wantsPriorityPass) return 1;
-                  return 2;
-                }
-                const diff = priorityTier(a) - priorityTier(b);
-                if (diff !== 0) return diff;
-                return (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0);
-              })
-              .map((ride) => (
-              <RideCard
-                key={ride.id}
-                ride={ride}
-                customerStatus={customerStatusMap[ride.customerId]}
-                carFor={carFor}
-                zones={liveBoard.zones}
-                onSetZone={handleSetZone}
-                onChangeCar={setAssignRide}
-                onDispatchAdvance={handleDispatchAdvance}
-                onDismiss={requestDismiss}
-              />
-            ))}
-            {pending.length === 0 && (
-              <p className="text-base text-slate-500">No new requests.</p>
-            )}
+        <section className="space-y-6">
+          <div>
+            <h2 className="font-bold text-xl text-slate-700">
+              {"\u{1F4FB}"} Send by radio ({officeRides.length})
+            </h2>
+            <p className="text-sm text-slate-500 mb-3">Phone calls, cash, guests, no GPS, ID not checked yet, or nobody took it. These need you.</p>
+            <div className="space-y-3">
+              {officeRides.map((ride) => (
+                <RideCard
+                  key={ride.id}
+                  ride={ride}
+                  customerStatus={customerStatusMap[ride.customerId]}
+                  carFor={carFor}
+                  zones={liveBoard.zones}
+                  onSetZone={handleSetZone}
+                  onChangeCar={setAssignRide}
+                  onDispatchAdvance={handleDispatchAdvance}
+                  onDismiss={requestDismiss}
+                />
+              ))}
+              {officeRides.length === 0 && <p className="text-base text-slate-500">Nothing to send right now.</p>}
+            </div>
+          </div>
+          <div>
+            <h2 className="font-bold text-xl text-slate-700">
+              {"\u{1F4F1}"} App rides ({appRides.length})
+            </h2>
+            <p className="text-sm text-slate-500 mb-3">The app is sending these to drivers. Step in any time.</p>
+            <div className="space-y-3">
+              {appRides.map((ride) => (
+                <RideCard
+                  key={ride.id}
+                  ride={ride}
+                  customerStatus={customerStatusMap[ride.customerId]}
+                  carFor={carFor}
+                  zones={liveBoard.zones}
+                  onSetZone={handleSetZone}
+                  onChangeCar={setAssignRide}
+                  onDispatchAdvance={handleDispatchAdvance}
+                  onDismiss={requestDismiss}
+                />
+              ))}
+              {appRides.length === 0 && <p className="text-base text-slate-500">No app rides waiting.</p>}
+            </div>
           </div>
         </section>
 
@@ -391,7 +425,12 @@ export default function DispatcherDashboard() {
         <AssignCarModal ride={assignRide} board={liveBoard.drivers} zones={liveBoard.zones} onClose={() => setAssignRide(null)} />
       )}
       {carAction && (
-        <CarActionsModal car={carAction === "new" ? null : carAction} zones={liveBoard.zones} onClose={() => setCarAction(null)} />
+        <CarActionsModal
+          car={carAction === "new" ? null : carAction}
+          zones={liveBoard.zones}
+          gps={carAction === "new" ? null : gps[carAction.id] || null}
+          onClose={() => setCarAction(null)}
+        />
       )}
 
       {dismissTarget && (

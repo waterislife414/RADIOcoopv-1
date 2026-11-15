@@ -12,6 +12,7 @@
 // (server-written), so drivers never read the rides collection.
 const admin = require("firebase-admin");
 const BRANDING = require("./branding.json");
+const { callingConfigured } = require("./calling");
 const { getZones } = require("./zoneStore");
 const { blockReason, INCENTIVES } = require("./workRules");
 const timers = require("./timers");
@@ -34,7 +35,8 @@ let timingPromise = null;
 const timing = () => (timingPromise ||= import("./lib/rideTiming.mjs"));
 // Same rule as rideTiming.isAppRide (kept in sync by tests): booked in the
 // app by a signed-in rider sharing location. Call-in and guest rides pay no fees.
-const isAppRide = (r) => !(r.source === "phone" || r.callIn) && !!r.customerId && r.customerId !== "guest";
+const isAppRide = (r) =>
+  typeof r.appHandled === "boolean" ? r.appHandled : !(r.source === "phone" || r.callIn) && !!r.customerId && r.customerId !== "guest";
 
 const rideRef = (id) => db().collection("rides").doc(id);
 const boardRef = (uid) => db().collection("board").doc(uid);
@@ -75,15 +77,44 @@ function rideCard(rideId, ride, zones) {
 // go straight to the broadcast; the dispatcher also sees them flagged.
 const needTitle = (card) => (card.zoneLabel ? `Need a car in ${card.zoneLabel}` : "Need a car");
 
+const APP_HANDLES = { requireAccount: true, requireVerifiedId: true, requireLocation: true, requireCardOrWallet: true, ...(BRANDING.rideRules?.appHandles || {}) };
+
+/** Why an app booking goes to the dispatcher instead of running on its own ([] = the app handles it). */
+function officeReasons(ride, user, termsOk) {
+  const why = [];
+  const member = !!ride.customerId && ride.customerId !== "guest";
+  if (APP_HANDLES.requireAccount && !member) why.push("guest");
+  if (APP_HANDLES.requireVerifiedId && member && user?.idVerified !== true) why.push("id");
+  if (APP_HANDLES.requireLocation && (ride.callIn || ride.shareLocation === false)) why.push("location");
+  const paid = (ride.paymentMethod === "card" && !!ride.paymentIntentId) || ride.paymentMethod === "wallet";
+  if (APP_HANDLES.requireCardOrWallet && !paid) why.push("cash");
+  if (!termsOk) why.push("terms");
+  return why;
+}
+
+/** Pickup-clock fields cleared whenever a ride gets a new driver (or goes back to waiting). */
+const PICKUP_RESET = Object.freeze({
+  arrivedAt: null,
+  arrivedDistM: null,
+  arrivedFix: null,
+  arrivedNear: null,
+  headsUpAt: null,
+  eta: null,
+  riderReply: null,
+  driverPos: null,
+  waitedMs: null,
+});
+
 /** Fields set on a new ride: when to dispatch it and its priority. */
 async function dispatchFieldsFor(ride, nowMs = Date.now(), rideId = null) {
   const c = await core();
   const T = await timing();
   let priority = ride.wantsPriorityPass ? "vip" : null;
   let tier = null;
+  let user = null;
   if (ride.customerId && ride.customerId !== "guest") {
-    const u = await db().collection("users").doc(ride.customerId).get();
-    tier = u.data()?.subscriptionTier || null;
+    user = (await db().collection("users").doc(ride.customerId).get()).data() || null;
+    tier = user?.subscriptionTier || null;
     if (tier === "PREMIUM") priority = "premium";
   }
   let dayPass = false;
@@ -97,16 +128,27 @@ async function dispatchFieldsFor(ride, nowMs = Date.now(), rideId = null) {
     triedDriverIds: [],
     broadcastTo: [],
     perks: T.perksFor({ tier, dayPass }, BRANDING.ridePerks || {}),
+    // The office marks riders who need extra time getting to the car: no wait or no-show fees.
+    extraTime: user?.extraTime === true,
   };
   // Everyone agrees to the terms. App bookings carry the agreement; a
   // dispatcher ticks "read the ride rules" on phone calls.
   const termsOk = ride.source === "phone" ? ride.termsRead === true : ride.consent?.version === BRANDING.legalVersion;
   if (!termsOk) fields.termsMissing = true;
-  // No location shared, or no agreement on an app booking: it's a call-in
-  // ride. The office dispatches it by radio, like a phone call.
-  if (ride.callIn || (!termsOk && ride.source !== "phone")) {
-    fields.dispatchState = "office";
-    return fields;
+  // The app runs a ride on its own (rider and driver work it out) only for a
+  // signed-in, ID-verified rider sharing GPS and paying by card or account
+  // balance. Everything else is a call-in ride the dispatcher sends by radio.
+  // Phone calls stay the dispatcher's own (he entered them, he decides).
+  if (ride.source === "phone") {
+    fields.appHandled = false;
+  } else {
+    const why = officeReasons(ride, user, termsOk);
+    fields.appHandled = why.length === 0;
+    if (why.length) {
+      fields.dispatchState = "office";
+      fields.officeWhy = why;
+      return fields;
+    }
   }
   if (ride.scheduleType === "later") {
     const at = c.parseLocalDateTime(ride.scheduledFor, TIME_ZONE);
@@ -317,6 +359,8 @@ function assignInTx(tx, c, { rideId, ride, uid, board, driver, customer, how, zo
     carNumber: driver.carNumber || board.carNumber || null,
     dispatchState: "assigned",
     assignedAt: nowMs,
+    // A new driver starts his own pickup clock.
+    ...PICKUP_RESET,
     assignedHow: how,
     offer: null,
     offerDriverId: null,
@@ -336,7 +380,10 @@ function assignInTx(tx, c, { rideId, ride, uid, board, driver, customer, how, zo
         ...rideCard(rideId, ride, zones),
         status: "dispatched",
         riderName,
-        riderPhone: ride.phone || customer?.phone || null,
+        // With private calling set up, drivers call through the company line
+        // and never see the rider's real number.
+        riderPhone: callingConfigured() ? null : ride.phone || customer?.phone || null,
+        riderPhoneLast4: String(ride.phone || customer?.phone || "").replace(/\D/g, "").slice(-4) || null,
         pickupLat: ride.pickupLat ?? null,
         pickupLng: ride.pickupLng ?? null,
         dropLat: ride.dropLat ?? null,
@@ -382,6 +429,7 @@ async function waitingRides(states) {
 
 module.exports = {
   _isAppRide: isAppRide,
+  PICKUP_RESET,
   OFFER,
   EXPIRE_MS,
   TIME_ZONE,

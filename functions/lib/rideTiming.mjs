@@ -49,7 +49,10 @@ export const pickupPoint = (ride) =>
  * without an account never pay these fees: same as it has always been.
  */
 export function isAppRide(ride) {
-  if (!ride || ride.source === "phone" || ride.callIn) return false;
+  if (!ride) return false;
+  // Set when the ride is booked (see dispatchEngine.officeReasons).
+  if (typeof ride.appHandled === "boolean") return ride.appHandled;
+  if (ride.source === "phone" || ride.callIn) return false;
   return !!ride.customerId && ride.customerId !== "guest";
 }
 
@@ -62,7 +65,8 @@ export const shouldSendHeadsUp = (ride, eta, rules = DEFAULT_RULES) =>
  * Null = no alert yet, still free.
  */
 export function freeCancelEndsAt(ride, rules = DEFAULT_RULES) {
-  const alertAt = ride?.headsUpAt ?? ride?.arrivedAt ?? null;
+  // An "I'm here" from far away (arrivedNear false) doesn't end free cancelling.
+  const alertAt = ride?.headsUpAt ?? (ride?.arrivedNear === false ? null : ride?.arrivedAt) ?? null;
   if (alertAt == null) return null;
   return Math.max(alertAt, (ride.assignedAt ?? alertAt) + rules.minFreeCancelMinutes * MIN);
 }
@@ -103,6 +107,8 @@ export function noShowCheck(ride, nowMs, rules = DEFAULT_RULES) {
     return { allowed: false, error: `No-show opens ${rules.noShowAfterMinutes} minutes after you arrive.`, opensAt: clock.noShowAt };
   }
   const near = Number.isFinite(ride.arrivedDistM) && ride.arrivedDistM <= rules.nearPickupMeters;
+  // Riders who need extra time (accessible vehicle, or flagged by the office) never pay it.
+  if (ride.extraTime || ride.needsAccessibleVehicle) return { allowed: true, feeCents: 0, near, waived: true };
   return { allowed: true, feeCents: near ? Math.round(rules.noShowFee * 100) : 0, near };
 }
 

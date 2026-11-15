@@ -259,7 +259,7 @@ export default function VehicleInspection() {
     <div className="min-h-screen bg-navy-950 text-white px-4 pt-14 pb-32">
       <div className="max-w-md mx-auto space-y-5">
         <div>
-          <Link to="/driver" className="text-slate-300 font-semibold">&larr; Driver home</Link>
+          <Link to="/driver" className="inline-flex items-center min-h-[48px] text-slate-300 font-semibold">&larr; Driver home</Link>
           <p className="text-xs font-bold tracking-widest text-gold-400 uppercase mt-4">
             Car {driver?.carNumber || "—"} &middot; Step {step + 1} of {steps.length}
           </p>

@@ -2,7 +2,7 @@
   "_README": "THIS IS THE ONLY FILE YOU EDIT FOR A NEW CLIENT (plus swapping images in public/). Every company name, phone, color, city, price, and tagline in the app reads from here. After editing, run: npm run build (manifest + backend config regenerate automatically).",
   "company": {
     "name": "Radio Co-op",
-    "wordmark": "Radio Co‑op",
+    "wordmark": "Radio Co\u2011op",
     "tagline": "Taxi Service",
     "hubName": "Radio Hub",
     "phoneDisplay": "(706) 322-0700",
@@ -34,8 +34,8 @@
     "statsAreaLabel": "Columbus & Beyond"
   },
   "copy": {
-    "heroEyebrow": "Columbus · Phenix City · Fort Benning · Midland",
-    "heroSubtext": "Round the clock, every day. A real dispatcher answers — not an app.",
+    "heroEyebrow": "Columbus \u00b7 Phenix City \u00b7 Fort Benning \u00b7 Midland",
+    "heroSubtext": "Round the clock, every day. A real dispatcher answers \u2014 not an app.",
     "aboutQuote": "Gotta Go? CALL RADIO!",
     "aboutBody": "We love our customers and have proudly served the Columbus area for decades.",
     "dispatcherFooterLabel": "Radio Co-op Dispatcher",
@@ -45,9 +45,9 @@
     "pickupPlaceholder": "123 Broadway, Columbus GA",
     "dropoffPlaceholder": "456 14th St, Phenix City AL",
     "metaTitle": "Radio Co-op | 24/7 Taxi Service",
-    "metaDescription": "Radio Co-op — 24/7 taxi service in Columbus, GA & Phenix City, AL. Call (706) 322-0700.",
+    "metaDescription": "Radio Co-op \u2014 24/7 taxi service in Columbus, GA & Phenix City, AL. Call (706) 322-0700.",
     "outOfAreaNote": "Going outside Columbus, Phenix City, Fort Benning or Midland? Call for pricing and availability.",
-    "adStripText": "Advertise your business here — Call us today",
+    "adStripText": "Advertise your business here \u2014 Call us today",
     "memberPitchHeading": "Become a member and unlock perks",
     "memberPerks": [
       "Free account: $1.80 card fee instead of $2.00",
@@ -64,9 +64,9 @@
       "perks": [
         "Move up the line ahead of regular riders",
         "Watch your driver on the map as they come to you",
-        "Call your driver directly. It’s private, and no numbers are shared."
+        "Call your driver directly. It\u2019s private, and no numbers are shared."
       ],
-      "fine": "Good until midnight. Premium members still dispatch first. Your driver may not pick up while driving and will call back when it’s safe."
+      "fine": "Good until midnight. Premium members still dispatch first. Your driver may not pick up while driving and will call back when it\u2019s safe."
     }
   },
   "colors": {
@@ -315,7 +315,14 @@
     "avgCitySpeedMph": 25,
     "roadFactor": 1.35,
     "feesGoToDriver": true,
-    "upsellAgainAfterMinutes": 4
+    "upsellAgainAfterMinutes": 4,
+    "appHandles": {
+      "_note": "Rides the app runs on its own (driver and rider work it out). Everything else goes to the dispatcher to send by radio: phone calls, guests, cash, no GPS, ID not verified yet.",
+      "requireAccount": true,
+      "requireVerifiedId": true,
+      "requireLocation": true,
+      "requireCardOrWallet": true
+    }
   },
   "ridePerks": {
     "_note": "Who gets the live driver map and the private Call-your-driver button. DAY_PASS = the $5 Priority Day Pass. Drivers can always call their rider.",

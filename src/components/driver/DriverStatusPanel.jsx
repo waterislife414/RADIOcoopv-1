@@ -89,7 +89,7 @@ function PositionLine({ drivers, uid, zoneId }) {
 }
 
 /** Online / Check Ready / Moving / Drop Off / Offline, driven by the phone's GPS. */
-export default function DriverStatusPanel({ driver, board, drivers, zones }) {
+export default function DriverStatusPanel({ driver, board, drivers, zones, rideStatus = null }) {
   const uid = driver.id;
   const [starting, setStarting] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -206,6 +206,11 @@ export default function DriverStatusPanel({ driver, board, drivers, zones }) {
         {status === "on_call" && (
           <p className="text-2xl font-bold text-emerald-300">On call &middot; {zoneLabel(board.zoneId)}</p>
         )}
+        {status === "on_call" && board?.radioCall && (
+          <p className="text-lg font-bold text-amber-200">
+            {"\u{1F4FB}"} Radio call from dispatch{board.radioCall.note ? `: ${board.radioCall.note}` : ""}. Tap Drop Off when you&rsquo;re done.
+          </p>
+        )}
       </div>
 
       <GpsLine gps={gps.gps} error={gps.error} zoneLabel={gpsZone?.label} />
@@ -239,7 +244,7 @@ export default function DriverStatusPanel({ driver, board, drivers, zones }) {
           </button>
         )}
 
-        {status === "on_call" && (
+        {status === "on_call" && (!board?.rideId || rideStatus === "in_transit") && (
           <>
             <button className={PRIMARY} disabled={busy} onClick={() => run(dropOff)}>
               Drop Off
@@ -264,7 +269,7 @@ export default function DriverStatusPanel({ driver, board, drivers, zones }) {
 
         {(status === "moving" || status === "ready") && (
           <button
-            className="w-full py-2 text-sm font-semibold text-slate-500 hover:text-white"
+            className="w-full min-h-[48px] py-2 text-base font-semibold text-slate-400 hover:text-white"
             disabled={busy}
             onClick={() => run(goOffline, { withFix: false })}
           >

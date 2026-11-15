@@ -124,7 +124,7 @@ export function buildSeed(now = Date.now()) {
 
   d["users/demo-rider"] = {
     uid: "demo-rider", firstName: "Riley", lastName: "Example", phone: "7065550142", email: "rider@example.com",
-    address: "1200 Example St, Columbus, GA", dob: "1990-01-01", subscriptionTier: null, walletBalance: 0, active: true,
+    address: "1200 Example St, Columbus, GA", dob: "1990-01-01", subscriptionTier: null, walletBalance: 0, active: true, idVerified: true,
     referralCode: "EXAMPLE1", referredBy: null, createdAt: ts(now - 40 * DAY),
   };
   d["phoneRiders/7065550100"] = {

@@ -96,17 +96,25 @@ async function getOrCreateStripeCustomer(uid, email) {
 // until midnight (a guest's pass covers one ride).
 async function recordFastPass(intent, uid) {
   const T = await timing();
-  const expiresAt = T.endOfLocalDay(Date.now(), TIME_ZONE);
-  await db.collection("fast_passes").doc(intent.id).set({
-    uid,
-    amountCents: intent.amount,
-    status: intent.status,
-    rideId: null,
-    rides: [],
-    expiresAt,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  // Good until midnight of the day it was paid, whenever this runs. Recorded
+  // once: confirming the same payment again can't renew or reset a pass.
+  const paidMs = Number.isFinite(intent.created) ? intent.created * 1000 : Date.now();
+  const expiresAt = T.endOfLocalDay(paidMs, TIME_ZONE);
+  const ref = db.collection("fast_passes").doc(intent.id);
+  const fresh = await db.runTransaction(async (tx) => {
+    if ((await tx.get(ref)).exists) return false;
+    tx.set(ref, {
+      uid,
+      amountCents: intent.amount,
+      status: intent.status,
+      rideId: null,
+      rides: [],
+      expiresAt,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    return true;
   });
-  if (uid && uid !== "guest") {
+  if (fresh && uid && uid !== "guest") {
     await db.collection("users").doc(uid).set({ dayPass: { id: intent.id, expiresAt } }, { merge: true });
   }
 }
@@ -124,7 +132,7 @@ exports.payFastPass = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) =
     payment_method: paymentMethodId,
     payment_method_types: ["card"],
     confirm: true,
-    description: "VIP Fast Pass",
+    description: "Priority Day Pass",
     metadata: { kind: "fast-pass", uid },
   });
   if (intent.status === "succeeded") await recordFastPass(intent, uid);
@@ -137,7 +145,7 @@ exports.confirmFastPass = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (reques
   if (typeof id !== "string" || !id) throw new HttpsError("invalid-argument", "Missing payment.");
   const intent = await getStripe().paymentIntents.retrieve(id);
   if (intent.status !== "succeeded" || intent.amount !== PRIORITY_PASS_FEE_CENTS || intent.metadata?.kind !== "fast-pass") {
-    throw new HttpsError("failed-precondition", "That Fast Pass payment didn't go through.");
+    throw new HttpsError("failed-precondition", "That Day Pass payment didn't go through.");
   }
   await recordFastPass(intent, intent.metadata.uid || "guest");
   return { id: intent.id, status: intent.status };
@@ -352,6 +360,10 @@ exports.captureFare = onCall(
       throw new HttpsError("not-found", "Ride not found.");
     }
     const ride = rideSnap.data();
+    if (ride.finalFare != null) throw new HttpsError("already-exists", "This fare is already paid.");
+    if (request.auth?.uid === ride.customerId && !isAdmin(request) && ride.paymentMethod !== "card") {
+      throw new HttpsError("failed-precondition", "This ride is paid in cash or from your balance, not by card here.");
+    }
 
     const requesterIsRider = request.auth && request.auth.uid === ride.customerId;
     const requesterIsAdmin = isAdmin(request);
@@ -383,14 +395,25 @@ exports.captureFare = onCall(
     if (requesterIsRider && paymentMethodId && ride.paymentMethod === "card") {
       const u = (await db.collection("users").doc(ride.customerId).get()).data() || {};
       owed = Array.isArray(u.feesOwed) ? u.feesOwed : [];
-      owedCents = Math.max(0, Math.round(u.feesOwedCents || 0));
+      owedCents = owed.reduce((n, f) => n + Math.max(0, Math.round(f.cents || 0)), 0);
     }
 
     const totalCents =
       Math.round(effectiveMeterFare * 100) + Math.round(tip * 100) + cardFeeCents + priorityPassCents + owedCents;
 
+    // Claim the fare before charging so two taps (or a retry) can't charge twice.
+    const claimedAt = Date.now();
+    await db.runTransaction(async (tx) => {
+      const r = (await tx.get(rideRef)).data() || {};
+      if (r.finalFare != null) throw new HttpsError("already-exists", "This fare is already paid.");
+      if (r.settlingAt && claimedAt - r.settlingAt < 120000) throw new HttpsError("aborted", "Payment is already going through. One moment.");
+      tx.update(rideRef, { settlingAt: claimedAt });
+    });
+    const release = () => rideRef.update({ settlingAt: null }).catch(() => {});
+
     const stripe = getStripe();
     let stripeStatus = "manual_override";
+    try {
 
     if (ride.paymentMethod === "card") {
       if (requesterIsRider && paymentMethodId) {
@@ -404,7 +427,7 @@ exports.captureFare = onCall(
           confirm: true,
           off_session: false,
           metadata: { rideId, uid: ride.customerId },
-        });
+        }, { idempotencyKey: `fare_${rideId}_${totalCents}` });
         stripeStatus = intent.status;
         if (intent.status === "succeeded" && owedCents > 0) await fees.settleOwedFees(ride.customerId, owed);
       } else if (ride.paymentIntentId) {
@@ -412,9 +435,13 @@ exports.captureFare = onCall(
         await stripe.paymentIntents.update(ride.paymentIntentId, {
           amount: totalCents,
         });
-        const captured = await stripe.paymentIntents.capture(ride.paymentIntentId);
+        const captured = await stripe.paymentIntents.capture(ride.paymentIntentId, {}, { idempotencyKey: `capture_${rideId}` });
         stripeStatus = captured.status;
       }
+    }
+    } catch (e) {
+      await release();
+      throw e;
     }
 
     await rideRef.update({
@@ -425,6 +452,7 @@ exports.captureFare = onCall(
       cardFeeCents,
       ...(owedCents > 0 && stripeStatus === "succeeded" ? { earlierFeesCents: owedCents } : {}),
       memberDiscountApplied,
+      settlingAt: null,
       settledBy: requesterIsAdmin && !requesterIsRider ? "dispatcher_override" : "customer",
     });
 
@@ -541,7 +569,11 @@ exports.cancelMyRide = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) 
     const snap = await tx.get(ref);
     const r = snap.exists ? snap.data() : null;
     if (!r || r.customerId !== uid) throw new HttpsError("not-found", "Ride not found.");
-    const q = T.cancelQuote(r, nowMs, rules);
+    const boardSnap = r.driverId ? await tx.get(db.collection("board").doc(r.driverId)) : null;
+    const driverOnIt = !!boardSnap?.exists && boardSnap.data().rideId === rideId;
+    const quoted = T.cancelQuote(r, nowMs, rules);
+    // No fee if the driver isn't actually on this ride any more.
+    const q = quoted.allowed && quoted.feeCents > 0 && !driverOnIt ? { ...quoted, feeCents: 0 } : quoted;
     if (!q.allowed) {
       throw new HttpsError(
         "failed-precondition",
@@ -564,7 +596,7 @@ exports.cancelMyRide = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) 
     }
     // A driver was on the way: free him up and tell him.
     tx.update(ref, { status: "cancelled", cancelledBy: "rider", cancelledAt: nowMs, cancelFeeCents: q.feeCents });
-    if (r.driverId) {
+    if (r.driverId && driverOnIt) {
       tx.set(
         db.collection("board").doc(r.driverId),
         {
@@ -577,18 +609,19 @@ exports.cancelMyRide = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) 
         },
         { merge: true }
       );
-      const paid = q.feeCents > 0 ? ` $${(q.feeCents / 100).toFixed(2)} cancel fee goes to your lease credit.` : "";
-      tx.set(
-        db.collection("driverInbox").doc(r.driverId),
-        { current: null, notice: { text: `The rider cancelled.${paid}`, at: nowMs } },
-        { merge: true }
-      );
+      tx.set(db.collection("driverInbox").doc(r.driverId), { current: null, notice: { text: "The rider cancelled.", at: nowMs } }, { merge: true });
     }
     return { ride: r, feeCents: q.feeCents };
   });
   const { ride, feeCents } = out;
   if (feeCents > 0) {
-    await fees.chargeRideFee({ stripe: getStripe(), ride, rideId, cents: feeCents, kind: "late_cancel_fee" });
+    const f = await fees.chargeRideFee({ stripe: getStripe(), ride, rideId, cents: feeCents, kind: "late_cancel_fee" });
+    // Tell the driver what actually happened to the fee.
+    const text =
+      f.chargedCents > 0
+        ? `The rider cancelled. $${(f.chargedCents / 100).toFixed(2)} cancel fee goes to your lease credit.`
+        : `The rider cancelled. They owe the $${(feeCents / 100).toFixed(2)} cancel fee; it goes to your lease credit when they pay.`;
+    if (ride.driverId) await db.collection("driverInbox").doc(ride.driverId).set({ notice: { text, at: Date.now() } }, { merge: true });
   } else if (ride.paymentMethod === "card" && ride.paymentIntentId) {
     try {
       await getStripe().paymentIntents.cancel(ride.paymentIntentId);

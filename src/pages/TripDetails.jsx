@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { collection, getDocs, limit, orderBy, query, where } from "firebase/firestore";
+import { db } from "../config/firebase";
 import { useAuth } from "../context/AuthContext";
 import ConsentModal from "../components/legal/ConsentModal";
 import { readLocationOnce } from "../utils/rideLive";
@@ -45,16 +47,19 @@ export default function TripDetails() {
   const [askConsent, setAskConsent] = useState(false);
   const [locBlocked, setLocBlocked] = useState(null);
   const [going, setGoing] = useState(false);
+  const [secondOk, setSecondOk] = useState(false);
   const [recent] = useState(recentPlaces);
   const { ride, updateRide, addStop, removeStop } = useRide();
   const navigate = useNavigate();
-  const sharing = ride.shareLocation !== false;
-  // A Priority Day Pass bought earlier today covers this ride too.
-  const dayPass = userProfile?.dayPass?.expiresAt > Date.now() ? userProfile.dayPass : null;
 
   const [stopInput, setStopInput] = useState("");
   const [showStops, setShowStops] = useState(ride.stops.length > 0);
   const [scheduleType, setScheduleType] = useState(ride.scheduleType);
+  const sharing = ride.shareLocation !== false;
+  // A Priority Day Pass bought earlier today covers this ride too.
+  const laterDay = scheduleType === "later" && ride.scheduledFor && new Date(ride.scheduledFor).getTime() > (userProfile?.dayPass?.expiresAt || 0);
+  const dayPass = userProfile?.dayPass?.expiresAt > Date.now() && !laterDay ? userProfile.dayPass : null;
+  const premium = userProfile?.subscriptionTier === "PREMIUM";
   const [error, setError] = useState("");
   const [locating, setLocating] = useState(false);
   const [locateError, setLocateError] = useState("");
@@ -103,7 +108,7 @@ export default function TripDetails() {
     }
   }
 
-  function handleContinue() {
+  async function handleContinue() {
     if (!ride.guestFirstName.trim() || !ride.guestLastName.trim()) {
       setError("First and last name are required.");
       return;
@@ -120,9 +125,32 @@ export default function TripDetails() {
       setError("A valid phone number is required so dispatch can reach you.");
       return;
     }
+    if (scheduleType === "later" && ride.scheduledFor && new Date(ride.scheduledFor).getTime() < Date.now() + 10 * 60000) {
+      setError("Pick a time at least 10 minutes from now, or choose Ride Now.");
+      return;
+    }
     if (scheduleType === "later" && !ride.scheduledFor) {
       setError("Please choose a date/time for your scheduled ride.");
       return;
+    }
+    // One ride at a time unless they mean it (booking for someone else).
+    if (currentUser && !secondOk) {
+      try {
+        const q = query(
+          collection(db, "rides"),
+          where("customerId", "==", currentUser.uid),
+          where("status", "in", ["pending", "dispatched", "in_transit"]),
+          orderBy("timestamp", "desc"),
+          limit(1)
+        );
+        if (!(await getDocs(q)).empty) {
+          setSecondOk(true);
+          setError("You already have a ride on the way (see Home). To book another one, for someone else, tap Continue again.");
+          return;
+        }
+      } catch {
+        // Can't check right now: let them book.
+      }
     }
     setAskConsent(true);
   }
@@ -378,7 +406,7 @@ export default function TripDetails() {
                     key={i}
                     className="flex items-center justify-between bg-slate-100 rounded-lg px-3 py-2 text-base"
                   >
-                    <span>{s}</span>
+                    <span className="min-w-0 break-all">{s}</span>
                     <button
                       type="button"
                       onClick={() => removeStop(i)}
@@ -427,6 +455,8 @@ export default function TripDetails() {
               </button>
             </div>
 
+{!premium && (
+              <>
             <div className="flex items-center justify-between border-2 border-gold-400/50 bg-amber-50 rounded-xl px-4 py-3.5">
               <span className="text-base font-semibold text-slate-700">
                 &#9733; {BRAND.copy.dayPass.title} &mdash; {dayPass ? "active until midnight" : BRAND.copy.dayPass.price}
@@ -450,6 +480,8 @@ export default function TripDetails() {
               Skip ahead in line all day, watch your driver on the map and call them directly. Paid on its own
               before checkout. (Premium members still dispatch first.)
             </p>
+              </>
+            )}
 
             <div className="flex items-center justify-between border-2 border-slate-200 rounded-xl px-4 py-3.5">
               <span className="text-base font-semibold text-slate-700">&#128205; Share my location with my driver</span>
@@ -520,7 +552,7 @@ export default function TripDetails() {
 
           <button
             onClick={handleContinue}
-            className="w-full mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4.5 rounded-full shadow-luxury transition hover:-translate-y-0.5 duration-200"
+            className="w-full mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4 min-h-[56px] rounded-full shadow-luxury transition hover:-translate-y-0.5 duration-200"
             disabled={going}
           >
             {going ? "Checking your location\u2026" : "Continue to Payment"}

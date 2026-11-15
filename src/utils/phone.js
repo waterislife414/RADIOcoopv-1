@@ -1,5 +1,8 @@
+/** 10-digit US number: drops a leading 1 (+1 country code) and anything after (extensions). */
 export function normalizePhone(input) {
-  return (input || "").replace(/\D/g, "");
+  let d = String(input || "").replace(/\D/g, "");
+  if (d.length >= 11 && d.startsWith("1")) d = d.slice(1);
+  return d.slice(0, 10);
 }
 
 export function formatPhoneDisplay(input) {

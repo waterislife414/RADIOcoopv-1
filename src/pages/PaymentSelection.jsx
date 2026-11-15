@@ -8,7 +8,7 @@ import { useAuth } from "../context/AuthContext";
 import { useRide } from "../context/RideContext";
 import CardPaymentForm from "../components/CardPaymentForm";
 import BrandHeader from "../components/BrandHeader";
-import { PROMO_CODES, STRIPE_PUBLISHABLE_KEY } from "../config/constants";
+import { FARE_CONFIG, PROMO_CODES, STRIPE_PUBLISHABLE_KEY } from "../config/constants";
 import { normalizePhone } from "../utils/phone";
 
 const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
@@ -135,7 +135,7 @@ export default function PaymentSelection() {
             <div className="border-2 border-slate-300 rounded-2xl px-5 py-5">
               <div className="flex justify-between items-center mb-3">
                 <span className="font-bold text-lg text-slate-800">Card</span>
-                <span className="text-slate-500 text-base">+ $2.00 app fee</span>
+                <span className="text-slate-500 text-base">+ ${(currentUser ? FARE_CONFIG.CARD_APP_FEE_MEMBER : FARE_CONFIG.CARD_APP_FEE).toFixed(2)} app fee</span>
               </div>
               <Elements stripe={stripePromise}>
                 <CardPaymentForm

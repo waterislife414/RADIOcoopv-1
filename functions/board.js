@@ -47,6 +47,7 @@ function readFix(data) {
  */
 async function changeStatus(uid, data, decide, { needFix = true } = {}) {
   const c = await core();
+  const ic = await inspectionCore();
   const fix = needFix || data?.lat != null ? readFix(data) : null;
   const zones = await getZones();
   const gpsZoneId = fix ? c.zoneForPoint(zones, fix.lng, fix.lat) : null;
@@ -61,6 +62,15 @@ async function changeStatus(uid, data, decide, { needFix = true } = {}) {
     const driver = d.data();
     const patch = decide({ c, board, driver, zones, gpsZoneId, nowMs }) || {};
     const next = { ...board, ...patch };
+    // Any way back onto the board (Go Online, Check Ready, Moving) needs the
+    // current Driver Agreement and a current vehicle check.
+    if (board.status === c.STATUS.OFFLINE && next.status !== c.STATUS.OFFLINE) {
+      const docs = driver.agreement?.docs || [];
+      const agreed = driver.agreement?.version === BRANDING.legalVersion && docs.includes("driver-agreement") && docs.includes("privacy");
+      if (!agreed) throw new HttpsError("failed-precondition", "Read and agree to the Driver Agreement first.", { agreement: true });
+      const needed = ic.inspectionNeeded(driver.inspection, driver.carNumber, nowMs);
+      if (needed) throw new HttpsError("failed-precondition", ic.NEEDED_MESSAGE[needed], { inspection: needed });
+    }
     if (Object.keys(patch).length) tx.update(boardRef(uid), { ...patch, updatedAt: serverNow() });
     // Being on the board in a lease period means that period's lease is owed.
     if (next.status !== c.STATUS.OFFLINE && !day.data()?.settledAt) {
@@ -137,7 +147,8 @@ exports.driverGoOnline = onCall(async (request) => {
     const needed = board.status === c.STATUS.OFFLINE ? ic.inspectionNeeded(driver.inspection, driver.carNumber, nowMs) : null;
     if (needed) throw new HttpsError("failed-precondition", ic.NEEDED_MESSAGE[needed], { inspection: needed });
     // Every driver reads and agrees to the current Driver Agreement before driving.
-    const agreed = driver.agreement?.version === BRANDING.legalVersion && (driver.agreement.docs || []).includes("driver-agreement");
+    const agreed =
+      driver.agreement?.version === BRANDING.legalVersion && ["driver-agreement", "privacy"].every((x) => (driver.agreement.docs || []).includes(x));
     if (board.status === c.STATUS.OFFLINE && !agreed) {
       throw new HttpsError("failed-precondition", "Read and agree to the Driver Agreement first.", { agreement: true });
     }
@@ -199,6 +210,9 @@ exports.driverDropOff = onCall(async (request) => {
     const driver = d.data();
     const rideId = b.data().rideId || null;
     const rideSnap = rideId ? await tx.get(db().collection("rides").doc(rideId)) : null;
+    if (rideSnap?.data()?.status === "dispatched" && rideSnap.data().driverId === uid) {
+      throw new HttpsError("failed-precondition", "Tap Picked up first. If the rider isn't coming, use \u201cCan't finish this call\u201d.");
+    }
 
     let patch;
     if (blockReason(driver, { c, nowMs })) {
@@ -214,7 +228,7 @@ exports.driverDropOff = onCall(async (request) => {
         : [];
       patch = c.applyDropOff(line, uid, dropZoneId, DISPATCH.dropOffPlacement || "front", nowMs);
     }
-    tx.update(boardRef(uid), { ...patch, rideId: null, updatedAt: serverNow() });
+    tx.update(boardRef(uid), { ...patch, rideId: null, radioCall: null, updatedAt: serverNow() });
     // The fare is settled the usual way (rider self-checkout or dispatcher).
     const ride = rideSnap?.data();
     if (ride && ride.driverId === uid && ["dispatched", "in_transit"].includes(ride.status)) {

@@ -2,7 +2,6 @@
 // car" replies, place in line (with the Day Pass offer), the Day Pass added
 // to a waiting ride, and private calls between rider and driver.
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
-const { defineSecret, defineString } = require("firebase-functions/params");
 const admin = require("firebase-admin");
 const BRANDING = require("./branding.json");
 const E = require("./dispatchEngine");
@@ -14,11 +13,9 @@ const inboxRef = (uid) => db().collection("driverInbox").doc(uid);
 const CALLING = BRANDING.calling || {};
 const PERKS = BRANDING.ridePerks || {};
 
-// Twilio: account SID and number live in functions/.env, the auth token is a
-// secret. Blank (or "none") = calls aren't set up yet; the app shows the office number.
-const TWILIO_AUTH_TOKEN = defineSecret("TWILIO_AUTH_TOKEN");
-const TWILIO_ACCOUNT_SID = defineString("TWILIO_ACCOUNT_SID", { default: "" });
-const TWILIO_PHONE_NUMBER = defineString("TWILIO_PHONE_NUMBER", { default: "" });
+// Twilio settings (functions/calling.js). Blank (or "none") = calls aren't set
+// up yet; riders get the office number and drivers dial direct.
+const { TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, TWILIO_PHONE_NUMBER, callMode } = require("./calling");
 
 let timingPromise;
 const timing = () => (timingPromise ||= import("./lib/rideTiming.mjs"));
@@ -141,13 +138,6 @@ exports.applyDayPass = onCall(async (request) => {
   return { ok: true };
 });
 
-function callMode() {
-  const vals = [TWILIO_ACCOUNT_SID.value(), TWILIO_AUTH_TOKEN.value(), TWILIO_PHONE_NUMBER.value()].map((v) => String(v || ""));
-  if (vals.some((v) => v.startsWith("demo-"))) return "demo";
-  if (vals.some((v) => !v || v.toLowerCase() === "none")) return "off";
-  return "live";
-}
-
 /**
  * Private call: Twilio rings the caller's phone from the company number,
  * plays the recording notice, then connects the other person. Nobody sees a
@@ -169,26 +159,29 @@ exports.startMaskedCall = onCall({ secrets: [TWILIO_AUTH_TOKEN] }, async (reques
     throw new HttpsError("failed-precondition", "Calling your driver comes with the Priority Day Pass and Premium.");
   }
   const who = isDriver ? "driver" : "rider";
-  const used = ride.calls?.[who] || 0;
   const max = CALLING.callsPerRidePerPerson || 6;
-  if (used >= max) throw new HttpsError("resource-exhausted", "That's the most calls for one ride. Please call the office.");
 
   const [userSnap, driverSnap] = await Promise.all([
     ride.customerId && ride.customerId !== "guest" ? db().collection("users").doc(ride.customerId).get() : null,
     ride.driverId ? db().collection("drivers").doc(ride.driverId).get() : null,
   ]);
-  const riderPhone = e164(ride.phone || userSnap?.data()?.phone);
+  // The account's phone (not the editable number on the booking) is the one the company line rings.
+  const riderPhone = e164(userSnap?.data()?.phone || ride.phone);
   const driverPhone = e164(driverSnap?.data()?.phone);
   const from = isDriver ? driverPhone : riderPhone;
   const to = isDriver ? riderPhone : driverPhone;
   const otherLabel = isDriver ? "your rider" : `Car ${ride.carNumber || ""}`.trim();
   const mode = callMode();
-  const logRef = db().collection("ride_calls").doc();
-  const log = { rideId, by: who, uid, at: Date.now(), mode, status: "started" };
-  await Promise.all([logRef.set(log), rideRef(rideId).update({ [`calls.${who}`]: FieldValue.increment(1) })]);
-
   if (mode !== "live") return { mode, otherLabel, officePhone: BRANDING.companyPhoneDisplay || null };
   if (!from || !to) throw new HttpsError("failed-precondition", "We don't have a phone number for this ride. Please call the office.");
+  // Count the call and check the limit in one step, so parallel taps can't go over.
+  await db().runTransaction(async (tx) => {
+    const used = (await tx.get(rideRef(rideId))).data()?.calls?.[who] || 0;
+    if (used >= max) throw new HttpsError("resource-exhausted", "That's the most calls for one ride. Please call the office.");
+    tx.update(rideRef(rideId), { [`calls.${who}`]: FieldValue.increment(1) });
+  });
+  const logRef = db().collection("ride_calls").doc();
+  await logRef.set({ rideId, by: who, uid, at: Date.now(), mode, status: "started" });
 
   const sid = TWILIO_ACCOUNT_SID.value();
   const token = TWILIO_AUTH_TOKEN.value();

@@ -68,6 +68,16 @@ async function freeDriver() {
       { lat: PICKUP.lat + s, lng: PICKUP.lng - s },
     ],
   });
+  await db.doc("zones/north").set({
+    label: "North Highland",
+    order: 2,
+    points: [
+      { lat: 32.6, lng: -85.0 },
+      { lat: 32.6, lng: -84.9 },
+      { lat: 32.7, lng: -84.9 },
+      { lat: 32.7, lng: -85.0 },
+    ],
+  });
   await db.doc("drivers/d1").set({
     carNumber: "44",
     name: "Pat Example",
@@ -81,7 +91,7 @@ async function freeDriver() {
   });
   await freeDriver();
   for (const [uid, tier] of [["u1", null], ["u2", "BASIC"], ["u3", "PREMIUM"]]) {
-    await db.doc(`users/${uid}`).set({ firstName: uid, phone: "7065550142", ...(tier ? { subscriptionTier: tier } : {}) });
+    await db.doc(`users/${uid}`).set({ firstName: uid, phone: "7065550142", idVerified: true, ...(tier ? { subscriptionTier: tier } : {}) });
   }
 
   // Perks: Basic sees the map, Premium also calls the driver; nobody else gets either.
@@ -90,15 +100,22 @@ async function freeDriver() {
   const p3 = await book("p3", { customerId: "u3" });
   assert.deepEqual([p3.perks, p3.priority], [{ liveMap: true, callDriver: true }, "premium"]);
 
-  // No location on purpose, or no agreement: the office dispatches it by radio.
-  assert.equal((await book("c1", { callIn: true })).dispatchState, "office");
+  // The app runs a ride on its own only for a signed-in, ID-verified rider
+  // sharing GPS and paying by card/balance. Everyone else goes to the dispatcher.
+  assert.equal((await get("rides/p1")).appHandled, true);
+  const c1 = await book("c1", { callIn: true });
+  assert.deepEqual([c1.dispatchState, c1.appHandled, c1.officeWhy], ["office", false, ["location"]]);
   const nt = await book("c2", { consent: null });
-  assert.deepEqual([nt.dispatchState, nt.termsMissing], ["office", true]);
+  assert.deepEqual([nt.dispatchState, nt.termsMissing, nt.officeWhy], ["office", true, ["terms"]]);
+  await db.doc("users/u9").set({ firstName: "New", idVerified: false });
+  assert.deepEqual((await book("c4", { customerId: "u9" })).officeWhy, ["id"]);
+  assert.deepEqual((await book("c5", { paymentMethod: "cash", paymentIntentId: null })).officeWhy, ["cash"]);
+  for (const id of ["c4", "c5"]) await db.doc(`rides/${id}`).delete();
 
   // Place in line: Premium first, then by booking time. Guests can ask with their ride id.
   for (const id of ["p2", "c1", "c2"]) await db.doc(`rides/${id}`).delete();
   const g1 = await book("g1", { customerId: "guest", paymentMethod: "cash", paymentIntentId: null });
-  assert.equal(g1.dispatchState, "new");
+  assert.deepEqual([g1.dispatchState, g1.officeWhy], ["office", ["guest", "cash"]]);
   assert.equal((await call("queueStatus", { rideId: "p3" }, rider("u3"))).position, 1);
   const q1 = await call("queueStatus", { rideId: "p1" }, rider("u1"));
   assert.deepEqual([q1.waiting, q1.position, q1.hasPriority], [true, 2, false]);
@@ -145,9 +162,9 @@ async function freeDriver() {
   assert.deepEqual([(await get("driverInbox/d1")).current, (await get("drivers/d1")).leaseCreditCents], [null, 500]);
   assert.match((await get("driverInbox/d1")).notice.text, /\$5\.00 cancel fee/);
 
-  // A cash rider who cancels late owes the fee; it rides along on their next card checkout.
+  // An account-balance rider (no card hold) who cancels late owes the fee; it rides along on their next card checkout.
   await freeDriver();
-  await book("p5", { paymentMethod: "cash", paymentIntentId: null });
+  await book("p5", { paymentMethod: "wallet", paymentIntentId: null });
   await assign("p5");
   await db.doc("rides/p5").update({ assignedAt: Date.now() - 5 * MIN, headsUpAt: Date.now() - MIN });
   await call("cancelMyRide", { rideId: "p5", acceptFeeCents: 500 }, rider("u1"));
@@ -159,6 +176,11 @@ async function freeDriver() {
   assert.equal(p6.earlierFeesCents, 500);
   assert.equal((await get("users/u1")).feesOwedCents, 0);
   assert.equal((await get("drivers/d1")).leaseCreditCents, 1000, "both $5 fees reached the driver");
+  await rejects(call("captureFare", { rideId: "p6", meterFare: 10, tipAmount: 0, paymentMethodId: "pm_card" }, rider("u1")), /already paid/);
+  // Confirming the same Day Pass payment again can't renew it.
+  await db.doc(`fast_passes/${pass.id}`).update({ expiresAt: Date.now() - 1000 });
+  await call("confirmFastPass", { id: pass.id }, undefined).catch(() => {});
+  assert.ok((await get(`fast_passes/${pass.id}`)).expiresAt < Date.now(), "replay must not renew the pass");
 
   // Arrival: the rider's phone, "I'm at the car", the wait clock; no fee when he wasn't really there.
   await freeDriver();
@@ -167,6 +189,7 @@ async function freeDriver() {
   await call("riderPing", { rideId: "p7", ...PICKUP, acc: 12 }, rider("u3"));
   assert.equal((await get("driverInbox/d1")).current.riderPos.lat, PICKUP.lat);
   await rejects(call("riderPing", { rideId: "p7", ...PICKUP }, rider("u1")), /not found/);
+  await call("driverPing", FAR, D1);
   const far = await call("driverArrived", { rideId: "p7", ...FAR }, D1);
   assert.ok(far.arrivedDistM > 5000 && far.near === false);
   await call("riderArrivalReply", { rideId: "p7", reply: "minute" }, rider("u3"));
@@ -174,6 +197,17 @@ async function freeDriver() {
   await db.doc("rides/p7").update({ arrivedAt: Date.now() - 8 * MIN });
   const noFee = await call("driverEndCall", { rideId: "p7", reason: "no_show", note: "Nobody came out", ...FAR }, D1);
   assert.equal(noFee.fee, null, "no fee: driver wasn't at the pickup");
+
+  // A ride handed to another car starts a fresh pickup clock (no inherited "I'm here").
+  await freeDriver();
+  await book("p9", { customerId: "u3" });
+  await assign("p9");
+  await call("driverPing", PICKUP, D1);
+  await call("driverArrived", { rideId: "p9", ...PICKUP }, D1);
+  assert.ok((await get("rides/p9")).arrivedAt > 0);
+  await call("dispatcherAssign", { rideId: "p9", uid: null, force: true }, ADMIN);
+  const p9 = await get("rides/p9");
+  assert.deepEqual([p9.driverId, p9.arrivedAt, p9.headsUpAt, p9.arrivedNear ?? null], [null, null, null, null]);
 
   // Call-in rides: same as always. No-show any time, no fee.
   await freeDriver();
@@ -189,7 +223,7 @@ async function freeDriver() {
   await rejects(call("startMaskedCall", { rideId: "p8" }, rider("u1")), /Day Pass and Premium/);
   const off = await call("startMaskedCall", { rideId: "p8" }, D1);
   assert.equal(off.mode, "off");
-  assert.equal((await get("rides/p8")).calls.driver, 1);
+  assert.equal((await get("rides/p8")).calls?.driver, undefined, "a call that can't go through isn't counted");
   // With keys: Twilio rings the driver from the company number, plays the notice, records, connects the rider.
   Object.assign(process.env, { TWILIO_ACCOUNT_SID: "AC_test", TWILIO_AUTH_TOKEN: "tok_test", TWILIO_PHONE_NUMBER: "+17065550000" });
   let sent = null;
@@ -199,6 +233,7 @@ async function freeDriver() {
   };
   const live = await call("startMaskedCall", { rideId: "p8" }, D1);
   assert.equal(live.mode, "live");
+  assert.equal((await get("rides/p8")).calls.driver, 1);
   assert.match(sent.url, /Accounts\/AC_test\/Calls\.json$/);
   assert.deepEqual([sent.body.get("To"), sent.body.get("From")], ["+17065550144", "+17065550000"]);
   const twiml = sent.body.get("Twiml");
@@ -207,10 +242,28 @@ async function freeDriver() {
   assert.match(twiml, /<Number>\+17065550142<\/Number>/);
   assert.ok(!twiml.includes("7065550144"), "the driver's real number is never passed to the rider");
 
+  // Dispatcher: moving a car to a zone his GPS isn't in needs "move anyway";
+  // a call he gave out over the radio puts the car on call until drop-off.
+  await db.doc("board/d1").set({ carNumber: "44", status: "ready", zoneId: "downtown", lineKey: 1, rideId: null }, { merge: true });
+  await db.doc("driverLocations/d1").set({ ...PICKUP, zoneId: "downtown", at: Date.now(), live: true });
+  await rejects(call("dispatcherBoardAction", { uid: "d1", action: "ready", zoneId: "north" }, ADMIN), /GPS shows Downtown, not North Highland/);
+  await call("dispatcherBoardAction", { uid: "d1", action: "ready", zoneId: "north", force: true }, ADMIN);
+  let bd = await get("board/d1");
+  assert.deepEqual([bd.zoneId, bd.movedAgainstGps], ["north", true]);
+  await call("dispatcherBoardAction", { uid: "d1", action: "ready", zoneId: "downtown" }, ADMIN);
+  await call("dispatcherBoardAction", { uid: "d1", action: "radio_call", note: "Kroger on Macon Rd" }, ADMIN);
+  bd = await get("board/d1");
+  assert.deepEqual([bd.status, bd.zoneId, bd.radioCall.note], ["on_call", "downtown", "Kroger on Macon Rd"]);
+  await call("driverDropOff", PICKUP, D1);
+  bd = await get("board/d1");
+  assert.deepEqual([bd.status === "on_call", bd.radioCall], [false, null]);
+
   // Drivers agree to the current Driver Agreement before going online.
   await db.doc("drivers/d1").update({ agreement: { version: "old", docs: ["driver-agreement", "privacy"] } });
   await db.doc("board/d1").set({ status: "offline", rideId: null }, { merge: true });
   await rejects(call("driverGoOnline", PICKUP, D1), /Driver Agreement/);
+  await rejects(call("driverCheckReady", PICKUP, D1), /Driver Agreement/);
+  await rejects(call("driverGoMoving", PICKUP, D1), /Driver Agreement/);
 
   console.log("rideflow e2e: ok");
   process.exit(0);

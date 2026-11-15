@@ -121,7 +121,9 @@ export function AuthProvider({ children }) {
   // Records that this rider read and accepted the current Terms + Privacy.
   async function saveLegalConsent(record) {
     if (!currentUser) return;
-    await updateDoc(doc(db, "users", currentUser.uid), { legal: record, marketingOptIn: !!record.marketingOptIn });
+    // Agreeing on a booking records the terms only; the promotions choice is
+    // changed only when the rider ticks that box (never un-ticked by a booking).
+    await updateDoc(doc(db, "users", currentUser.uid), { legal: record, ...(record.marketingOptIn ? { marketingOptIn: true } : {}) });
     await refreshProfile(currentUser.uid);
   }
 
@@ -165,6 +167,7 @@ export function AuthProvider({ children }) {
     loading,
     signup,
     saveLegalConsent,
+    refreshProfile,
     login,
     logout,
     resetPassword,

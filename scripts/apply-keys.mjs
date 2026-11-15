@@ -89,13 +89,27 @@ if (vals.OFFICE_PHONE) {
     set(b.company, "phoneTel", `+1${d}`, "office phone link");
   } else warn("OFFICE_PHONE should be 10 digits. Skipped.");
 }
-const num = (k) => (vals[k] != null && Number.isFinite(Number(vals[k])) && Number(vals[k]) >= 0 ? Number(vals[k]) : null);
+const num = (k) => {
+  if (vals[k] == null) return null;
+  const n = Number(String(vals[k]).replace(/[$,\s]/g, "").replace(/minutes?$/i, ""));
+  if (Number.isFinite(n) && n >= 0) return n;
+  warn(`${k} should be a number. Skipped.`);
+  return null;
+};
 const rr = (b.rideRules ||= {});
+const rulesBefore = JSON.stringify(rr);
 set(rr, "lateCancelFee", num("LATE_CANCEL_FEE"), "late-cancel fee");
 set(rr, "noShowFee", num("NO_SHOW_FEE"), "no-show fee");
 set(rr, "headsUpMinutes", num("FREE_CANCEL_UNTIL_MINUTES_AWAY"), "free-cancel / alert minutes");
 set(rr, "waitGraceMinutes", num("FREE_WAIT_MINUTES"), "free wait minutes");
 set(rr, "noShowAfterMinutes", num("NO_SHOW_AFTER_MINUTES"), "no-show minutes");
+// Fee numbers are in the Terms: a change means everyone agrees again.
+if (JSON.stringify(rr) !== rulesBefore) {
+  const today = new Date().toISOString().slice(0, 10);
+  const [d, n] = String(b.policies.legalVersion || "").split(".");
+  b.policies.legalVersion = `${today}.${d === today ? Number(n || 0) + 1 : 1}`;
+  changed.push(`terms version ${b.policies.legalVersion} (fees changed: riders and drivers will agree again)`);
+}
 if (num("DAY_PASS_PRICE") != null && num("DAY_PASS_PRICE") !== 5) {
   warn("DAY_PASS_PRICE: the $5 price is also set in the payment code (functions/index.js PRIORITY_PASS_FEE_CENTS); ask Claude to change both.");
 }

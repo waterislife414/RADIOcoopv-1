@@ -77,7 +77,8 @@ export default function RiderPickup({ ride, rideId }) {
       {waiting && ride.arrivedAt == null && ride.headsUpAt != null && (
         <div className="rounded-2xl bg-amber-100 border-2 border-amber-400 p-4 text-amber-950" role="status">
           <p className="text-xl font-extrabold">
-            {car} is about {Math.min(eta || RIDE_RULES.headsUpMinutes, RIDE_RULES.headsUpMinutes)} minutes away
+            {car} is about {Math.min(eta || RIDE_RULES.headsUpMinutes, RIDE_RULES.headsUpMinutes)}{" "}
+            {Math.min(eta || RIDE_RULES.headsUpMinutes, RIDE_RULES.headsUpMinutes) === 1 ? "minute" : "minutes"} away
           </p>
           <p className="font-semibold">Please head outside to meet your driver.</p>
         </div>
@@ -125,7 +126,7 @@ export default function RiderPickup({ ride, rideId }) {
           {sharing === "on" && !paused && (
             <>
               {"\u{1F4CD}"} Sharing your location with your driver until pickup.{" "}
-              <button type="button" className="underline font-semibold" onClick={() => setPaused(true)}>
+              <button type="button" className="underline font-semibold min-h-[44px] px-2" onClick={() => setPaused(true)}>
                 Stop
               </button>
             </>

@@ -45,11 +45,11 @@ export default function ConsentModal({
     if (el && el.scrollTop + el.clientHeight >= el.scrollHeight - 40) setAtEnd(true);
   }
 
-  const all = terms && contact && promo;
+  // "Check all" covers what's required; promotions are always the rider's own separate choice.
+  const all = terms && contact;
   const setAll = (v) => {
     setTerms(v);
     setContact(v);
-    setPromo(v);
   };
   const ready = atEnd && terms && contact;
 

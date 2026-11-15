@@ -28,7 +28,7 @@ export default function DriverRecord({ driver }) {
     <section className="glass-panel border border-white/10 rounded-2xl p-5 space-y-3">
       <div className="flex items-baseline justify-between">
         <p className="text-xs font-bold tracking-widest text-slate-500 uppercase">Record</p>
-        <Link to="/driver/profile" className="text-sm font-semibold text-gold-300">
+        <Link to="/driver/profile" className="inline-flex items-center min-h-[48px] text-sm font-semibold text-gold-300">
           My profile &rarr;
         </Link>
       </div>

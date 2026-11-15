@@ -11,17 +11,22 @@ def book(pg, pickup, share=True, pay="Cash"):
     if (sw.get_attribute("aria-checked")=="true") != share: sw.click()
     pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
     agree_modal(pg,"Agree & Continue"); pg.wait_for_timeout(1500)
-    pg.locator(f"button:has-text('{pay}')").first.click(); pg.wait_for_timeout(2000)
+    if pay=="Card":
+        pg.locator("text=Card").first.click(); pg.wait_for_timeout(500)
+        pg.fill("input[placeholder='Cardholder Name']","Riley Example"); pg.click("button:has-text('Authorize Card')"); pg.wait_for_timeout(2500)
+    else:
+        pg.locator(f"button:has-text('{pay}')").first.click(); pg.wait_for_timeout(2000)
 with sync_playwright() as p:
     b,ctx=launch(p)
     pg=ctx.new_page(); errs=[]; watch(pg,errs)
     pg.goto(BASE+"/?as=demo-rider"); pg.wait_for_timeout(1500)
     # A. App ride with a demo car: on the way -> 4-minute alert -> here -> I'm at the car -> riding
     def live_flow():
-        book(pg, "QA 1 Broadway")
+        book(pg, "QA 1 Broadway", pay="Card")
         assert "/success" in pg.url, pg.url
         k,v=rides(pg,"QA 1 Broadway")[0]
         assert v.get("consent",{}).get("version") and v.get("shareLocation") is True and v.get("callIn") is False, "booking fields"
+        assert v.get("appHandled") is True, f"not app-handled: {v.get('officeWhy')}"
         seen=set()
         for _ in range(120):
             t=pg.inner_text("body")
@@ -49,11 +54,17 @@ with sync_playwright() as p:
         k,v=rides(pg,"QA 3 CallIn")[0]
         return (v.get("callIn") is True and v.get("dispatchState")=="office") or f"callIn={v.get('callIn')} state={v.get('dispatchState')}"
     check("Rider: location off -> call-in ride in the office queue", call_in)
-    def office_badge():
-        A=ctx.new_page(); A.goto(BASE+"/?as=demo-admin"); A.wait_for_timeout(1000); A.goto(BASE+"/admin/dashboard"); A.wait_for_timeout(2500)
-        ok=A.locator("text=Call-in").count()>0
-        A.close(); return ok or "no Call-in badge on the dispatcher's card"
-    check("Dispatcher: call-in rides are marked", office_badge)
+    def office_lists():
+        A=ctx.new_page(); aerr=[]; watch(A,aerr); A.goto(BASE+"/?as=demo-admin"); A.wait_for_timeout(1000); A.goto(BASE+"/admin/dashboard"); A.wait_for_timeout(2500)
+        t=A.inner_text("body")
+        assert "Send by radio" in t and "App rides" in t, "lists missing"
+        sec=A.locator("section", has_text="Send by radio").first.inner_text()
+        assert "QA 3 CallIn" in sec and "no GPS" in sec, "call-in ride not in the radio list with its reason"
+        # Board: open a car, see the radio-call button
+        A.locator("button[title^='Car ']").first.click(); A.wait_for_timeout(500)
+        ok=A.locator("button:has-text('Gave him a radio call')").count()==1 or A.locator("text=On a radio call").count()>0 or A.locator("text=On an app call").count()>0
+        A.close(); return (ok and not aerr) or f"radio-call button missing or errors {aerr[:2]}"
+    check("Dispatcher: 'Send by radio' vs 'App rides' lists, reasons shown, radio-call button on cars", office_lists)
     # D. Waiting in line -> Day Pass offer -> pay -> moves up
     def line_offer():
         put(pg,"settings/dispatch",{"mode":"manual"})
