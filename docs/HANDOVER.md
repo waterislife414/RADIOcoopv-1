@@ -85,6 +85,16 @@ the page shows that honestly and adds a 1.5x busy-time column.
 Driver screening questions (`src/config/driverScreening.js`) and the legal pages are drafts: have the
 owner's lawyer review them before going live.
 
+## Who the app handles, and who the dispatcher handles
+The app runs a ride by itself (rider and driver work it out: offer, 4-minute alert, "I'm here",
+calls) only when the rider is signed in, their ID has been checked by the office, they share their
+location and pay by card or account balance. Everything else (phone calls, cash, guests, location
+off, ID not checked yet, nobody took it) goes to the dispatcher's **Send by radio** list.
+The dispatcher sees every car on the **board by area**, can move cars (except an app driver into an
+area his GPS says he isn't in), put any car on a radio call, and step into any ride.
+Switches: `branding.config.json` → `rideRules.appHandles` (`requireAccount`, `requireVerifiedId`,
+`requireLocation`, `requireCardOrWallet`; all on by default).
+
 ## Pickup rules, fees and perks (all in `branding.config.json`)
 | Setting | Now | What it does |
 |---|---|---|

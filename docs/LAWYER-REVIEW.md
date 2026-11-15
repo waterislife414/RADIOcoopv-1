@@ -27,9 +27,9 @@ today and where to change it. Text lives in `src/legal/documents.js`; numbers li
 
 ## Calls, location and records
 - [ ] **Call recording.** Calls between rider and driver go through the company's number and are recorded.
-  Georgia and Alabama are one-party-consent states. The caller hears "may be recorded"; the person who
-  answers consented in the terms. Should the person answering also hear a notice (Florida and other
-  all-party states)?
+  Georgia and Alabama are one-party-consent states. Both people hear "may be recorded": the caller
+  before it rings, the person answering before they're connected. Both also agreed in the terms.
+  Is that enough for riders from all-party states such as Florida?
   Change: `branding.config.json` → `calling.recordCalls` / `calling.greeting`; Terms; Privacy.
 - [ ] **Recording retention.** Pick a period (90 days suggested), set it in Twilio, and state it in the Privacy Policy.
 - [ ] **Location.** Riders share location until pickup when they choose to; drivers' locations are seen by
