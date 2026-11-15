@@ -37,7 +37,8 @@ async function runTimer(match) {
   return t;
 }
 async function newRide(id, extra) {
-  const data = { status: "pending", pickup: "100 Test St", dropoff: "", customerId: "guest", firstName: "Pat", phone: "7065550100", paymentMethod: "cash", timestamp: admin.firestore.Timestamp.now(), ...extra };
+  const consent = { version: require("../../functions/branding.json").legalVersion, docs: ["terms", "privacy"] };
+  const data = { status: "pending", pickup: "100 Test St", dropoff: "", customerId: "guest", firstName: "Pat", phone: "7065550100", paymentMethod: "cash", consent, timestamp: admin.firestore.Timestamp.now(), ...extra };
   await db.doc(`rides/${id}`).set(data);
   // assignRideZone with a preset zone (no geocoding)
   await f.assignRideZone.run({ data: { data: () => data, ref: db.doc(`rides/${id}`) }, params: { rideId: id } });
@@ -54,7 +55,7 @@ async function boardChanged(uid, before) {
   await db.doc("zones/east").set({ label: "East", order: 2, points: sq(EAST.lat, EAST.lng) });
   await db.doc("zones/fort-benning").set({ label: "Fort Benning", order: 3, requiresCert: "base", points: sq(FB.lat, FB.lng) });
   const mk = async (uid, car, status, zoneId, lineKey, extra = {}) => {
-    await db.doc(`drivers/${uid}`).set({ carNumber: car, inspection: { carNumber: String(car), initialAt: Date.now(), lastFullAt: Date.now(), shiftCheckAt: Date.now() }, status: "offline", active: true, certs: {}, warnings: 0, ...extra });
+    await db.doc(`drivers/${uid}`).set({ carNumber: car, agreement: { version: require("../../functions/branding.json").legalVersion, docs: ["driver-agreement", "privacy"] }, inspection: { carNumber: String(car), initialAt: Date.now(), lastFullAt: Date.now(), shiftCheckAt: Date.now() }, status: "offline", active: true, certs: {}, warnings: 0, ...extra });
     await db.doc(`board/${uid}`).set({ carNumber: car, status, zoneId, lineKey });
   };
   await mk("d1", "44", "ready", "rose-hill", 1);

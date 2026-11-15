@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import ConsentModal from "../components/legal/ConsentModal";
-import { consentIsCurrent } from "../legal/documents";
+import { readLocationOnce } from "../utils/rideLive";
+import { BRAND } from "../config/constants";
 
 const RIDER_DOCS = ["rider-terms", "privacy"];
 import { useRide } from "../context/RideContext";
@@ -40,12 +41,16 @@ function RecentChips({ places, current, onPick, label }) {
 
 export default function TripDetails() {
   const { currentUser, userProfile, saveLegalConsent } = useAuth();
-  // Guests agree on every booking. Signed-in riders agree once per version.
-  const alreadyAgreed = !!currentUser && consentIsCurrent(userProfile?.legal, RIDER_DOCS);
+  // Every rider reads and agrees to the terms on every booking.
   const [askConsent, setAskConsent] = useState(false);
+  const [locBlocked, setLocBlocked] = useState(null);
+  const [going, setGoing] = useState(false);
   const [recent] = useState(recentPlaces);
   const { ride, updateRide, addStop, removeStop } = useRide();
   const navigate = useNavigate();
+  const sharing = ride.shareLocation !== false;
+  // A Priority Day Pass bought earlier today covers this ride too.
+  const dayPass = userProfile?.dayPass?.expiresAt > Date.now() ? userProfile.dayPass : null;
 
   const [stopInput, setStopInput] = useState("");
   const [showStops, setShowStops] = useState(ride.stops.length > 0);
@@ -119,18 +124,28 @@ export default function TripDetails() {
       setError("Please choose a date/time for your scheduled ride.");
       return;
     }
-    if (!alreadyAgreed) {
-      setAskConsent(true);
-      return;
-    }
-    proceed(userProfile.legal);
+    setAskConsent(true);
   }
 
-  function proceed(consent) {
+  // App rides share the rider's location so the driver can find them.
+  // Location turned off on purpose = a call-in ride the office dispatches.
+  async function proceed(consent) {
+    if (!sharing) return finish(consent, { callIn: true, bookedFrom: null });
+    if (scheduleType === "later") return finish(consent, { callIn: false, bookedFrom: null });
+    setGoing(true);
+    const r = await readLocationOnce();
+    setGoing(false);
+    if (r.denied) return setLocBlocked({ consent });
+    finish(consent, { callIn: false, bookedFrom: r.fix || null });
+  }
+
+  function finish(consent, extra) {
+    setLocBlocked(null);
     rememberPlaces(ride.pickup, ride.dropoff);
-    if (!alreadyAgreed && currentUser) saveLegalConsent(consent).catch(() => {});
-    updateRide({ scheduleType, consent });
-    navigate(ride.wantsPriorityPass ? "/fast-pass" : "/payment");
+    if (currentUser) saveLegalConsent(consent).catch(() => {});
+    const pass = dayPass ? { wantsPriorityPass: true, fastPassId: dayPass.id } : {};
+    updateRide({ scheduleType, consent, shareLocation: !extra.callIn, ...extra, ...pass });
+    navigate(dayPass || !ride.wantsPriorityPass ? "/payment" : "/fast-pass");
   }
 
   return (
@@ -414,25 +429,44 @@ export default function TripDetails() {
 
             <div className="flex items-center justify-between border-2 border-gold-400/50 bg-amber-50 rounded-xl px-4 py-3.5">
               <span className="text-base font-semibold text-slate-700">
-                &#9733; VIP for a Day &mdash; $5 Fast Pass
+                &#9733; {BRAND.copy.dayPass.title} &mdash; {dayPass ? "active until midnight" : BRAND.copy.dayPass.price}
               </span>
-              <button role="switch" aria-checked={!!(ride.wantsPriorityPass)} aria-label="VIP Fast Pass"
+              <button role="switch" aria-checked={!!(dayPass || ride.wantsPriorityPass)} aria-label={BRAND.copy.dayPass.title}
                 type="button"
+                disabled={!!dayPass}
                 onClick={() => updateRide({ wantsPriorityPass: !ride.wantsPriorityPass })}
                 className={`w-12 h-7 rounded-full transition after:absolute after:-inset-2.5 after:content-[''] shrink-0 ${
-                  ride.wantsPriorityPass ? "bg-gold-500" : "bg-slate-300"
+                  dayPass || ride.wantsPriorityPass ? "bg-gold-500" : "bg-slate-300"
                 } relative`}
               >
                 <span
                   className={`absolute top-1 w-5 h-5 bg-white rounded-full transition ${
-                    ride.wantsPriorityPass ? "left-6" : "left-1"
+                    dayPass || ride.wantsPriorityPass ? "left-6" : "left-1"
                   }`}
                 />
               </button>
             </div>
             <p className="text-xs text-slate-500 -mt-2">
-              Moves you up the dispatcher's queue for this ride. The $5 is
-              paid on its own before checkout. (Premium members still dispatch first.)
+              Skip ahead in line all day, watch your driver on the map and call them directly. Paid on its own
+              before checkout. (Premium members still dispatch first.)
+            </p>
+
+            <div className="flex items-center justify-between border-2 border-slate-200 rounded-xl px-4 py-3.5">
+              <span className="text-base font-semibold text-slate-700">&#128205; Share my location with my driver</span>
+              <button role="switch" aria-checked={sharing} aria-label="Share my location with my driver"
+                type="button"
+                onClick={() => updateRide({ shareLocation: !sharing })}
+                className={`w-12 h-7 rounded-full transition after:absolute after:-inset-2.5 after:content-[''] shrink-0 ${
+                  sharing ? "bg-blue-600" : "bg-slate-300"
+                } relative`}
+              >
+                <span className={`absolute top-1 w-5 h-5 bg-white rounded-full transition ${sharing ? "left-6" : "left-1"}`} />
+              </button>
+            </div>
+            <p className={`text-xs -mt-2 ${sharing ? "text-slate-500" : "text-amber-800 font-semibold"}`}>
+              {sharing
+                ? "Your driver sees where you are until pickup, so they can find you even if the address is off."
+                : "Without your location, your ride goes to our dispatcher like a phone call."}
             </p>
 
             {currentUser && (
@@ -487,9 +521,31 @@ export default function TripDetails() {
           <button
             onClick={handleContinue}
             className="w-full mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4.5 rounded-full shadow-luxury transition hover:-translate-y-0.5 duration-200"
+            disabled={going}
           >
-            Continue to Payment
+            {going ? "Checking your location\u2026" : "Continue to Payment"}
           </button>
+          {locBlocked && (
+            <div className="fixed inset-0 z-[80] bg-black/60 flex items-end sm:items-center justify-center p-3" role="dialog" aria-modal="true" aria-label="Location is off">
+              <div className="w-full max-w-sm rounded-3xl bg-white p-6 space-y-3 text-center">
+                <p className="text-xl font-bold text-slate-800">Location is off on this phone</p>
+                <p className="text-slate-600">
+                  App rides use your location so your driver can find you. Without it, your ride goes to our dispatcher like a phone
+                  call. To get an app driver, turn on Location for this site in your phone&rsquo;s settings and try again.
+                </p>
+                <button type="button" onClick={() => proceed(locBlocked.consent)} className="w-full min-h-[52px] rounded-xl bg-blue-600 text-white font-bold">
+                  I turned it on, try again
+                </button>
+                <button
+                  type="button"
+                  onClick={() => finish(locBlocked.consent, { callIn: true, bookedFrom: null })}
+                  className="w-full min-h-[52px] rounded-xl border-2 border-slate-300 font-bold text-slate-700"
+                >
+                  Book as a call-in ride
+                </button>
+              </div>
+            </div>
+          )}
           <ConsentModal
             open={askConsent}
             docIds={RIDER_DOCS}

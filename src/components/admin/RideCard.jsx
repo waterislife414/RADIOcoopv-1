@@ -104,7 +104,23 @@ export default function RideCard({ ride, customerStatus, carFor, zones, onSetZon
             <StatusBadge status={customerStatus} />
             {ride.wantsPriorityPass && (
               <span className="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-gold-400 text-navy-950">
-                &#9733; Fast Pass{ride.fastPassId ? " \u00b7 paid" : ""}
+                &#9733; Day Pass{ride.fastPassId ? " \u00b7 paid" : ""}
+              </span>
+            )}
+            {ride.dispatchState === "office" && (
+              <span className="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-900" title="No location shared: dispatch by radio">
+                Call-in
+              </span>
+            )}
+            {ride.termsMissing && (
+              <span className="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-red-600 text-white" title="This rider hasn't agreed to the current terms">
+                No terms
+              </span>
+            )}
+            {ride.fee?.cents > 0 && (
+              <span className="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-slate-800 text-white">
+                {ride.fee.kind === "no_show_fee" ? "No-show" : "Late cancel"} ${(ride.fee.cents / 100).toFixed(2)}
+                {ride.fee.owedCents > 0 ? " owed" : ""}
               </span>
             )}
           </div>

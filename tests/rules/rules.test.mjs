@@ -58,9 +58,19 @@ test("riders: book a ride, but never set dispatch or money fields", async () => 
     { status: "dispatched" },
     { finalFare: 5 },
     { customerId: "rider2" },
+    // Perks, fees and pickup timing are the server's to set.
+    { perks: { liveMap: true, callDriver: true } },
+    { fee: { cents: 0 } },
+    { headsUpAt: 1 },
+    { arrivedAt: 1 },
+    { termsRead: true },
   ]) {
     await assertFails(setDoc(doc(rider(), "rides/x"), ride({ customerId: "rider1", ...bad })));
   }
+  // Location choices are the rider's: share, or book as a call-in ride.
+  await assertSucceeds(setDoc(doc(rider(), "rides/loc"), ride({ customerId: "rider1", shareLocation: true, bookedFrom: { lat: 32.4, lng: -84.9 } })));
+  await assertSucceeds(setDoc(doc(rider(), "rides/callin"), ride({ customerId: "rider1", shareLocation: false, callIn: true })));
+  await assertFails(updateDoc(doc(rider(), "rides/mine"), { perks: { liveMap: true } }));
   await assertSucceeds(updateDoc(doc(rider(), "rides/mine"), { dropoff: "C" }));
   await assertFails(updateDoc(doc(rider(), "rides/mine"), { status: "dispatched" }));
   await assertFails(updateDoc(doc(rider(), "rides/mine"), { dispatchState: "assigned" }));
@@ -76,6 +86,12 @@ test("riders: no free wallet money or membership", async () => {
   await assertSucceeds(setDoc(doc(fresh, "users/rider9"), { firstName: "X", walletBalance: 0, subscriptionTier: null }));
   await assertFails(updateDoc(doc(rider(), "users/rider1"), { walletBalance: 50 }));
   await assertFails(updateDoc(doc(rider(), "users/rider1"), { subscriptionTier: "PREMIUM" }));
+  // No free Day Pass, and no wiping out fees owed.
+  await assertFails(updateDoc(doc(rider(), "users/rider1"), { dayPass: { id: "x", expiresAt: 9e15 } }));
+  await assertFails(updateDoc(doc(rider(), "users/rider1"), { feesOwedCents: 0 }));
+  const rider8 = env.authenticatedContext("rider8").firestore();
+  await assertFails(setDoc(doc(rider8, "users/rider8"), { firstName: "X", walletBalance: 0, subscriptionTier: null, dayPass: { id: "x" } }));
+  await assertSucceeds(setDoc(doc(rider8, "users/rider8"), { firstName: "X", walletBalance: 0, subscriptionTier: null }));
   await assertSucceeds(updateDoc(doc(rider(), "users/rider1"), { phone: "7065550100" }));
   await assertSucceeds(updateDoc(doc(rider(), "users/rider1"), { idImageUrl: "u", idVerified: false, idSubmittedAt: "t" }));
   await assertFails(updateDoc(doc(rider(), "users/rider1"), { idVerified: true }));
@@ -185,6 +201,11 @@ test("inspections and shop work orders: server-written; driver reads his own, sh
   await assertSucceeds(getDoc(doc(shop, "vehicles/44")));
   await assertFails(getDoc(doc(rider, "work_orders/w1")));
   await assertFails(getDoc(doc(rider, "cancelled_rides/c1")));
+});
+
+test("call logs are server-only", async () => {
+  await assertFails(getDoc(doc(rider(), "ride_calls/c1")));
+  await assertFails(setDoc(doc(rider(), "ride_calls/c1"), { rideId: "mine" }));
 });
 
 test("alerts: office reads them; nobody writes them from the app", async () => {

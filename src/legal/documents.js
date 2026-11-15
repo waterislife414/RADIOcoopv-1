@@ -7,7 +7,12 @@
 import { BRAND, COMPANY_NAME, COMPANY_PHONE_DISPLAY, COMPANY_EMAIL, OFFICE_ADDRESS } from "../config/constants";
 import { clock } from "../config/lease";
 
-export const LEGAL_VERSION = "2026-11-14.2";
+// One version number for every agreement; bump it in branding.config.json and
+// everyone is asked to agree again before their next ride or shift.
+export const LEGAL_VERSION = BRAND.policies.legalVersion;
+const RR = { headsUpMinutes: 4, minFreeCancelMinutes: 1, lateCancelFee: 5, waitGraceMinutes: 2, noShowAfterMinutes: 7, noShowFee: 10, ...(BRAND.rideRules || {}) };
+const PASS = BRAND.copy.dayPass?.title || "Priority Day Pass";
+const dollars = (n) => `$${Number(n).toFixed(2)}`;
 
 const lease = BRAND.dispatch?.lease || {};
 const money = (cents) => `$${(cents / 100).toFixed(0)}`;
@@ -43,8 +48,11 @@ export const DOCUMENTS = {
         p: [
           "The fare is set by the meter or by the rate quoted for trips outside the local area. Any price shown in the app before the ride is an estimate only.",
           "If you pay by card, a hold may be placed on your card when you book, and the final fare, fees and any tip are charged after the ride. An app fee may apply to card payments.",
-          "You can cancel at no charge before a driver is assigned (in the app if you have an account, or by calling). After that, call the office.",
-          "All rides, memberships and add-on fees, including the Fast Pass, are non-refundable once a ride has been dispatched or completed, except where the law requires a refund.",
+          `Cancelling and no-shows on rides booked in the app with an account: you can cancel at no charge until we tell you your driver is about ${RR.headsUpMinutes} minutes away (and always for the first ${RR.minFreeCancelMinutes} minute after a driver takes your ride). After that, cancelling costs ${dollars(RR.lateCancelFee)}. When your driver arrives, you get ${RR.waitGraceMinutes} minutes of free waiting; after that the meter runs for waiting time at the posted rate. If you are not at the car ${RR.noShowAfterMinutes} minutes after your driver arrives, your driver may cancel the ride as a no-show and you will be charged ${dollars(RR.noShowFee)}. A no-show fee is only charged when the app shows your driver was at the pickup. Cancel and no-show fees go to your driver for the trip out.`,
+          "Fees are taken from the hold on your card. If you paid cash or the hold can't cover a fee, it is added to your next card payment in the app. Riders who need extra time to reach or get into the car because of a disability can tell us, and we will waive wait and no-show fees.",
+          "Rides booked by phone, and rides booked without sharing your location, are dispatched by our office and are cancelled by calling us. Cancel and no-show fees do not apply to them.",
+          `The ${PASS} costs ${dollars(5)}. It moves your rides ahead of riders without priority (members on plans that dispatch first still go first), shows your driver on a map and lets you call your driver, for every ride you book until midnight (local time) on the day you buy it. A guest's pass covers one ride. It does not promise a pickup time.`,
+          "All rides, memberships and add-on fees, including the Priority Day Pass, are non-refundable once a ride has been dispatched or completed, except where the law requires a refund.",
           `You agree to pay for every ride you take. Refusing to pay, using a fraudulent payment method, or leaving without paying may be theft of services under Georgia law (O.C.G.A. \u00a7 16-8-5) and may be reported to the police. ${COMPANY_NAME} may pursue every legal remedy to recover unpaid fares, fees, court costs and reasonable attorney's fees, and may refuse future service to anyone flagged for non-payment.`,
         ],
       },
@@ -72,6 +80,8 @@ export const DOCUMENTS = {
         p: [
           "By giving us your phone number or email you agree that we and your driver may call, text or email you about your rides and your account, including by automated means. Message and data rates may apply.",
           "We send promotions only if you choose to receive them. You can stop promotional texts at any time by replying STOP, and promotional emails by using the unsubscribe link. Agreeing to promotions is never required to get a ride.",
+          `Calls between you and your driver can go through ${COMPANY_NAME}'s phone number so neither of you sees the other's real number. These calls may be recorded for quality, safety and to settle disputes, and you agree to that recording each time you place or answer such a call. Your driver may not answer while driving.`,
+          "Location: rides booked in the app use your phone's location so your driver can find you. While your ride is on and the app is open, your location is shared with your driver until pickup. You can stop sharing at any time; your ride then may be handled by our office like a phone call.",
         ],
       },
       {
@@ -116,6 +126,7 @@ export const DOCUMENTS = {
           "From riders: your name, phone number, email, pickup and drop-off addresses, your location if you choose to share it, ride and payment history, any photo or ID you upload, and messages you send us. Card details are handled by our payment processor; we do not store full card numbers.",
           "From drivers and applicants: contact details, driver's license and license number, driving record (MVR), answers to screening questions, background information, uploaded documents, vehicle inspection photos and videos, damage and repair reports, typed signatures, vehicle and lease records, payments, ride activity, and your location while you are on the board.",
           "Places you booked recently are saved only on your own phone, so you can tap them next time.",
+          "During a ride: where your phone was when you booked, your location until pickup if you share it, when your driver arrived and how close to the pickup, your replies such as \u201cI'm at the car,\u201d and records of calls between you and your driver through our number, including recordings.",
           "From everyone: basic device and usage information, such as the type of phone or browser and the pages you open.",
         ],
       },
@@ -220,6 +231,7 @@ export const DOCUMENTS = {
         h: "7. Your information, location and messages",
         p: [
           "You agree that we may collect, keep, use and share your information as described in the Privacy Policy, including your location while you are on the board, your license and driving record, and your lease, payment and ride records, for as long as we choose.",
+          "Calls with riders through the company's number may be recorded for quality, safety and to settle disputes, and you agree to that recording. Never give a rider a reason to call your own phone. Tap \u201cI'm here\u201d only when you are at the pickup: the app records how close you were, and a no-show fee is only charged to the rider when you were there. Cancel and no-show fees collected on your calls are credited to your lease. Card fees, memberships and the Priority Day Pass belong to the company.",
           "You agree to receive calls, texts, emails and app alerts about calls, your lease and your account. These are part of the job and cannot be turned off while you drive for us. Promotional messages are sent only if you choose them, and you can stop those at any time by replying STOP.",
         ],
       },

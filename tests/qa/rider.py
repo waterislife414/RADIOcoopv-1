@@ -40,7 +40,7 @@ with sync_playwright() as p:
         pg.click("[aria-label='Trip outside the local area']"); pg.wait_for_timeout(200)
         n0=pg.locator("input").count(); pg.click("[aria-label='Add stops']"); pg.wait_for_timeout(200); out.append(pg.locator("input").count()>n0)
         pg.click("[aria-label='Add stops']")
-        for t in ["Round trip","Handicap-accessible vehicle","VIP Fast Pass"]:
+        for t in ["Round trip","Handicap-accessible vehicle","Priority Day Pass"]:
             pg.click(f"[aria-label='{t}']"); pg.wait_for_timeout(150)
             out.append(pg.locator(f"[aria-label='{t}']").get_attribute("aria-checked")=="true")
             pg.click(f"[aria-label='{t}']")

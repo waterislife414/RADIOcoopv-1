@@ -144,6 +144,9 @@ exports.acceptDriverAgreement = onCall(async (request) => {
   const version = String(request.data?.version || "").slice(0, 20);
   const docs = (Array.isArray(request.data?.docs) ? request.data.docs : []).filter((d) => ["driver-agreement", "privacy"].includes(d));
   if (!version || docs.length !== 2) throw new HttpsError("invalid-argument", "Agreement not accepted.");
+  if (version !== require("./branding.json").legalVersion) {
+    throw new HttpsError("failed-precondition", "The agreement was updated. Reload the app and read the new one.");
+  }
   const agreement = { version, docs, acceptedAt: Date.now(), marketingOptIn: request.data?.marketingOptIn === true };
   await db().collection("drivers").doc(request.auth.uid).update({ agreement, agreementHistory: admin.firestore.FieldValue.arrayUnion(agreement) });
   return { ok: true };

@@ -16,7 +16,7 @@ exports.assignRideZone = onDocumentCreated("rides/{rideId}", async (event) => {
   const ride = event.data?.data();
   if (!ride) return;
   const rideId = event.params.rideId;
-  const dispatchFields = await dispatchFieldsFor(ride);
+  const dispatchFields = await dispatchFieldsFor(ride, Date.now(), event.params.rideId);
 
   const { zoneForPoint, requiredCertsForRide } = await core();
   const zones = await getZones();

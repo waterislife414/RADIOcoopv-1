@@ -1,18 +1,19 @@
 import { useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { Elements, CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../config/firebase";
 import { useRide } from "../context/RideContext";
 import BrandHeader from "../components/BrandHeader";
-import { STRIPE_PUBLISHABLE_KEY } from "../config/constants";
+import { BRAND, STRIPE_PUBLISHABLE_KEY } from "../config/constants";
 
 const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
 const payFastPass = httpsCallable(functions, "payFastPass");
 const confirmFastPass = httpsCallable(functions, "confirmFastPass");
 
-function PayForm({ onPaid }) {
+function PayForm({ onPaid, label }) {
   const stripe = useStripe();
   const elements = useElements();
   const [name, setName] = useState("");
@@ -64,35 +65,93 @@ function PayForm({ onPaid }) {
         disabled={busy || !stripe}
         className="w-full bg-gradient-to-b from-gold-300 to-gold-500 text-navy-950 font-extrabold text-lg py-4 rounded-2xl shadow-luxury disabled:opacity-50"
       >
-        {busy ? "Processing…" : "Pay $5.00 Fast Pass"}
+        {busy ? "Processing…" : label}
       </button>
     </div>
   );
 }
 
-/** Step between trip details and checkout: the $5 Fast Pass is paid on its own. */
+const applyDayPass = httpsCallable(functions, "applyDayPass");
+const PASS = BRAND.copy.dayPass;
+
+function PassCard() {
+  return (
+    <div className="rounded-3xl bg-navy-950 text-white p-6 text-center shadow-luxury mb-6">
+      <p className="text-xs font-bold tracking-[0.3em] text-gold-400 uppercase">&#9733; {PASS.title}</p>
+      <p className="font-display text-2xl font-bold mt-1">{PASS.tagline}</p>
+      <ul className="text-left space-y-1.5 text-slate-200 mt-4">
+        {PASS.perks.map((p) => (
+          <li key={p} className="flex gap-2">
+            <span className="text-gold-400" aria-hidden="true">
+              &#10003;
+            </span>
+            {p}
+          </li>
+        ))}
+      </ul>
+      <p className="font-mono text-4xl font-bold text-gold-300 mt-4">{PASS.price}</p>
+      <p className="text-xs text-slate-400 mt-1">{PASS.fine}</p>
+    </div>
+  );
+}
+
+/**
+ * The $5 Priority Day Pass, paid on its own. Two ways in: a step between trip
+ * details and checkout, or ?ride=ID for a ride that's already waiting (it
+ * moves up the line; a ride already dispatched gets the map and calling).
+ */
 export default function FastPass() {
   const { ride, updateRide } = useRide();
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const waitingRideId = params.get("ride");
+  const [err, setErr] = useState("");
+  const back = currentUser ? "/" : "/success";
+
+  if (waitingRideId) {
+    return (
+      <div className="min-h-screen bg-white">
+        <BrandHeader tagline={PASS.title} />
+        <div className="px-6 py-8">
+          <div className="max-w-md mx-auto">
+            <PassCard />
+            <Elements stripe={stripePromise}>
+              <PayForm
+                label={`Pay ${PASS.price} and skip ahead`}
+                onPaid={async (id) => {
+                  try {
+                    await applyDayPass({ rideId: waitingRideId, passId: id });
+                    navigate(back, { replace: true });
+                  } catch (e) {
+                    setErr(`Paid, but ${e?.message || "it couldn't be added to this ride"}. Your pass still works on your next ride today.`);
+                  }
+                }}
+              />
+            </Elements>
+            {err && <p className="text-sm text-red-700 mt-3">{err}</p>}
+            <button type="button" onClick={() => navigate(back)} className="w-full mt-4 text-slate-500 font-semibold py-3">
+              No thanks, I&rsquo;ll wait
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!ride.consent) return <Navigate to="/trip-details" replace />;
   if (!ride.wantsPriorityPass || ride.fastPassId) return <Navigate to="/payment" replace />;
 
   return (
     <div className="min-h-screen bg-white">
-      <BrandHeader tagline="Step 1 of 2 · Fast Pass" />
+      <BrandHeader tagline={`Step 1 of 2 \u00b7 ${PASS.title}`} />
       <div className="px-6 py-8">
         <div className="max-w-md mx-auto">
-          <div className="rounded-3xl bg-navy-950 text-white p-6 text-center shadow-luxury mb-6">
-            <p className="text-xs font-bold tracking-[0.3em] text-gold-400 uppercase">VIP for a Day</p>
-            <p className="font-display text-3xl font-bold mt-1">&#9733; Fast Pass</p>
-            <p className="text-slate-300 mt-2">Moves you up the dispatcher&rsquo;s queue for this ride.</p>
-            <p className="font-mono text-4xl font-bold text-gold-300 mt-4">$5.00</p>
-            <p className="text-xs text-slate-500 mt-1">Paid now, separate from your ride. Your ride is paid next.</p>
-          </div>
-
+          <PassCard />
+          <p className="text-xs text-slate-500 text-center -mt-3 mb-4">Paid now, separate from your ride. Your ride is paid next.</p>
           <Elements stripe={stripePromise}>
             <PayForm
+              label={`Pay ${PASS.price} ${PASS.title}`}
               onPaid={(id) => {
                 updateRide({ fastPassId: id });
                 navigate("/payment");
@@ -108,9 +167,8 @@ export default function FastPass() {
             }}
             className="w-full mt-4 text-slate-500 font-semibold py-3"
           >
-            No thanks &mdash; skip the Fast Pass
+            No thanks &mdash; skip the {PASS.title}
           </button>
-          <p className="text-xs text-slate-500 text-center mt-2">Premium members are always dispatched first.</p>
         </div>
       </div>
     </div>

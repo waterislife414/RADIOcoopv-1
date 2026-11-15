@@ -45,6 +45,9 @@ exports.dispatcherCreateRide = onCall(async (request) => {
   const scheduledFor = later ? clean(d.scheduledFor, 16) : null;
   if (phone.length !== 10) throw new HttpsError("invalid-argument", "Enter the caller's 10-digit phone number.");
   if (!pickup) throw new HttpsError("invalid-argument", "Enter the pickup.");
+  // Every customer agrees to the terms: on a phone call the dispatcher reads
+  // the short ride rules and ticks the box once the caller says OK.
+  if (d.termsRead !== true) throw new HttpsError("invalid-argument", "Read the ride rules to the caller, then tick the box.");
   if (later && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(scheduledFor)) throw new HttpsError("invalid-argument", "Pick the pickup time.");
 
   const zones = await getZones();
@@ -90,6 +93,8 @@ exports.dispatcherCreateRide = onCall(async (request) => {
       finalFare: null,
       timestamp: FieldValue.serverTimestamp(),
       source: "phone",
+      termsRead: true,
+      termsVersion: require("./branding.json").legalVersion,
       enteredBy: by,
       notes: clean(d.notes, 300) || null,
       ...(zone ? { zoneId: zone.id, zoneLabel: zone.label } : {}),

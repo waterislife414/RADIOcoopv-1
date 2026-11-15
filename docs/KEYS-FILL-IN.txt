@@ -1,0 +1,51 @@
+RADIO CO-OP TAXI APP: FILL IN THE BLANKS
+==========================================
+Copy everything below the line, fill in after each "=" sign, and send it back.
+Leave a line blank if you don't have it yet; the app keeps working without it.
+
+NEVER put these four in this sheet: Stripe secret key (sk_live_...), Stripe
+webhook secret (whsec_...), Twilio auth token, any password. You type those
+yourself in Cloud Shell; the script prints the exact commands.
+------------------------------------------------------------------------------
+
+## 1. FIREBASE (the app's home). console.firebase.google.com
+##    Project settings > General > Your apps > Web app > "SDK setup and configuration" > Config
+FIREBASE_API_KEY =
+FIREBASE_AUTH_DOMAIN =
+FIREBASE_PROJECT_ID =
+FIREBASE_STORAGE_BUCKET =
+FIREBASE_MESSAGING_SENDER_ID =
+FIREBASE_APP_ID =
+##    Optional: call alerts with the driver's screen off.
+##    Project settings > Cloud Messaging > Web Push certificates > Key pair
+FIREBASE_WEB_PUSH_KEY =
+
+## 2. STRIPE (card payments, memberships, Day Pass). dashboard.stripe.com
+##    Developers > API keys > Publishable key (starts pk_live_)
+STRIPE_PUBLISHABLE_KEY =
+
+## 3. TWILIO (private rider/driver calls, recorded). console.twilio.com
+##    Account Info box on the home page > Account SID (starts AC)
+TWILIO_ACCOUNT_SID =
+##    Phone Numbers > Manage > Active numbers > the number you bought (706 area code is best)
+TWILIO_PHONE_NUMBER =
+
+## 4. LIVE MAP TILES (optional). Blank = free OpenStreetMap, fine for testing.
+##    For launch, any tile service key works, e.g. a MapTiler or Stadia "raster tiles" URL
+MAP_TILE_URL =
+MAP_TILE_ATTRIBUTION =
+
+## 5. PEOPLE
+##    Email Malcolm will log in with as the owner / dispatcher
+OWNER_LOGIN_EMAIL =
+##    Email for mechanics' shop login (optional)
+SHOP_LOGIN_EMAIL =
+
+## 6. CONFIRM OR CHANGE (already filled in with what the app uses now)
+OFFICE_PHONE = (706) 322-0700
+LATE_CANCEL_FEE = 5
+NO_SHOW_FEE = 10
+FREE_CANCEL_UNTIL_MINUTES_AWAY = 4
+FREE_WAIT_MINUTES = 2
+NO_SHOW_AFTER_MINUTES = 7
+DAY_PASS_PRICE = 5

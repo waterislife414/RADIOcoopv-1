@@ -94,8 +94,23 @@ const QA = [
     a: <p>Call the office with the time and place of your ride. We&rsquo;ll pass the message to your driver right away.</p>,
   },
   {
-    q: "What is the Fast Pass?",
-    a: <p>For $5 you move up the dispatcher&rsquo;s line for that one ride. You pay the $5 before checkout, then your ride.</p>,
+    q: "What is the Priority Day Pass?",
+    a: (
+      <p>
+        For $5 you move up the line on every ride until midnight, watch your driver on the map and call them directly (private, no
+        numbers shared). Premium members still dispatch first. Choose it when you book, or tap &ldquo;Skip ahead&rdquo; while you wait.
+      </p>
+    ),
+  },
+  {
+    q: "Can I cancel? Is there a fee?",
+    a: (
+      <p>
+        Cancelling is free until we tell you your driver is about 4 minutes away. After that it costs $5, which goes to your driver.
+        Once your driver is there, the wait meter starts after 2 minutes, and after 7 minutes they can cancel as a no-show ($10). Phone
+        bookings are cancelled by calling us.
+      </p>
+    ),
   },
   {
     q: "The words are too small",

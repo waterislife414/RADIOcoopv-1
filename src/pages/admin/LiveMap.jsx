@@ -53,9 +53,9 @@ export default function LiveMap() {
 
   useEffect(() => {
     const map = L.map(mapEl.current).setView([DISPATCH.mapCenter.lat, DISPATCH.mapCenter.lng], DISPATCH.mapZoom);
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    L.tileLayer(BRAND.infrastructure.mapTiles?.url || "https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
-      attribution: "&copy; OpenStreetMap contributors",
+      attribution: BRAND.infrastructure.mapTiles?.attribution || "&copy; OpenStreetMap contributors",
     }).addTo(map);
     zoneLayer.current = L.layerGroup().addTo(map);
     carLayer.current = L.layerGroup().addTo(map);

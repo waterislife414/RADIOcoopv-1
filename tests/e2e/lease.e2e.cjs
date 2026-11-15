@@ -28,7 +28,7 @@ async function rideUpdate(id, before, after) {
   const core = await import(ROOT + "/lib/dispatchCore.mjs");
   await db.doc("zones/rose-hill").set({ label: "Rose Hill", points: sq(RH.lat, RH.lng) });
   const mk = async (uid, car, extra = {}) => {
-    await db.doc(`drivers/${uid}`).set({ carNumber: car, inspection: { carNumber: String(car), initialAt: Date.now(), lastFullAt: Date.now(), shiftCheckAt: Date.now() }, status: "offline", active: true, certs: {}, warnings: 0, leaseCreditCents: 0, leaseOwedCents: 0, ...extra });
+    await db.doc(`drivers/${uid}`).set({ carNumber: car, agreement: { version: require("../../functions/branding.json").legalVersion, docs: ["driver-agreement", "privacy"] }, inspection: { carNumber: String(car), initialAt: Date.now(), lastFullAt: Date.now(), shiftCheckAt: Date.now() }, status: "offline", active: true, certs: {}, warnings: 0, leaseCreditCents: 0, leaseOwedCents: 0, ...extra });
     await db.doc(`board/${uid}`).set({ carNumber: car, status: "offline", zoneId: null, lineKey: null });
   };
   await mk("d1", "44");

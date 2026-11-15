@@ -7,6 +7,8 @@ const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
 const BRANDING = require("./branding.json");
+let timingPromise = null;
+const timing = () => (timingPromise ||= import("./lib/rideTiming.mjs"));
 const { requireDriver, INCENTIVES } = require("./workRules");
 const E = require("./dispatchEngine");
 
@@ -67,6 +69,15 @@ exports.driverEndCall = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request)
     const check = ix.validateEndCall(request.data, ride.status);
     if (check.error) throw new HttpsError("invalid-argument", check.error);
     const v = check.value;
+    // No-show on an app ride: only after 7 minutes at the pickup; the rider
+    // pays the no-show fee when the driver was really there. Call-in rides: as always.
+    let noShowFeeCents = 0;
+    if (v.reason === "no_show") {
+      const T = await timing();
+      const ns = T.noShowCheck(ride, nowMs, T.rulesFrom(BRANDING.rideRules));
+      if (!ns.allowed) throw new HttpsError("failed-precondition", ns.error);
+      noShowFeeCents = ns.feeCents;
+    }
     const outcome = ix.rideOutcome(v.reason, ride.status);
     const driver = ds.data() || {};
     const report = { reason: v.reason, label: v.label, note: v.note, by: uid, at: nowMs, stage: ride.status };
@@ -167,11 +178,26 @@ exports.driverEndCall = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request)
       });
       tx.set(db().collection("vehicles").doc(String(driver.carNumber)), { openRepairs: FieldValue.increment(1), unsafeReportedAt: nowMs }, { merge: true });
     }
-    return { outcome, ride, warnings: driverPatch.warnings ?? null, suspended, offline };
+    return { outcome, ride, warnings: driverPatch.warnings ?? null, suspended, offline, noShowFeeCents };
   });
 
-  // Release the card hold when the ride is called off.
-  if (out.outcome === "cancel" && out.ride.paymentMethod === "card" && out.ride.paymentIntentId) {
+  // No-show fee from the card hold (the rest is released), or release the hold.
+  let fee = null;
+  if (out.noShowFeeCents > 0) {
+    fee = await require("./rideFees").chargeRideFee({
+      stripe: require("stripe")(STRIPE_SECRET_KEY.value()),
+      ride: out.ride,
+      rideId,
+      cents: out.noShowFeeCents,
+      kind: "no_show_fee",
+    });
+    if (fee.chargedCents > 0) {
+      await db().collection("driverInbox").doc(uid).set(
+        { notice: { text: `No-show recorded. $${(fee.chargedCents / 100).toFixed(2)} goes to your lease credit.`, at: Date.now() } },
+        { merge: true }
+      );
+    }
+  } else if (out.outcome === "cancel" && out.ride.paymentMethod === "card" && out.ride.paymentIntentId) {
     try {
       await require("stripe")(STRIPE_SECRET_KEY.value()).paymentIntents.cancel(out.ride.paymentIntentId);
     } catch {
@@ -179,7 +205,7 @@ exports.driverEndCall = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request)
     }
   }
   if (out.outcome === "redispatch") await E.startDispatch(rideId);
-  return { outcome: out.outcome, warnings: out.warnings, suspended: out.suspended, offline: out.offline };
+  return { outcome: out.outcome, warnings: out.warnings, suspended: out.suspended, offline: out.offline, fee };
 });
 
 exports.ackAlert = onCall(async (request) => {

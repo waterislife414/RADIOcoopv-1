@@ -13,6 +13,14 @@ const { requireDriver, blockReason } = require("./workRules");
 const FieldValue = admin.firestore.FieldValue;
 const db = () => admin.firestore();
 const { rideRef, boardRef, driverRef, inboxRef } = E.refs;
+const BRANDING = require("./branding.json");
+let timingPromise = null;
+const timing = () => (timingPromise ||= import("./lib/rideTiming.mjs"));
+function optionalFix(data) {
+  const lat = Number(data?.lat);
+  const lng = Number(data?.lng);
+  return Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 ? { lat, lng } : null;
+}
 
 function rideIdFrom(request) {
   const id = String(request.data?.rideId || "");
@@ -104,9 +112,39 @@ exports.driverPickedUp = onCall(async (request) => {
     const ride = rs.data();
     if (!ride || ride.driverId !== uid) throw new HttpsError("failed-precondition", "That isn't your call.");
     if (ride.status !== "dispatched") return { ok: true, status: ride.status };
-    tx.update(rideRef(rideId), { status: "in_transit", pickedUpAt: Date.now() });
+    const nowMs = Date.now();
+    tx.update(rideRef(rideId), {
+      status: "in_transit",
+      pickedUpAt: nowMs,
+      ...(ride.arrivedAt != null ? { waitedMs: nowMs - ride.arrivedAt } : {}),
+    });
     tx.set(inboxRef(uid), { current: { status: "in_transit" } }, { merge: true });
     return { ok: true, status: "in_transit" };
+  });
+});
+
+// "I'm here": starts the wait clock (meter at 2 minutes, no-show at 7) and
+// tells the rider. How far he is from the pickup (or the rider's phone) is
+// kept: a no-show fee is only charged when he was really there.
+exports.driverArrived = onCall(async (request) => {
+  const uid = requireDriver(request);
+  const rideId = rideIdFrom(request);
+  const fix = optionalFix(request.data);
+  const T = await timing();
+  const rules = T.rulesFrom(BRANDING.rideRules);
+  const nowMs = Date.now();
+  return db().runTransaction(async (tx) => {
+    const ride = (await tx.get(rideRef(rideId))).data();
+    if (!ride || ride.driverId !== uid) throw new HttpsError("failed-precondition", "That isn't your call.");
+    if (ride.status !== "dispatched") throw new HttpsError("failed-precondition", "This call isn't waiting on a pickup.");
+    if (ride.arrivedAt != null) return { arrivedAt: ride.arrivedAt, arrivedDistM: ride.arrivedDistM ?? null };
+    const dists = [T.distanceMeters(fix, T.pickupPoint(ride)), T.distanceMeters(fix, ride.riderPos), T.distanceMeters(fix, ride.bookedFrom)].filter(
+      (d) => Number.isFinite(d)
+    );
+    const arrivedDistM = dists.length ? Math.round(Math.min(...dists)) : null;
+    tx.update(rideRef(rideId), { arrivedAt: nowMs, arrivedDistM, arrivedFix: fix, headsUpAt: ride.headsUpAt ?? nowMs });
+    tx.set(inboxRef(uid), { current: { arrivedAt: nowMs, arrivedDistM } }, { merge: true });
+    return { arrivedAt: nowMs, arrivedDistM, near: arrivedDistM == null ? null : arrivedDistM <= rules.nearPickupMeters };
   });
 });
 

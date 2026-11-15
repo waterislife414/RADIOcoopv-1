@@ -26,7 +26,8 @@ service cloud.firestore {
     // (Stripe webhooks / Cloud Functions), never by the rider's own app.
     function userServerKeys() {
       return ['walletBalance', 'subscriptionTier', 'subscriptionStatus', 'stripeCustomerId',
-              'stripeSubscriptionId', 'smsAddonStatus', 'birthdayCredits'];
+              'stripeSubscriptionId', 'smsAddonStatus', 'birthdayCredits',
+              'dayPass', 'feesOwedCents', 'feesOwed'];
     }
 
     match /users/{userId} {
@@ -55,7 +56,11 @@ service cloud.firestore {
               'priority', 'dispatchAt', 'zoneAssignedAt', 'lastMiss', 'requestedDriverId',
               'pickedUpAt', 'droppedOffAt', 'source', 'enteredBy', 'zoneSetBy',
               'tipAmount', 'capturedAmountCents', 'stripeStatus', 'cardFeeCents', 'settledBy',
-              'memberDiscountApplied', 'ledgerCreditedAt'];
+              'memberDiscountApplied', 'ledgerCreditedAt',
+              // Pickup timing, perks, fees and calls: server-written only.
+              'perks', 'termsMissing', 'eta', 'headsUpAt', 'driverPos', 'riderPos', 'riderReply',
+              'arrivedAt', 'arrivedDistM', 'arrivedFix', 'waitedMs', 'fee', 'calls',
+              'cancelFeeCents', 'cancelledBy', 'cancelledAt', 'earlierFeesCents', 'termsRead'];
     }
 
     match /rides/{rideId} {

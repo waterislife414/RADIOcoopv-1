@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { useRide } from "../context/RideContext";
 import BrandHeader from "../components/BrandHeader";
 import CurrentRideStatus from "../components/CurrentRideStatus";
+import LineStatus from "../components/LineStatus";
 import {
   COMPANY_PHONE_DISPLAY,
   COMPANY_PHONE_TEL,
@@ -28,6 +29,16 @@ export default function Success() {
   // Keep this ride's details for this page, then clear the booking so the next
   // one starts fresh (new agreement for guests, no leftover Fast Pass or addresses).
   const [ride] = useState(bookedRide);
+  // Guests have no account to look their ride up by: keep its id for this visit
+  // (for "you're 3rd in line" and the Day Pass offer after paying for it).
+  const [guestRideId] = useState(() => {
+    try {
+      if (bookedRide.lastRideId) sessionStorage.setItem("rc-last-ride", bookedRide.lastRideId);
+      return bookedRide.lastRideId || sessionStorage.getItem("rc-last-ride");
+    } catch {
+      return bookedRide.lastRideId || null;
+    }
+  });
   useEffect(() => {
     resetRide();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -56,6 +67,11 @@ export default function Success() {
           </p>
 
           {currentUser && <CurrentRideStatus />}
+          {!currentUser && guestRideId && (
+            <div className="mb-4">
+              <LineStatus rideId={guestRideId} />
+            </div>
+          )}
           {!currentUser && (
             <a
               href={`tel:${COMPANY_PHONE_TEL}`}

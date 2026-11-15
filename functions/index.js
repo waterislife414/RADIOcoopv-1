@@ -17,7 +17,12 @@ const COMPANY_NAME = BRANDING.companyName;
 const DATA_RETENTION_DAYS = BRANDING.dataRetentionDays;
 const CARD_APP_FEE_CENTS = BRANDING.cardAppFeeCents;
 const CARD_APP_FEE_MEMBER_CENTS = BRANDING.cardAppFeeMemberCents;
-const PRIORITY_PASS_FEE_CENTS = 500; // $5 VIP-for-a-day pass, fixed server-side
+const PRIORITY_PASS_FEE_CENTS = 500; // $5 Priority Day Pass, fixed server-side (company keeps it)
+const TIME_ZONE = (BRANDING.dispatch && BRANDING.dispatch.timeZone) || "America/New_York";
+const RIDE_RULES = BRANDING.rideRules || {};
+const fees = require("./rideFees");
+let timingPromise;
+const timing = () => (timingPromise ||= import("./lib/rideTiming.mjs"));
 const OUT_OF_AREA_MINIMUM_FARE_CENTS = BRANDING.outOfAreaMinimumFareCents;
 const SUBSCRIPTION_TRIAL_DAYS = BRANDING.subscriptionTrialDays;
 const BASE_FARE_CENTS = BRANDING.baseFareCents;
@@ -87,14 +92,23 @@ async function getOrCreateStripeCustomer(uid, email) {
 // ---------- VIP Fast Pass ($5, paid on its own before checkout) ----------
 // Charged right away, separately from the ride fare. The ride then carries
 // fastPassId; captureFare skips the $5 when that pass is paid.
+// The $5 Priority Day Pass: priority, live map and calling on every ride
+// until midnight (a guest's pass covers one ride).
 async function recordFastPass(intent, uid) {
+  const T = await timing();
+  const expiresAt = T.endOfLocalDay(Date.now(), TIME_ZONE);
   await db.collection("fast_passes").doc(intent.id).set({
     uid,
     amountCents: intent.amount,
     status: intent.status,
     rideId: null,
+    rides: [],
+    expiresAt,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
   });
+  if (uid && uid !== "guest") {
+    await db.collection("users").doc(uid).set({ dayPass: { id: intent.id, expiresAt } }, { merge: true });
+  }
 }
 
 exports.payFastPass = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
@@ -132,11 +146,18 @@ exports.confirmFastPass = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (reques
 /** True when the ride's Fast Pass was already paid on its own (claims it for this ride). */
 async function fastPassPaid(ride, rideId) {
   if (!ride.fastPassId) return false;
+  const T = await timing();
   const ref = db.collection("fast_passes").doc(String(ride.fastPassId));
   const snap = await ref.get();
   const pass = snap.exists ? snap.data() : null;
-  if (!pass || pass.status !== "succeeded" || (pass.rideId && pass.rideId !== rideId)) return false;
-  if (!pass.rideId) await ref.update({ rideId });
+  // A pass checked at the end of a ride counts if it was good when the ride was booked.
+  const bookedMs = ride.timestamp?.toMillis ? ride.timestamp.toMillis() : Date.now();
+  if (!T.isDayPassValid(pass, ride.customerId, rideId, Math.min(bookedMs, Date.now()))) return false;
+  if (pass.uid === "guest" || pass.expiresAt == null) {
+    if (!pass.rideId) await ref.update({ rideId });
+  } else {
+    await ref.update({ rides: admin.firestore.FieldValue.arrayUnion(rideId) });
+  }
   return true;
 }
 
@@ -355,8 +376,18 @@ exports.captureFare = onCall(
     const priorityPassCents =
       ride.wantsPriorityPass && !(await fastPassPaid(ride, rideId)) ? PRIORITY_PASS_FEE_CENTS : 0;
 
+    // Cancel/no-show fees the rider still owes from an earlier ride ride along
+    // on their own card checkout (they were told in the terms and on screen).
+    let owed = [];
+    let owedCents = 0;
+    if (requesterIsRider && paymentMethodId && ride.paymentMethod === "card") {
+      const u = (await db.collection("users").doc(ride.customerId).get()).data() || {};
+      owed = Array.isArray(u.feesOwed) ? u.feesOwed : [];
+      owedCents = Math.max(0, Math.round(u.feesOwedCents || 0));
+    }
+
     const totalCents =
-      Math.round(effectiveMeterFare * 100) + Math.round(tip * 100) + cardFeeCents + priorityPassCents;
+      Math.round(effectiveMeterFare * 100) + Math.round(tip * 100) + cardFeeCents + priorityPassCents + owedCents;
 
     const stripe = getStripe();
     let stripeStatus = "manual_override";
@@ -375,6 +406,7 @@ exports.captureFare = onCall(
           metadata: { rideId, uid: ride.customerId },
         });
         stripeStatus = intent.status;
+        if (intent.status === "succeeded" && owedCents > 0) await fees.settleOwedFees(ride.customerId, owed);
       } else if (ride.paymentIntentId) {
         // Original pre-auth hold path (kept for compatibility).
         await stripe.paymentIntents.update(ride.paymentIntentId, {
@@ -391,6 +423,7 @@ exports.captureFare = onCall(
       capturedAmountCents: totalCents,
       stripeStatus,
       cardFeeCents,
+      ...(owedCents > 0 && stripeStatus === "succeeded" ? { earlierFeesCents: owedCents } : {}),
       memberDiscountApplied,
       settledBy: requesterIsAdmin && !requesterIsRider ? "dispatcher_override" : "customer",
     });
@@ -497,30 +530,73 @@ exports.cancelMyRide = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) 
   if (!uid) throw new HttpsError("unauthenticated", "Sign in to cancel.");
   const rideId = String(request.data?.rideId || "");
   if (!/^[A-Za-z0-9_-]{1,64}$/.test(rideId)) throw new HttpsError("invalid-argument", "Missing ride.");
+  // The fee the rider saw and agreed to on screen; if the driver got close
+  // in the meantime, they're asked again instead of being charged more.
+  const acceptFeeCents = Math.max(0, Math.round(Number(request.data?.acceptFeeCents) || 0));
+  const T = await timing();
+  const rules = T.rulesFrom(RIDE_RULES);
   const ref = db.collection("rides").doc(rideId);
-  const ride = await db.runTransaction(async (tx) => {
+  const nowMs = Date.now();
+  const out = await db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
     const r = snap.exists ? snap.data() : null;
     if (!r || r.customerId !== uid) throw new HttpsError("not-found", "Ride not found.");
-    if (r.status !== "pending" || r.driverId) {
-      throw new HttpsError("failed-precondition", "A driver is already on the way. Please call us to cancel.");
+    const q = T.cancelQuote(r, nowMs, rules);
+    if (!q.allowed) {
+      throw new HttpsError(
+        "failed-precondition",
+        q.reason === "riding" ? "You're already on your ride." : "A driver is already on the way. Please call us to cancel."
+      );
     }
-    tx.set(db.collection("cancelled_rides").doc(rideId), {
-      ...r,
-      cancelledBy: "rider",
-      cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-    tx.delete(ref);
-    return r;
+    if (q.why === "no_driver") {
+      tx.set(db.collection("cancelled_rides").doc(rideId), {
+        ...r,
+        cancelledBy: "rider",
+        cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      tx.delete(ref);
+      return { ride: r, feeCents: 0 };
+    }
+    if (q.feeCents > acceptFeeCents) {
+      throw new HttpsError("failed-precondition", `Your driver is close now, so cancelling costs $${(q.feeCents / 100).toFixed(2)}.`, {
+        feeCents: q.feeCents,
+      });
+    }
+    // A driver was on the way: free him up and tell him.
+    tx.update(ref, { status: "cancelled", cancelledBy: "rider", cancelledAt: nowMs, cancelFeeCents: q.feeCents });
+    if (r.driverId) {
+      tx.set(
+        db.collection("board").doc(r.driverId),
+        {
+          status: "moving",
+          zoneId: null,
+          lineKey: null,
+          rideId: null,
+          lastEvent: { type: "rider_cancelled", at: nowMs, feeCents: q.feeCents },
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+      const paid = q.feeCents > 0 ? ` $${(q.feeCents / 100).toFixed(2)} cancel fee goes to your lease credit.` : "";
+      tx.set(
+        db.collection("driverInbox").doc(r.driverId),
+        { current: null, notice: { text: `The rider cancelled.${paid}`, at: nowMs } },
+        { merge: true }
+      );
+    }
+    return { ride: r, feeCents: q.feeCents };
   });
-  if (ride.paymentMethod === "card" && ride.paymentIntentId) {
+  const { ride, feeCents } = out;
+  if (feeCents > 0) {
+    await fees.chargeRideFee({ stripe: getStripe(), ride, rideId, cents: feeCents, kind: "late_cancel_fee" });
+  } else if (ride.paymentMethod === "card" && ride.paymentIntentId) {
     try {
       await getStripe().paymentIntents.cancel(ride.paymentIntentId);
     } catch {
       // Hold may already be released.
     }
   }
-  return { cancelled: true };
+  return { cancelled: true, feeCents };
 });
 
 exports.declineRide = onCall(async (request) => {
@@ -704,6 +780,7 @@ const featureModules = [
   require("./record"),
   require("./inspections"),
   require("./callIssues"),
+  require("./rideLive"),
 ];
 for (const mod of featureModules) {
   for (const [name, fn] of Object.entries(mod)) if (!name.startsWith("_")) exports[name] = fn;

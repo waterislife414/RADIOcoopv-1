@@ -63,6 +63,9 @@ export default function PaymentSelection() {
         paymentIntentId,
         promoCode: ride.promoCode || null,
         consent: ride.consent || null,
+        shareLocation: ride.shareLocation !== false,
+        callIn: !!ride.callIn,
+        bookedFrom: ride.bookedFrom || null,
         status: "pending",
         finalFare: null,
         timestamp: serverTimestamp(),
@@ -98,7 +101,7 @@ export default function PaymentSelection() {
           </h1>
           {ride.wantsPriorityPass && ride.fastPassId && (
             <div className="bg-emerald-50 border-2 border-emerald-500 text-emerald-800 rounded-2xl px-4 py-3 mb-5 font-semibold">
-              &#10003; Fast Pass paid ($5.00). Now choose how you&rsquo;ll pay for the ride.
+              &#10003; Priority Day Pass is on for this ride. Now choose how you&rsquo;ll pay for the ride.
             </div>
           )}
 

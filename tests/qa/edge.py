@@ -35,9 +35,10 @@ with sync_playwright() as p:
         pg.fill("#dropoff","Peachtree Mall")
         if pg.locator("input[type=tel]").input_value()=="": pg.fill("input[type=tel]","7065550102")
         pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(700)
-        return (pg.locator("[data-testid=legal-scroll]").count()==0 and "/payment" in pg.url) or f"asked again or stuck: {pg.url}"
-    check("Agreement pop-up does NOT come back for a member who already agreed", signup_then_book_no_repeat)
+        return pg.locator("[data-testid=legal-scroll]").count()==1 or f"no agreement pop-up on the next booking: {pg.url}"
+    check("Agreement pop-up comes back on every booking, even for members", signup_then_book_no_repeat)
     def recent_chips():
+        if pg.locator("[data-testid=legal-scroll]").count(): pg.keyboard.press("Escape")
         pg.goto(BASE+"/trip-details"); pg.wait_for_timeout(900)
         return pg.locator("text=Recent places").count()>0 or "no recent places after booking"
     check("Recent places show up after a booking", recent_chips)

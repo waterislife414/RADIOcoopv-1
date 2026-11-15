@@ -35,6 +35,8 @@ with sync_playwright() as p:
         A.fill("input[placeholder=\"Caller's number\"]","7065550123"); A.wait_for_timeout(300)
         A.fill("input[placeholder='First name']","Phone"); A.fill("input[placeholder='Last name']","Caller")
         A.fill("input[placeholder='Pickup address or place']","QA Civic Center, Columbus"); A.fill("input[placeholder='Drop-off (optional)']","Peachtree Mall")
+        assert A.locator("button:has-text('Post ride')").is_disabled(), "Post allowed before reading the ride rules"
+        A.locator("[aria-label='Caller agreed to the ride rules']").check()
         A.click("button:has-text('Post ride')"); A.wait_for_timeout(2500)
         k,v=ride_doc(A,"QA Civic Center"); return bool(k) or "ride not saved"
     check("Dispatcher: post a phone ride (quick entry)", post_ride)

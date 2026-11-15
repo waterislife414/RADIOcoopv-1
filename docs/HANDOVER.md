@@ -2,9 +2,18 @@
 
 The program does not change. Only the settings and keys below do.
 
+## The fast way: fill in the blanks
+1. Fill in `docs/KEYS-FILL-IN.txt` (every blank says exactly where in each website to find it).
+2. Send the filled sheet back. It holds no secrets; the sheet says which ones never go in it.
+3. `node scripts/apply-keys.mjs filled-sheet.txt` plugs everything in and prints the
+   Cloud Shell commands for the secrets and the deploy.
+
 ## What the owner provides
 1. **A Firebase project** on the pay-as-you-go (Blaze) plan, with his card on it.
 2. **A Stripe account** (for card payments).
+3. **A Twilio account with one local phone number** (optional: private, recorded rider/driver calls).
+   About $1.15 a month for the number plus about 3 cents a minute for recorded calls.
+   Without it, riders see the office number and drivers call riders directly.
 
 ## What gets typed in (one file + two secrets)
 | Where | What | Comes from |
@@ -14,11 +23,15 @@ The program does not change. Only the settings and keys below do.
 | `branding.config.json` → `dispatch.pushVapidKey` (optional) | Web Push key, for call alerts with the screen off | Firebase console → Project settings → Cloud Messaging → Web Push certificates |
 | Secret `STRIPE_SECRET_KEY` | Secret key (`sk_live_…`) | Stripe → Developers → API keys |
 | Secret `STRIPE_WEBHOOK_SECRET` | Signing secret (`whsec_…`) | Stripe → Developers → Webhooks, endpoint = the `stripeWebhook` function URL |
+| `functions/.env` → `TWILIO_ACCOUNT_SID`, `TWILIO_PHONE_NUMBER` | Account SID (`AC…`) and the number you bought | Twilio console home page; Phone Numbers → Active numbers |
+| Secret `TWILIO_AUTH_TOKEN` | Auth token (type `none` until calls are set up) | Twilio console home page → Account Info |
+| `branding.config.json` → `infrastructure.mapTiles` (optional) | A map tile URL with your key | Any raster tile service; blank = free OpenStreetMap tiles for testing |
 
-The two secrets are typed into Cloud Shell, never into a file:
+The secrets are typed into Cloud Shell, never into a file:
 
     firebase functions:secrets:set STRIPE_SECRET_KEY
     firebase functions:secrets:set STRIPE_WEBHOOK_SECRET
+    firebase functions:secrets:set TWILIO_AUTH_TOKEN      # type none if calls aren't set up yet
 
 ## Go live
     bash scripts/deploy-dispatch.sh
@@ -53,3 +66,23 @@ the page shows that honestly and adds a 1.5x busy-time column.
 
 Driver screening questions (`src/config/driverScreening.js`) and the legal pages are drafts: have the
 owner's lawyer review them before going live.
+
+## Pickup rules, fees and perks (all in `branding.config.json`)
+| Setting | Now | What it does |
+|---|---|---|
+| `rideRules.headsUpMinutes` | 4 | "Your driver is about 4 minutes away" alert; free cancelling ends here |
+| `rideRules.minFreeCancelMinutes` | 1 | Riders always get this long after a driver takes the call to cancel free |
+| `rideRules.lateCancelFee` | $5 | Cancelling after the alert. Goes to the driver's lease credit |
+| `rideRules.waitGraceMinutes` | 2 | Free wait after "I'm here"; then the driver starts his meter |
+| `rideRules.noShowAfterMinutes` | 7 | When the driver can mark a no-show |
+| `rideRules.noShowFee` | $10 | Only if the driver's phone was within `nearPickupMeters` (250 m) of the pickup or rider |
+| `ridePerks.liveMap` | Day Pass, Basic, Premium | Who watches the car come on a map |
+| `ridePerks.callDriver` | Day Pass, Premium | Who can call their driver (drivers can always call riders) |
+| `calling.recordCalls` | on | Calls through the company number are recorded |
+| `policies.legalVersion` | 2026-11-15.1 | Change it and every driver re-agrees before the next shift |
+
+Riders agree to the terms on every booking. Drivers agree when they sign up and again whenever
+`policies.legalVersion` changes. On phone calls the dispatcher reads one line and ticks a box.
+Call-in rides (phone, or booked with location off) and guests pay no cancel or no-show fees.
+Card fees, memberships and the Day Pass are the company's; drivers get the meter fare, tips,
+and cancel/no-show fees on their calls.

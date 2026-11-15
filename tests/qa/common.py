@@ -1,5 +1,5 @@
 import re, json
-BASE="http://127.0.0.1:8790"
+BASE=__import__("os").environ.get("QA_BASE","http://127.0.0.1:8790")
 KEY="rc-demo-db-v1"
 results=[]
 def check(name, fn):

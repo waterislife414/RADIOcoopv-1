@@ -26,6 +26,7 @@ writeFileSync(join(root, "public/manifest.webmanifest"), JSON.stringify(manifest
 
 const backend = {
   companyName: branding.company.name,
+  companyPhoneDisplay: branding.company.phoneDisplay,
   tierMonthlyCents: Object.fromEntries(
     Object.entries(branding.pricing.tiers).map(([k, t]) => [k, Math.round(t.monthlyPrice * 100)])
   ),
@@ -37,6 +38,12 @@ const backend = {
   subscriptionTrialDays: branding.pricing.subscriptionTrialDays,
   dataRetentionDays: branding.policies.dataRetentionDays,
   dispatch: branding.dispatch,
+  legalVersion: branding.policies.legalVersion,
+  rideRules: branding.rideRules,
+  ridePerks: branding.ridePerks,
+  calling: branding.calling,
+  waitPerMinuteCents: Math.round(branding.pricing.fare.WAIT_TIME_PER_MINUTE * 100),
+  dayPassCopy: branding.copy.dayPass,
 };
 writeFileSync(join(root, "functions/branding.json"), JSON.stringify(backend, null, 2) + "\n");
 

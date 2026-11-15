@@ -15,6 +15,7 @@ const get = async (p) => (await db.doc(p).get()).data();
 async function rejects(p, re) { await assert.rejects(p, (e) => (assert.match(e.message, re), true)); }
 const DAY = 86400000;
 
+const LEGAL = require("../../functions/branding.json").legalVersion;
 (async () => {
   await require("./reset.cjs")(db);
   E._resetSettingsCache();
@@ -31,9 +32,9 @@ const DAY = 86400000;
   const ride = (id) => db.doc(`rides/${id}`).set({ status: "pending", zoneId: "east", pickup: "x", customerId: "guest", dispatchState: "new", timestamp: admin.firestore.Timestamp.now() });
 
   // Agreement + contact
-  await rejects(run("acceptDriverAgreement", { version: "v1", docs: ["driver-agreement"] }, drv("d1")), /not accepted/);
-  await run("acceptDriverAgreement", { version: "v1", docs: ["driver-agreement", "privacy"], marketingOptIn: true }, drv("d1"));
-  assert.deepEqual([(await get("drivers/d1")).agreement.version, (await get("drivers/d1")).agreement.marketingOptIn], ["v1", true]);
+  await rejects(run("acceptDriverAgreement", { version: LEGAL, docs: ["driver-agreement"] }, drv("d1")), /not accepted/);
+  await run("acceptDriverAgreement", { version: LEGAL, docs: ["driver-agreement", "privacy"], marketingOptIn: true }, drv("d1"));
+  assert.deepEqual([(await get("drivers/d1")).agreement.version, (await get("drivers/d1")).agreement.marketingOptIn], [LEGAL, true]);
   await rejects(run("updateDriverContact", { phone: "123" }, drv("d1")), /10-digit/);
   await run("updateDriverContact", { phone: "(706) 555-0101", address: "1 Example St", emergencyName: "Pat", emergencyPhone: "7065550102" }, drv("d1"));
   assert.equal((await get("drivers/d1")).phone, "7065550101");

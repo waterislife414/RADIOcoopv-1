@@ -1,5 +1,6 @@
 {
   "companyName": "Radio Co-op",
+  "companyPhoneDisplay": "(706) 322-0700",
   "tierMonthlyCents": {
     "BASIC": 999,
     "PREMIUM": 1499
@@ -123,5 +124,51 @@
       "minMoveMeters": 50,
       "maxIntervalSec": 45
     }
+  },
+  "legalVersion": "2026-11-15.1",
+  "rideRules": {
+    "_note": "Pickup timing for app rides. Call-in and guest-without-account rides never pay these fees.",
+    "headsUpMinutes": 4,
+    "minFreeCancelMinutes": 1,
+    "lateCancelFee": 5,
+    "waitGraceMinutes": 2,
+    "noShowAfterMinutes": 7,
+    "noShowFee": 10,
+    "nearPickupMeters": 250,
+    "avgCitySpeedMph": 25,
+    "roadFactor": 1.35,
+    "feesGoToDriver": true,
+    "upsellAgainAfterMinutes": 4
+  },
+  "ridePerks": {
+    "_note": "Who gets the live driver map and the private Call-your-driver button. DAY_PASS = the $5 Priority Day Pass. Drivers can always call their rider.",
+    "liveMap": [
+      "DAY_PASS",
+      "BASIC",
+      "PREMIUM"
+    ],
+    "callDriver": [
+      "DAY_PASS",
+      "PREMIUM"
+    ]
+  },
+  "calling": {
+    "_note": "Private calls go through the Twilio number in functions/.env; nobody sees a real number. Blank Twilio keys = calls show the office number instead.",
+    "recordCalls": true,
+    "maxCallMinutes": 10,
+    "callsPerRidePerPerson": 6,
+    "greeting": "Connecting you now. This call may be recorded for quality and safety."
+  },
+  "waitPerMinuteCents": 35,
+  "dayPassCopy": {
+    "title": "Priority Day Pass",
+    "price": "$5",
+    "tagline": "Get picked up faster, all day.",
+    "perks": [
+      "Move up the line ahead of regular riders",
+      "Watch your driver on the map as they come to you",
+      "Call your driver directly. It’s private, and no numbers are shared."
+    ],
+    "fine": "Good until midnight. Premium members still dispatch first. Your driver may not pick up while driving and will call back when it’s safe."
   }
 }

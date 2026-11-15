@@ -8,7 +8,9 @@ require(ROOT + "/push.js").impl = async (t) => ({ responses: t.map(() => ({})) }
 const admin = require(ROOT + "/node_modules/firebase-admin");
 const db = admin.firestore();
 const ADMIN = { uid: "boss", token: { admin: true } };
-const as = (fn, data, auth = ADMIN) => f[fn].run({ data, auth });
+// The dispatcher has read the ride rules to the caller unless a test says otherwise.
+const as = (fn, data, auth = ADMIN) =>
+  f[fn].run({ data: fn === "dispatcherCreateRide" ? { termsRead: true, ...data } : data, auth });
 const get = async (p) => (await db.doc(p).get()).data();
 async function rejects(p, re) { await assert.rejects(p, (e) => (assert.match(e.message, re), true)); }
 async function created(rideId) {
@@ -29,6 +31,7 @@ async function created(rideId) {
   await db.doc("blacklist_phones/7065550199").set({ reason: "test" });
 
   await rejects(as("dispatcherCreateRide", { phone: "706", pickup: "x" }), /10-digit/);
+  await rejects(as("dispatcherCreateRide", { phone: "7065550100", pickup: "x", termsRead: false }), /ride rules/);
   await rejects(as("dispatcherCreateRide", { phone: "(706) 555-0100", pickup: "" }), /pickup/);
   await rejects(as("dispatcherCreateRide", { phone: "7065550199", pickup: "x" }), /blocked/);
   await rejects(as("dispatcherCreateRide", { phone: "7065550100", pickup: "x" }, { uid: "d1", token: { driver: true } }), /Dispatcher/);

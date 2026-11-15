@@ -25,7 +25,7 @@ async function rejects(p, re) {
 (async () => {
   await require("./reset.cjs")(db);
   const c = await import(ROOT + "/lib/inspectionCore.mjs");
-  await db.doc("drivers/d1").set({ carNumber: "44", name: "Pat Example", status: "offline", active: true, certs: {}, warnings: 0 });
+  await db.doc("drivers/d1").set({ carNumber: "44", name: "Pat Example", status: "offline", active: true, certs: {}, warnings: 0, agreement: { version: require("../../functions/branding.json").legalVersion, docs: ["driver-agreement", "privacy"] } });
   await db.doc("board/d1").set({ carNumber: "44", status: "offline", zoneId: null, lineKey: null });
 
   // No inspection yet: can't go on the board.
@@ -98,13 +98,13 @@ async function rejects(p, re) {
   assert.equal((await get("vehicles/44")).openRepairs, 4);
   await rejects(call("setShopAccess", { email: "x@example.com" }, SHOP), /Office only/);
 
-  // Riders cancel their own pending ride; not someone else's; not after dispatch. Office-only declineRide.
+  // Riders cancel their own ride; not someone else's; a call-in ride is cancelled by phone. Office-only declineRide.
   await db.doc("rides/r1").set({ customerId: "rider1", status: "pending", paymentMethod: "card", paymentIntentId: "pi_demo_1" });
-  await db.doc("rides/r2").set({ customerId: "rider1", status: "dispatched", driverId: "d9", paymentMethod: "cash" });
+  await db.doc("rides/r2").set({ customerId: "rider1", status: "dispatched", driverId: "d9", paymentMethod: "cash", source: "phone" });
   await rejects(call("cancelMyRide", { rideId: "r1" }, { uid: "rider2", token: {} }), /not found/);
   await rejects(call("cancelMyRide", { rideId: "r2" }, { uid: "rider1", token: {} }), /call us/);
   await rejects(call("cancelMyRide", { rideId: "r1" }, null), /Sign in/);
-  assert.deepEqual(await call("cancelMyRide", { rideId: "r1" }, { uid: "rider1", token: {} }), { cancelled: true });
+  assert.deepEqual(await call("cancelMyRide", { rideId: "r1" }, { uid: "rider1", token: {} }), { cancelled: true, feeCents: 0 });
   assert.equal((await db.doc("rides/r1").get()).exists, false);
   assert.equal((await get("cancelled_rides/r1")).cancelledBy, "rider");
   await rejects(call("declineRide", { rideId: "r2" }, { uid: "rider1", token: {} }), /Dispatchers only/);

@@ -18,7 +18,7 @@ async function rejects(p, re) {
   await assert.rejects(p, (e) => (assert.match(e.message, re), true));
 }
 async function onCall(rideId, status) {
-  await db.doc(`rides/${rideId}`).set({ customerId: "rider1", status, driverId: "d1", carNumber: "44", paymentMethod: "card", paymentIntentId: `pi_${rideId}`, pickup: "900 Broadway" });
+  await db.doc(`rides/${rideId}`).set({ customerId: "rider1", status, driverId: "d1", carNumber: "44", paymentMethod: "card", paymentIntentId: `pi_${rideId}`, pickup: "900 Broadway", pickupLat: LOC.lat, pickupLng: LOC.lng });
   await db.doc("board/d1").set({ carNumber: "44", status: "on_call", rideId, zoneId: null, lineKey: null }, { merge: true });
   await db.doc("driverInbox/d1").set({ current: { rideId, status } });
 }
@@ -38,13 +38,23 @@ async function onCall(rideId, status) {
   assert.equal((await get(`alerts/${sos.id}`)).status, "handled");
   await rejects(call("driverEmergency", {}, { uid: "r1", token: {} }), /approved driver/);
 
-  // Rider no-show before pickup: ride called off, card hold released, driver back on the road, no warning.
+  // App rider no-show: only after "I'm here" and 7 minutes at the pickup; the
+  // $10 no-show fee comes off the card hold and goes to the driver. No warning.
   await onCall("r1", "dispatched");
   await rejects(call("driverEndCall", { rideId: "r1", reason: "no_show", note: "" }, D1), /few words/);
   await rejects(call("driverEndCall", { rideId: "r1", reason: "runner", note: "ran" }, D1), /doesn't fit/);
-  assert.equal((await call("driverEndCall", { rideId: "r1", reason: "no_show", note: "Waited 10 min, no answer", ...LOC }, D1)).outcome, "cancel");
+  const noShow = { rideId: "r1", reason: "no_show", note: "Waited 10 min, no answer", ...LOC };
+  await rejects(call("driverEndCall", noShow, D1), /I'm here/);
+  await call("driverArrived", { rideId: "r1", ...LOC }, D1);
+  await rejects(call("driverEndCall", noShow, D1), /7 minutes/);
+  await db.doc("rides/r1").update({ arrivedAt: Date.now() - 8 * 60000 });
+  const ended = await call("driverEndCall", noShow, D1);
+  assert.equal(ended.outcome, "cancel");
+  assert.deepEqual([ended.fee.cents, ended.fee.chargedCents, ended.fee.status], [1000, 1000, "charged"]);
   let ride = await get("rides/r1");
-  assert.deepEqual([ride.status, ride.cancelledBy, ride.endReport.reason], ["cancelled", "driver", "no_show"]);
+  assert.deepEqual([ride.status, ride.cancelledBy, ride.endReport.reason, ride.fee.kind], ["cancelled", "driver", "no_show", "no_show_fee"]);
+  assert.equal((await get("drivers/d1")).leaseCreditCents, 1000);
+  assert.match((await get("driverInbox/d1")).notice.text, /\$10\.00 goes to your lease credit/);
   assert.equal((await get("board/d1")).status, "moving");
   assert.equal((await get("driverInbox/d1")).current, null);
   assert.equal((await get("drivers/d1")).warnings ?? 0, 0);

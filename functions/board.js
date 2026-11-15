@@ -23,6 +23,8 @@ const db = () => admin.firestore();
 const serverNow = () => admin.firestore.FieldValue.serverTimestamp();
 let corePromise = null;
 const core = () => (corePromise ||= import("./lib/dispatchCore.mjs"));
+let timingPromise = null;
+const timing = () => (timingPromise ||= import("./lib/rideTiming.mjs"));
 
 const boardRef = (uid) => db().collection("board").doc(uid);
 const driverRef = (uid) => db().collection("drivers").doc(uid);
@@ -76,6 +78,8 @@ exports.driverPing = onCall(async (request) => {
   const uid = requireDriver(request);
   const fix = readFix(request.data);
   const c = await core();
+  const T = await timing();
+  const rules = T.rulesFrom(BRANDING.rideRules);
   const zones = await getZones();
   const gpsZoneId = c.zoneForPoint(zones, fix.lng, fix.lat);
   const nowMs = Date.now();
@@ -84,6 +88,20 @@ exports.driverPing = onCall(async (request) => {
     const [b, l] = await Promise.all([tx.get(boardRef(uid)), tx.get(locationRef(uid))]);
     if (!b.exists) throw new HttpsError("failed-precondition", "You're not on the driver roster yet.");
     const board = b.data();
+    // On a call: the rider's ETA, the "about 4 minutes away" alert, and the
+    // car on the rider's map when their pass or membership includes it.
+    const rideDoc = board.rideId ? db().collection("rides").doc(board.rideId) : null;
+    const ride = rideDoc ? (await tx.get(rideDoc)).data() : null;
+    if (ride && ride.driverId === uid && ["dispatched", "in_transit"].includes(ride.status)) {
+      const patch = {};
+      if (ride.status === "dispatched") {
+        const eta = T.etaMinutes(fix, T.pickupPoint(ride), rules);
+        patch.eta = eta == null ? null : { minutes: eta, at: nowMs };
+        if (T.shouldSendHeadsUp(ride, eta, rules)) patch.headsUpAt = nowMs;
+      }
+      if (ride.perks?.liveMap) patch.driverPos = { lat: fix.lat, lng: fix.lng, at: nowMs };
+      if (Object.keys(patch).length) tx.update(rideDoc, patch);
+    }
     const res = c.applyLocation(
       { status: board.status, zoneId: board.zoneId, outOfZoneSince: l.exists ? l.data().outOfZoneSince : null },
       gpsZoneId,
@@ -118,6 +136,11 @@ exports.driverGoOnline = onCall(async (request) => {
     // Vehicle inspection: first 360 for this car, weekly, then a quick check each shift.
     const needed = board.status === c.STATUS.OFFLINE ? ic.inspectionNeeded(driver.inspection, driver.carNumber, nowMs) : null;
     if (needed) throw new HttpsError("failed-precondition", ic.NEEDED_MESSAGE[needed], { inspection: needed });
+    // Every driver reads and agrees to the current Driver Agreement before driving.
+    const agreed = driver.agreement?.version === BRANDING.legalVersion && (driver.agreement.docs || []).includes("driver-agreement");
+    if (board.status === c.STATUS.OFFLINE && !agreed) {
+      throw new HttpsError("failed-precondition", "Read and agree to the Driver Agreement first.", { agreement: true });
+    }
     if (board.status !== c.STATUS.OFFLINE) return null; // already on the board
     return { status: c.STATUS.MOVING, zoneId: null, lineKey: null };
   });

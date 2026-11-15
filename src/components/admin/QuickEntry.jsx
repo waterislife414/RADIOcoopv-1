@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from "firebase/firestore";
+import { COMPANY_NAME } from "../../config/constants";
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../../config/firebase";
 import { formatPhoneDisplay, normalizePhone } from "../../utils/phone";
 
 const createRide = httpsCallable(functions, "dispatcherCreateRide");
 const forgetCaller = httpsCallable(functions, "forgetCaller");
-const EMPTY = { phone: "", firstName: "", lastName: "", pickup: "", dropoff: "", zoneId: "", passengers: 1, wheelchair: false, requestedDriverId: "", later: false, scheduledFor: "", notes: "", remember: true };
+const EMPTY = { phone: "", firstName: "", lastName: "", pickup: "", dropoff: "", zoneId: "", passengers: 1, wheelchair: false, requestedDriverId: "", later: false, scheduledFor: "", notes: "", remember: true, termsRead: false };
 
 /** Phone call → ride in a few keystrokes. Saved callers fill in name and places. */
 export default function QuickEntry({ zones, board }) {
@@ -80,6 +81,7 @@ export default function QuickEntry({ zones, board }) {
         scheduledFor: f.later ? f.scheduledFor : null,
         notes: f.notes,
         remember: f.remember,
+        termsRead: f.termsRead,
       });
       setMsg({ ok: true, text: `Posted: ${f.pickup}` });
       setF(EMPTY);
@@ -194,6 +196,13 @@ export default function QuickEntry({ zones, board }) {
         )}
       </div>
 
+      <label className="flex items-start gap-2 rounded-xl border-2 border-amber-300 bg-amber-50 p-3 text-sm text-slate-700">
+        <input type="checkbox" className="mt-1 w-5 h-5" checked={f.termsRead} onChange={(e) => set({ termsRead: e.target.checked })} aria-label="Caller agreed to the ride rules" />
+        <span>
+          <b>Read to the caller:</b> &ldquo;Your ride follows {COMPANY_NAME}&rsquo;s terms, posted on our website. Okay?&rdquo; Tick
+          when they say yes.
+        </span>
+      </label>
       <div className="flex flex-wrap gap-2 items-center">
         <input value={f.notes} onChange={(e) => set({ notes: e.target.value })} placeholder="Note for the driver (optional)" className={`${input} flex-1 min-w-48`} />
         <label className="flex items-center gap-1.5 text-sm text-slate-600">
@@ -201,7 +210,7 @@ export default function QuickEntry({ zones, board }) {
           Remember caller
         </label>
         <button
-          disabled={busy || digits.length !== 10 || !f.pickup || caller?.blocked}
+          disabled={busy || digits.length !== 10 || !f.pickup || !f.termsRead || caller?.blocked}
           className="rounded-xl px-6 py-3 font-bold bg-gradient-to-b from-gold-300 to-gold-500 text-navy-950 disabled:opacity-40"
         >
           {busy ? "Posting…" : "Post ride"}

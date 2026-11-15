@@ -3,7 +3,7 @@ import * as core from "./core";
 import { accounts } from "./accounts";
 import { getSimulated, setSimulated } from "./geo";
 import { center } from "./seed";
-import { lockUnpaidNow, settleLeasesNow } from "./engine";
+import { driveMeToPickup, lockUnpaidNow, settleLeasesNow } from "./engine";
 import { resetDemo } from "./boot";
 
 const ROLES = [
@@ -100,6 +100,18 @@ export default function DemoBar() {
         ))}
         <option value="real">Real GPS of this device</option>
       </select>
+
+      {String(uid || "").startsWith("demo-driver") && (
+        <>
+          <p style={h}>On a call</p>
+          <button
+            style={{ ...btn, marginBottom: 6 }}
+            onClick={() => act(() => driveMeToPickup((i) => setNote(`Driving\u2026 ${i * 10}%`)), () => "At the pickup. Tap \u201cI'm here\u201d.")}
+          >
+            Drive my car to the pickup (20 sec)
+          </button>
+        </>
+      )}
 
       <p style={h}>Lease clock</p>
       <button style={{ ...btn, marginBottom: 6 }} onClick={() => act(settleLeasesNow, (n) => `2 PM: settled ${n} lease day${n === 1 ? "" : "s"}.`)}>

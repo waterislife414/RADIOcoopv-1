@@ -51,8 +51,8 @@ export default function Promotions() {
             <p>Riders with an account pay a $1.80 card fee instead of $2.00, every ride.</p>
           </Promo>
 
-          <Promo eyebrow="In a hurry?" title="VIP for a Day Fast Pass" to="/trip-details" cta="Book with Fast Pass">
-            <p>$5 moves you up the dispatcher&rsquo;s queue for that ride. Choose it when you book.</p>
+          <Promo eyebrow="In a hurry?" title="Priority Day Pass, $5" to="/trip-details" cta="Book with the Day Pass">
+            <p>Skip ahead in line all day, watch your driver on the map and call them directly. Good until midnight.</p>
           </Promo>
 
           <div className="rounded-2xl bg-slate-50 p-5 text-center">

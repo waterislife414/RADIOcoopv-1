@@ -4,13 +4,64 @@ import { functions } from "../../config/firebase";
 import { ring } from "../../utils/alertSound";
 import { reasonsFor } from "../../../functions/lib/callIssues.mjs";
 import { quickFix } from "../../utils/quickFix";
+import CallButton from "../CallButton";
+import RideMap from "../RideMap";
+import { RIDE_RULES, useNow, money } from "../../utils/rideLive";
+import { waitClock, clockText } from "../../../functions/lib/rideTiming.mjs";
 
 const pickedUp = httpsCallable(functions, "driverPickedUp");
 const driverEndCall = httpsCallable(functions, "driverEndCall");
+const driverArrived = httpsCallable(functions, "driverArrived");
+
+const nearPickup = (ride) => Number.isFinite(ride.arrivedDistM) && ride.arrivedDistM <= RIDE_RULES.nearPickupMeters;
+
+/** Where the rider's phone is (live, or where they booked from) next to the pickup and this car. */
+function FindRider({ ride, onClose }) {
+  const [me, setMe] = useState(null);
+  useEffect(() => {
+    if (!navigator.geolocation) return undefined;
+    const id = navigator.geolocation.watchPosition((p) => setMe({ lat: p.coords.latitude, lng: p.coords.longitude }), () => {}, {
+      enableHighAccuracy: true,
+      maximumAge: 10000,
+    });
+    return () => navigator.geolocation.clearWatch(id);
+  }, []);
+  const spot = ride.riderPos || ride.bookedFrom;
+  const mins = spot?.at ? Math.max(0, Math.round((Date.now() - spot.at) / 60000)) : null;
+  const points = [
+    Number.isFinite(ride.pickupLat) && { key: "pickup", lat: ride.pickupLat, lng: ride.pickupLng, color: "#2563eb", label: "P" },
+    spot && { key: "rider", ...spot, color: "#059669", label: "Rider" },
+    me && { key: "me", ...me, color: "#0f172a", label: "You" },
+  ].filter(Boolean);
+  return (
+    <div className="fixed inset-0 z-[75] bg-black/70 flex items-end sm:items-center justify-center p-3" role="dialog" aria-modal="true" aria-label="Find rider">
+      <div className="w-full max-w-md rounded-3xl bg-navy-900 border border-white/15 p-4 space-y-3 text-white">
+        <p className="text-xl font-bold">Find your rider</p>
+        <RideMap points={points} height={300} label="Map of the pickup, your rider and you" />
+        <p className="text-sm text-slate-300">
+          {ride.riderPos
+            ? `Green = your rider's phone${mins != null ? `, ${mins === 0 ? "just now" : `${mins} min ago`}` : ""}.`
+            : spot
+              ? "Green = where your rider's phone was when they booked."
+              : "Your rider isn't sharing their location. Call them."}{" "}
+          Blue = the address they typed.
+        </p>
+        {spot && (
+          <a href={navUrl(spot.lat, spot.lng)} target="_blank" rel="noopener noreferrer" className="block text-center rounded-xl py-3 font-bold bg-emerald-500 text-navy-950">
+            Navigate to the rider &rarr;
+          </a>
+        )}
+        <button type="button" onClick={onClose} className="w-full min-h-[48px] rounded-xl border-2 border-white/25 font-bold">
+          Close
+        </button>
+      </div>
+    </div>
+  );
+}
 
 /** "Can't finish this call": pick why, write what happened, send. */
-function EndCallSheet({ ride, onClose }) {
-  const [reason, setReason] = useState(null);
+function EndCallSheet({ ride, onClose, initialReason = null, noShowOpen = true }) {
+  const [reason, setReason] = useState(initialReason);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -41,11 +92,15 @@ function EndCallSheet({ ride, onClose }) {
               <button
                 key={r.id}
                 type="button"
+                disabled={r.id === "no_show" && !noShowOpen}
                 onClick={() => setReason(r.id)}
-                className={`w-full min-h-[52px] rounded-2xl border-2 px-4 text-left font-bold text-lg ${r.warnings ? "border-red-400/70" : "border-white/20"}`}
+                className={`w-full min-h-[52px] rounded-2xl border-2 px-4 text-left font-bold text-lg disabled:opacity-40 ${r.warnings ? "border-red-400/70" : "border-white/20"}`}
               >
                 {r.label}
                 {r.warnings > 0 && <span className="block text-sm font-semibold text-red-300">Counts as {r.warnings} warnings</span>}
+                {r.id === "no_show" && !noShowOpen && (
+                  <span className="block text-sm font-semibold text-slate-300">Opens {RIDE_RULES.noShowAfterMinutes} minutes after you tap I&rsquo;m here</span>
+                )}
               </button>
             ))}
           </>
@@ -96,7 +151,18 @@ export default function CurrentRide({ ride }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [ending, setEnding] = useState(false);
+  const [finding, setFinding] = useState(false);
+  const now = useNow(1000);
   const rung = useRef(null);
+  const meterRung = useRef(null);
+  const clock = ride ? waitClock(ride, now, RIDE_RULES) : null;
+  // Two beeps when the free wait is over: time to start the meter.
+  useEffect(() => {
+    if (ride?.status === "dispatched" && clock?.meterOn && meterRung.current !== ride.rideId) {
+      meterRung.current = ride.rideId;
+      ring(2);
+    }
+  }, [clock?.meterOn, ride?.rideId, ride?.status]);
   // Ring when dispatch hands him a call (he didn't tap Accept, so he may not be looking).
   useEffect(() => {
     if (ride?.how === "dispatcher" && rung.current !== ride.rideId && Date.now() - (ride.assignedAt || 0) < 60_000) {
@@ -106,6 +172,24 @@ export default function CurrentRide({ ride }) {
   }, [ride?.rideId, ride?.how, ride?.assignedAt]);
   if (!ride) return null;
   const going = ride.status === "dispatched";
+  const arrived = ride.arrivedAt != null;
+  const noShowOpen = !ride.appRide || (arrived && clock?.noShowOpen);
+
+  async function markArrived() {
+    setBusy(true);
+    setMsg("");
+    try {
+      const fix = await quickFix();
+      const { data } = await driverArrived({ rideId: ride.rideId, ...(fix || {}) });
+      if (ride.appRide && data?.near === false) {
+        setMsg("You look far from the pickup. A no-show fee is only charged when you're at the pickup.");
+      }
+    } catch (e) {
+      setMsg(e?.message || "Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function markPickedUp() {
     setBusy(true);
@@ -152,10 +236,40 @@ export default function CurrentRide({ ride }) {
         {ride.wheelchair && <span className="rounded-full bg-sky-500/20 text-sky-200 px-3 py-1">{"♿"} Wheelchair</span>}
         {ride.paymentMethod && <span className="rounded-full bg-white/10 px-3 py-1 capitalize">{ride.paymentMethod}</span>}
       </div>
-      {ride.riderPhone && (
-        <a href={`tel:${ride.riderPhone}`} className="block text-center rounded-xl py-3 font-bold bg-white/10">
-          Call rider
-        </a>
+      {ride.cardHold && <p className="text-sm text-emerald-300 font-semibold">{"\u2713"} Card on file: the fare is covered.</p>}
+      {going && ride.paymentMethod === "cash" && <p className="text-sm text-amber-300 font-semibold">Cash rider. Collecting up front is your call.</p>}
+      <div className="grid grid-cols-2 gap-2">
+        {ride.riderPhone && <CallButton rideId={ride.rideId} label="Call rider" fallbackTel={ride.riderPhone} dark />}
+        {going && (
+          <button type="button" onClick={() => setFinding(true)} className="w-full min-h-[52px] rounded-xl font-bold bg-white/10 border-2 border-white/25">
+            {"\u{1F4CD}"} Find rider
+          </button>
+        )}
+      </div>
+      {going && !arrived && (
+        <button disabled={busy} onClick={markArrived} className="w-full rounded-2xl py-4 text-lg font-bold bg-amber-400 text-navy-950 disabled:opacity-50">
+          I&rsquo;m here
+        </button>
+      )}
+      {going && arrived && clock && (
+        <div className="rounded-2xl bg-white/10 p-4 space-y-1" data-testid="driver-wait">
+          <p className="text-sm text-slate-300">Waiting at the pickup</p>
+          <p className="text-3xl font-mono font-bold">{clockText(clock.waitedMs)}</p>
+          <p className={`font-bold ${clock.meterOn ? "text-amber-300" : "text-slate-200"}`}>
+            {clock.meterOn ? "\u25B6 Start your meter: wait time is running." : `Free wait. Start your meter at ${RIDE_RULES.waitGraceMinutes}:00.`}
+          </p>
+          {ride.riderReply && (
+            <p className="font-bold text-emerald-300">Rider says: {ride.riderReply.reply === "here" ? "\u201cI'm at the car\u201d" : "\u201cNeed a minute\u201d"}</p>
+          )}
+          {ride.appRide && !clock.noShowOpen && (
+            <p className="text-sm text-slate-300">No-show opens in {clockText(clock.noShowAt - now)}.</p>
+          )}
+          {ride.appRide && clock.noShowOpen && (
+            <button type="button" onClick={() => setEnding("no_show")} className="w-full min-h-[52px] rounded-xl border-2 border-red-400 font-bold text-red-200 mt-2">
+              Rider didn&rsquo;t show up {nearPickup(ride) ? `(${money(RIDE_RULES.noShowFee * 100)} to you)` : "(no fee: you weren't at the pickup)"}
+            </button>
+          )}
+        </div>
       )}
       {going && (
         <button
@@ -166,11 +280,14 @@ export default function CurrentRide({ ride }) {
           Picked up
         </button>
       )}
-      <button type="button" onClick={() => setEnding(true)} className="w-full min-h-[48px] rounded-2xl border-2 border-white/25 font-bold text-slate-200">
+      <button type="button" onClick={() => setEnding("menu")} className="w-full min-h-[48px] rounded-2xl border-2 border-white/25 font-bold text-slate-200">
         Can&rsquo;t finish this call
       </button>
       {msg && <p className="text-red-300 text-sm">{msg}</p>}
-      {ending && <EndCallSheet ride={ride} onClose={() => setEnding(false)} />}
+      {ending && (
+        <EndCallSheet ride={ride} initialReason={ending === "no_show" ? "no_show" : null} noShowOpen={!!noShowOpen} onClose={() => setEnding(false)} />
+      )}
+      {finding && <FindRider ride={ride} onClose={() => setFinding(false)} />}
     </section>
   );
 }

@@ -10,6 +10,7 @@ import leaseModule from "../../functions/lease.js";
 import timers from "../../functions/timers.js";
 import push from "../../functions/push.js";
 import { addTimer } from "./engine-timers";
+import { setSimulated } from "./geo";
 
 timers.impl = (data, delaySec) => addTimer(data, delaySec);
 push.impl = async (tokens) => ({ responses: tokens.map(() => ({ success: true })) });
@@ -96,8 +97,32 @@ async function runMinuteJobs(now) {
   }
 }
 
+const lerp = (a, b, t) => ({ lat: a.lat + (b.lat - a.lat) * t, lng: a.lng + (b.lng - a.lng) * t });
+const pickupOf = (ride, board) =>
+  ride?.pickupLat != null ? { lat: ride.pickupLat, lng: ride.pickupLng } : zoneCenter(ride?.zoneId) || zoneCenter(board?.zoneId);
+const startFrom = (to) => ({ lat: to.lat + 0.03, lng: to.lng }); // about 2 miles out
+
+/** Demo: the signed-in driver "drives" to his pickup in about 20 seconds (sets off the 4-minute alert on the way). */
+export async function driveMeToPickup(onStep) {
+  const uid = accounts.currentUid();
+  const cur = core.readDoc(`driverInbox/${uid}`)?.current;
+  if (!cur || cur.status !== "dispatched") throw new Error("No pickup to drive to. Take a call first.");
+  const to = pickupOf(core.readDoc(`rides/${cur.rideId}`), core.readDoc(`board/${uid}`));
+  if (!to) throw new Error("This pickup isn't on the map.");
+  const from = startFrom(to);
+  for (let i = 0; i <= 10; i++) {
+    const p = lerp(from, to, i / 10);
+    setSimulated({ ...p });
+    await runAs(uid, "driverPing", { ...p, accuracy: 8 });
+    onStep?.(i);
+    if (i < 10) await new Promise((r) => setTimeout(r, 2000));
+  }
+}
+
 // Example drivers that answer on their own, so a rider-only walkthrough
-// still gets a car.
+// still gets a car. They drive in from about 2 miles out (the rider gets the
+// 4-minute alert), tap "I'm here", and pick up when the rider says they're at
+// the car (or after a short wait).
 async function runBots(now) {
   for (const b of core.runQuery({ collection: "demoBots" })) {
     const uid = b.path.split("/").pop();
@@ -115,7 +140,22 @@ async function runBots(now) {
         await runAs(uid, "acceptOffer", { rideId: inbox.offer.rideId });
       } else if (board.status === "on_call" && inbox.current) {
         const cur = inbox.current;
-        if (cur.status === "dispatched" && now - cur.assignedAt > (bot.pickupSec ?? 15) * 1000) {
+        const to = cur.status === "dispatched" ? pickupOf(admin().doc(`rides/${cur.rideId}`), board) : null;
+        if (cur.status === "dispatched" && cur.arrivedAt == null && to) {
+          const from = bot.rideId === cur.rideId && bot.from ? bot.from : startFrom(to);
+          if (bot.rideId !== cur.rideId) await core.commit([{ type: "set", path: b.path, merge: true, data: { rideId: cur.rideId, from, lastPingAt: 0 } }]);
+          const t = Math.min(1, (now - cur.assignedAt) / ((bot.driveSec ?? 40) * 1000));
+          if (now - (bot.lastPingAt || 0) > 3000 || t >= 1) {
+            await runAs(uid, "driverPing", { ...lerp(from, to, t), accuracy: 8 });
+            await core.commit([{ type: "set", path: b.path, merge: true, data: { lastPingAt: now } }]);
+          }
+          if (t >= 1) await runAs(uid, "driverArrived", { rideId: cur.rideId, ...to });
+        } else if (
+          cur.status === "dispatched" &&
+          (cur.arrivedAt != null
+            ? cur.riderReply?.reply === "here" || now - cur.arrivedAt > (bot.waitSec ?? 45) * 1000
+            : now - cur.assignedAt > (bot.pickupSec ?? 15) * 1000)
+        ) {
           await runAs(uid, "driverPickedUp", { rideId: cur.rideId });
           await core.commit([{ type: "set", path: b.path, merge: true, data: { pickedAt: now } }]);
         } else if (cur.status === "in_transit" && now - (bot.pickedAt || 0) > (bot.rideSec ?? 25) * 1000) {

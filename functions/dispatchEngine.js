@@ -30,6 +30,11 @@ const db = () => admin.firestore();
 const serverNow = () => FieldValue.serverTimestamp();
 let corePromise = null;
 const core = () => (corePromise ||= import("./lib/dispatchCore.mjs"));
+let timingPromise = null;
+const timing = () => (timingPromise ||= import("./lib/rideTiming.mjs"));
+// Same rule as rideTiming.isAppRide (kept in sync by tests): booked in the
+// app by a signed-in rider sharing location. Call-in and guest rides pay no fees.
+const isAppRide = (r) => !(r.source === "phone" || r.callIn) && !!r.customerId && r.customerId !== "guest";
 
 const rideRef = (id) => db().collection("rides").doc(id);
 const boardRef = (uid) => db().collection("board").doc(uid);
@@ -71,14 +76,38 @@ function rideCard(rideId, ride, zones) {
 const needTitle = (card) => (card.zoneLabel ? `Need a car in ${card.zoneLabel}` : "Need a car");
 
 /** Fields set on a new ride: when to dispatch it and its priority. */
-async function dispatchFieldsFor(ride, nowMs = Date.now()) {
+async function dispatchFieldsFor(ride, nowMs = Date.now(), rideId = null) {
   const c = await core();
+  const T = await timing();
   let priority = ride.wantsPriorityPass ? "vip" : null;
+  let tier = null;
   if (ride.customerId && ride.customerId !== "guest") {
     const u = await db().collection("users").doc(ride.customerId).get();
-    if (u.data()?.subscriptionTier === "PREMIUM") priority = "premium";
+    tier = u.data()?.subscriptionTier || null;
+    if (tier === "PREMIUM") priority = "premium";
   }
-  const fields = { priority, dispatchState: "new", triedDriverIds: [], broadcastTo: [] };
+  let dayPass = false;
+  if (ride.fastPassId) {
+    const p = await db().collection("fast_passes").doc(String(ride.fastPassId)).get();
+    dayPass = T.isDayPassValid(p.data(), ride.customerId, rideId, nowMs);
+  }
+  const fields = {
+    priority,
+    dispatchState: "new",
+    triedDriverIds: [],
+    broadcastTo: [],
+    perks: T.perksFor({ tier, dayPass }, BRANDING.ridePerks || {}),
+  };
+  // Everyone agrees to the terms. App bookings carry the agreement; a
+  // dispatcher ticks "read the ride rules" on phone calls.
+  const termsOk = ride.source === "phone" ? ride.termsRead === true : ride.consent?.version === BRANDING.legalVersion;
+  if (!termsOk) fields.termsMissing = true;
+  // No location shared, or no agreement on an app booking: it's a call-in
+  // ride. The office dispatches it by radio, like a phone call.
+  if (ride.callIn || (!termsOk && ride.source !== "phone")) {
+    fields.dispatchState = "office";
+    return fields;
+  }
   if (ride.scheduleType === "later") {
     const at = c.parseLocalDateTime(ride.scheduledFor, TIME_ZONE);
     if (at && at - LEAD_MS > nowMs) Object.assign(fields, { dispatchState: "scheduled", dispatchAt: at - LEAD_MS });
@@ -102,7 +131,7 @@ async function startDispatch(rideId) {
     if (!rs.exists) return null;
     const ride = rs.data();
     if (ride.status !== "pending") return null;
-    if (["offering", "assigned"].includes(ride.dispatchState)) return null;
+    if (["offering", "assigned", "office"].includes(ride.dispatchState)) return null;
     if (ride.dispatchState === "scheduled" && ride.dispatchAt > nowMs) return null;
 
     const boardSnap = await tx.get(db().collection("board").where("status", "in", ["ready", "moving"]));
@@ -312,6 +341,10 @@ function assignInTx(tx, c, { rideId, ride, uid, board, driver, customer, how, zo
         pickupLng: ride.pickupLng ?? null,
         dropLat: ride.dropLat ?? null,
         dropLng: ride.dropLng ?? null,
+        bookedFrom: ride.bookedFrom ?? null,
+        riderPos: ride.riderPos ?? null,
+        appRide: isAppRide(ride),
+        cardHold: ride.paymentMethod === "card" && !!ride.paymentIntentId,
         assignedAt: nowMs,
         how,
       },
@@ -348,6 +381,7 @@ async function waitingRides(states) {
 }
 
 module.exports = {
+  _isAppRide: isAppRide,
   OFFER,
   EXPIRE_MS,
   TIME_ZONE,

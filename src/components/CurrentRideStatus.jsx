@@ -6,18 +6,23 @@ import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../config/firebase";
 import { useAuth } from "../context/AuthContext";
 import { FARE_CONFIG, STRIPE_PUBLISHABLE_KEY, COMPANY_PHONE_DISPLAY, COMPANY_PHONE_TEL } from "../config/constants";
+import RiderPickup from "./RiderPickup";
+import LineStatus from "./LineStatus";
+import { RIDE_RULES, useNow, money } from "../utils/rideLive";
+import { cancelQuote } from "../../functions/lib/rideTiming.mjs";
 
 const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
 
 const STATUS_LABELS = {
-  pending: { label: "Request received", detail: "Waiting for a dispatcher to accept your ride.", pct: 20 },
-  dispatched: { label: "Driver dispatched!", detail: "A driver has been assigned to your ride.", pct: 55 },
-  in_transit: { label: "Driver is on the way!", detail: "Your ride is en route.", pct: 85 },
+  pending: { label: "Request received", detail: "Finding you a driver.", pct: 20 },
+  dispatched: { label: "Driver assigned!", detail: "Your driver is coming to the pickup.", pct: 55 },
+  in_transit: { label: "On your ride", detail: "Enjoy the ride.", pct: 85 },
 };
 
 const TIP_PRESETS = [15, 20, 25];
 
 function SettleFareForm({ ride, rideId }) {
+  const { userProfile } = useAuth();
   const stripe = useStripe();
   const elements = useElements();
 
@@ -34,7 +39,9 @@ function SettleFareForm({ ride, rideId }) {
     : meterNum * (tipPercent / 100);
   const cardFee = FARE_CONFIG.CARD_APP_FEE_MEMBER; // self-checkout is member-only
   const priorityPassFee = ride.wantsPriorityPass && !ride.fastPassId ? 5 : 0;
-  const total = meterNum + tipAmount + cardFee + priorityPassFee;
+  // Cancel/no-show fees still owed from an earlier ride are added here (the server adds the same amount).
+  const earlierFees = Math.max(0, userProfile?.feesOwedCents || 0) / 100;
+  const total = meterNum + tipAmount + cardFee + priorityPassFee + earlierFees;
 
   async function handlePay(e) {
     e.preventDefault();
@@ -138,7 +145,8 @@ function SettleFareForm({ ride, rideId }) {
       <div className="flex justify-between text-sm text-slate-500 pt-1">
         <span>
           Meter + tip + ${cardFee.toFixed(2)} member card fee
-          {priorityPassFee > 0 && ` + $${priorityPassFee.toFixed(2)} VIP pass`}
+          {priorityPassFee > 0 && ` + $${priorityPassFee.toFixed(2)} Day Pass`}
+          {earlierFees > 0 && ` + $${earlierFees.toFixed(2)} earlier cancel/no-show fee`}
         </span>
         <span className="font-bold text-slate-800 text-lg">${total.toFixed(2)}</span>
       </div>
@@ -205,42 +213,70 @@ function RatingPrompt({ ride, rideId }) {
 
 const cancelMyRide = httpsCallable(functions, "cancelMyRide");
 
-/** Cancel before a driver is assigned; after that, a call to the office. */
+/**
+ * Cancel: free until the "driver is about 4 minutes away" alert, then the
+ * late-cancel fee (it goes to the driver). Call-in rides cancel by phone.
+ */
 function CancelOrCall({ ride, rideId }) {
+  const now = useNow(1000);
   const [ask, setAsk] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
-  const canCancel = ride.status === "pending" && !ride.driverId;
+  const [shownFee, setShownFee] = useState(0);
+  const quote = cancelQuote(ride, now, RIDE_RULES);
+  const canCancel = quote.allowed;
+
+  function open() {
+    setShownFee(quote.feeCents);
+    setMsg("");
+    setAsk(true);
+  }
 
   async function cancel() {
     setBusy(true);
     setMsg("");
     try {
-      await cancelMyRide({ rideId });
+      await cancelMyRide({ rideId, acceptFeeCents: shownFee });
     } catch (e) {
-      setMsg(e?.message || "Couldn't cancel. Please call us.");
+      // The driver got close while they were deciding: show the new price.
+      const fee = e?.details?.feeCents;
+      if (fee) {
+        setShownFee(fee);
+        setMsg(e.message);
+      } else {
+        setMsg(e?.message || "Couldn't cancel. Please call us.");
+        setAsk(false);
+      }
       setBusy(false);
-      setAsk(false);
     }
   }
 
   return (
     <div className="mt-4 pt-4 border-t border-blue-200 space-y-2">
       {canCancel && !ask && (
-        <button type="button" onClick={() => setAsk(true)} className="w-full min-h-[48px] rounded-xl border-2 border-red-300 bg-white text-red-700 font-bold text-base">
-          Cancel this ride
-        </button>
+        <>
+          <button type="button" onClick={open} className="w-full min-h-[48px] rounded-xl border-2 border-red-300 bg-white text-red-700 font-bold text-base">
+            Cancel this ride
+          </button>
+          {ride.status === "dispatched" && quote.feeCents === 0 && (
+            <p className="text-xs text-slate-500 text-center">Free to cancel until your driver is about {RIDE_RULES.headsUpMinutes} minutes away.</p>
+          )}
+        </>
       )}
       {ask && (
         <div className="rounded-xl bg-white border-2 border-red-300 p-4 text-center">
           <p className="font-bold text-slate-800 text-lg">Cancel this ride?</p>
-          <p className="text-sm text-slate-600 mt-1">No charge &mdash; any card hold is released.</p>
+          <p className="text-sm text-slate-600 mt-1">
+            {shownFee > 0
+              ? `Your driver is close, so cancelling now costs ${money(shownFee)}. It goes to your driver for the trip out.`
+              : "No charge \u2014 any card hold is released."}
+          </p>
           <div className="grid grid-cols-2 gap-3 mt-3">
             <button type="button" onClick={() => setAsk(false)} disabled={busy} className="min-h-[48px] rounded-xl border-2 border-slate-300 font-bold text-slate-700">
               Keep ride
             </button>
             <button type="button" onClick={cancel} disabled={busy} className="min-h-[48px] rounded-xl bg-red-600 text-white font-bold">
-              {busy ? "Cancelling\u2026" : "Yes, cancel"}
+              {busy ? "Cancelling\u2026" : shownFee > 0 ? `Cancel (${money(shownFee)})` : "Yes, cancel"}
             </button>
           </div>
         </div>
@@ -254,7 +290,7 @@ function CancelOrCall({ ride, rideId }) {
 }
 
 function CurrentRideStatusInner() {
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
   const [ride, setRide] = useState(null);
   const [rideId, setRideId] = useState(null);
 
@@ -301,6 +337,13 @@ function CurrentRideStatusInner() {
           </div>
           <p className="font-bold text-lg text-slate-800">{info.label}</p>
           <p className="text-sm text-slate-600 mt-0.5 mb-1">{info.detail}</p>
+          {ride.status === "pending" && !ride.driverId && <LineStatus rideId={rideId} />}
+          {["dispatched", "in_transit"].includes(ride.status) && <RiderPickup ride={ride} rideId={rideId} />}
+          {userProfile?.feesOwedCents > 0 && (
+            <p className="text-sm text-red-700 mt-2">
+              {money(userProfile.feesOwedCents)} in cancel or no-show fees from an earlier ride is added to your next card payment.
+            </p>
+          )}
         </>
       )}
 

@@ -18,6 +18,34 @@ import { useDriverInbox } from "../../hooks/useDriverInbox";
 import OfferAlert from "./OfferAlert";
 import BroadcastList from "./BroadcastList";
 import CurrentRide from "./CurrentRide";
+
+/** "The rider cancelled. $5 goes to your lease credit." Shows for 10 minutes or until closed. */
+function DriverNotice({ notice }) {
+  const [closed, setClosed] = useState(() => {
+    try {
+      return Number(localStorage.getItem("rc-driver-notice") || 0);
+    } catch {
+      return 0;
+    }
+  });
+  if (!notice?.text || notice.at <= closed || Date.now() - notice.at > 10 * 60000) return null;
+  function close() {
+    try {
+      localStorage.setItem("rc-driver-notice", String(notice.at));
+    } catch {
+      // Fine: it hides for this visit.
+    }
+    setClosed(notice.at);
+  }
+  return (
+    <div className="rounded-2xl bg-gold-400 text-navy-950 p-4 font-bold flex items-start justify-between gap-3" role="status">
+      <span>{notice.text}</span>
+      <button type="button" onClick={close} className="shrink-0 underline">
+        OK
+      </button>
+    </div>
+  );
+}
 import { unlockAudio } from "../../utils/alertSound";
 
 function CertBadges({ certs }) {
@@ -102,6 +130,7 @@ export default function DriverDashboard() {
 
         <DriverStatusPanel driver={driver} board={board} drivers={drivers} zones={zones} />
 
+        <DriverNotice notice={inbox.notice} />
         {board?.status === "on_call" && <CurrentRide ride={inbox.current} />}
         {canWork && free && <BroadcastList broadcasts={inbox.broadcasts} />}
 
