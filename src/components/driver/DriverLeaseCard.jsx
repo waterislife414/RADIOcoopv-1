@@ -7,7 +7,7 @@ import { leaseLocked, leasePeriodKey, leaseWindow } from "../../../functions/lib
 
 const logEnvelope = httpsCallable(functions, "logEnvelope");
 
-/** Today's lease: card money so far, credit, envelope owed, and the envelope button. */
+/** Today's lick: card money so far, credit, envelope owed, and the envelope button. */
 export default function DriverLeaseCard({ driver }) {
   const uid = driver.id;
   const [now, setNow] = useState(() => Date.now());
@@ -86,4 +86,11 @@ export default function DriverLeaseCard({ driver }) {
           </span>
         </div>
         <div className="h-2.5 rounded-full bg-white/10 mt-1 overflow-hidden">
-          <div className="h-full bg-emerald-400" style={{ width: `${lease ?
+          <div className="h-full bg-emerald-400" style={{ width: `${lease ? Math.min(100, (covered / lease) * 100) : 0}%` }} />
+        </div>
+      </div>
+
+      {msg && <p className="text-red-300 text-sm">{msg}</p>}
+    </section>
+  );
+}
