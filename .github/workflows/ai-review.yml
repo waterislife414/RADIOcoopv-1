@@ -26,7 +26,7 @@ jobs:
           T="${BR#ai-review/}"
           git config user.name "ai-reviewer"; git config user.email "ai-bot@users.noreply.github.com"
           git checkout -B "ai/$T" "origin/ai/$T"
-          MODEL=openrouter/qwen/qwen3-coder:free; [ "$T" = T6 ] && MODEL=gemini/gemini-2.5-flash
+          MODEL=gemini/gemini-2.5-flash-lite
           git diff origin/step1-wip --stat -- . ':!docs' ':!.gitignore' | awk '{print $1}' | grep -E '^(src|functions|tests)/' > /tmp/files.txt || true
           { cat AGENTS.md; echo; echo "You are the REVIEWER, not the author. Another AI made this change for task: $(grep -E "^$T " AI_PROMPT.md)"; echo "Attack it: wrong collection/field names, missing null checks, hooks rules, unused imports, broken styling, security rules, anything outside the task. Read the real code for every name it uses. Fix real problems with minimal edits; if nothing is wrong change nothing. End by listing each issue found and fixed."; } > /tmp/review.txt
           aider --yes-always --no-check-update --model "$MODEL" --map-tokens 8192 --read AGENTS.md --read docs/CHANGES-AND-TODO.md --read firestore.rules --message-file /tmp/review.txt $(cat /tmp/files.txt) > /tmp/rev.log 2>&1 || true
