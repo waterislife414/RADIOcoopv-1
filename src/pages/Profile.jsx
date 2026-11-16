@@ -28,6 +28,11 @@ export default function Profile() {
   const [showDeactivate, setShowDeactivate] = useState(false);
   const [idUploading, setIdUploading] = useState(false);
   const [idUploadError, setIdUploadError] = useState("");
+  const [openPerks, setOpenPerks] = useState({});
+
+  function togglePerks(tier) {
+    setOpenPerks((prev) => ({ ...prev, [tier]: !prev[tier] }));
+  }
 
   async function handleIdUpload(e) {
     const file = e.target.files[0];
@@ -115,28 +120,79 @@ export default function Profile() {
           {/* Plan */}
           <ProfilePhoto />
 
-          <div className="border-2 border-slate-200 rounded-2xl p-5 mb-5">
-            <div className="flex items-center justify-between mb-3">
+          <div className="border-2 border-slate-200 rounded-2xl p-5 mb-5 space-y-4">
+            <div className="flex items-center justify-between">
               <h2 className="font-bold text-lg text-slate-800">Your Plan</h2>
               <span className="text-sm font-bold uppercase text-blue-600">
                 {tierInfo ? tierInfo.name : "Standard"}
               </span>
             </div>
+
+            {/* Free Tier / Standard */}
+            <div className="border border-slate-200 rounded-xl p-3">
+              <div className="flex justify-between items-center cursor-pointer" onClick={() => togglePerks("free")}>
+                <span className="font-semibold text-slate-800">Free Tier</span>
+                <span className="text-xs text-blue-600 font-semibold">{openPerks["free"] ? "Hide perks" : "What you get"}</span>
+              </div>
+              {openPerks["free"] && (
+                <ul className="mt-2 text-sm text-slate-600 space-y-1" data-testid="perks-free">
+                  <li>&bull; Text driver updates</li>
+                  <li>&bull; Seasonal and special offers</li>
+                </ul>
+              )}
+            </div>
+
+            {/* Basic Tier */}
+            <div className="border border-slate-200 rounded-xl p-3">
+              <div className="flex justify-between items-center cursor-pointer" onClick={() => togglePerks("BASIC")}>
+                <span className="font-semibold text-slate-800">Basic (&mdash; ${SUBSCRIPTION_TIERS.BASIC.monthlyPrice}/mo)</span>
+                <span className="text-xs text-blue-600 font-semibold">{openPerks["BASIC"] ? "Hide perks" : "What you get"}</span>
+              </div>
+              {openPerks["BASIC"] && (
+                <ul className="mt-2 text-sm text-slate-600 space-y-1" data-testid="perks-BASIC">
+                  <li>&bull; Everything in Free</li>
+                  <li>&bull; See driver live on map</li>
+                  <li>&bull; Driver photo and name</li>
+                </ul>
+              )}
+            </div>
+
+            {/* Premium Tier */}
+            <div className="border border-slate-200 rounded-xl p-3">
+              <div className="flex justify-between items-center cursor-pointer" onClick={() => togglePerks("PREMIUM")}>
+                <span className="font-semibold text-slate-800">Premium (&mdash; ${SUBSCRIPTION_TIERS.PREMIUM.monthlyPrice}/mo)</span>
+                <span className="text-xs text-blue-600 font-semibold">{openPerks["PREMIUM"] ? "Hide perks" : "What you get"}</span>
+              </div>
+              {openPerks["PREMIUM"] && (
+                <ul className="mt-2 text-sm text-slate-600 space-y-1" data-testid="perks-PREMIUM">
+                  <li>&bull; Everything in Basic</li>
+                  <li>&bull; Message or call driver</li>
+                  <li>&bull; 3 priority rides monthly</li>
+                </ul>
+              )}
+            </div>
+
             {!tierKey && (
-              <button
-                onClick={() => navigate("/subscribe/BASIC")}
-                className="w-full bg-gradient-to-b from-gold-300 to-gold-500 text-navy-950 font-bold text-base py-3.5 rounded-xl disabled:opacity-50"
-              >
-                Upgrade to Basic &mdash; ${SUBSCRIPTION_TIERS.BASIC.monthlyPrice}/mo
-              </button>
+              <>
+                <button
+                  onClick={() => navigate("/subscribe/BASIC")}
+                  className="w-full bg-gradient-to-b from-gold-300 to-gold-500 text-navy-950 font-bold text-base py-3.5 rounded-xl disabled:opacity-50"
+                >
+                  Upgrade to Basic &mdash; ${SUBSCRIPTION_TIERS.BASIC.monthlyPrice}/mo
+                </button>
+                <p className="text-xs text-center text-slate-500">Try the next level free</p>
+              </>
             )}
             {tierKey === "BASIC" && (
-              <button
-                onClick={() => navigate("/subscribe/PREMIUM")}
-                className="w-full bg-gradient-to-b from-gold-300 to-gold-500 text-navy-950 font-bold text-base py-3.5 rounded-xl disabled:opacity-50"
-              >
-                Upgrade to Premium &mdash; ${SUBSCRIPTION_TIERS.PREMIUM.monthlyPrice}/mo
-              </button>
+              <>
+                <button
+                  onClick={() => navigate("/subscribe/PREMIUM")}
+                  className="w-full bg-gradient-to-b from-gold-300 to-gold-500 text-navy-950 font-bold text-base py-3.5 rounded-xl disabled:opacity-50"
+                >
+                  Upgrade to Premium &mdash; ${SUBSCRIPTION_TIERS.PREMIUM.monthlyPrice}/mo
+                </button>
+                <p className="text-xs text-center text-slate-500">Try the next level free</p>
+              </>
             )}
             {tierKey === "PREMIUM" && (
               <p className="text-base text-slate-500 text-center">
@@ -183,30 +239,6 @@ export default function Profile() {
               </>
             ) : (
               <p className="text-base text-slate-500">Loading...</p>
-            )}
-          </div>
-
-          {/* SMS Ride Alerts add-on */}
-          <div className="border-2 border-slate-200 rounded-2xl p-5 mb-5">
-            <h2 className="font-bold text-lg text-slate-800 mb-1">SMS Ride Alerts</h2>
-            {["active", "trialing"].includes(userProfile.smsAddonStatus) ? (
-              <p className="text-base text-emerald-600 font-semibold">
-                &#10003; Active &mdash; you'll get texts when your driver is on the way.
-              </p>
-            ) : (
-              <>
-                <p className="text-base text-slate-600 mb-3">
-                  Get a text the moment your driver is dispatched, in
-                  addition to email. $15/mo, separate from your Basic/Premium
-                  plan.
-                </p>
-                <Link
-                  to="/subscribe/SMS_ADDON"
-                  className="block w-full text-center bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-xl"
-                >
-                  Add SMS Alerts &mdash; $15/mo
-                </Link>
-              </>
             )}
           </div>
 
