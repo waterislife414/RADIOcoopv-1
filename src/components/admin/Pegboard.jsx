@@ -57,6 +57,8 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
   const [now, setNow] = useState(() => Date.now());
   const [picked, setPicked] = useState(null); // car chip waiting for a zone tap
   const [msg, setMsg] = useState("");
+  const [draggingCar, setDraggingCar] = useState(null);
+  const [overZone, setOverZone] = useState(null);
 
   useEffect(() => {
     const u = onSnapshot(collection(db, "driverLocations"), (s) => setLocs(Object.fromEntries(s.docs.map((d) => [d.id, d.data()]))));
@@ -80,6 +82,15 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
 
   const zoneName = useMemo(() => Object.fromEntries(zones.map((z) => [z.id, z.label])), [zones]);
   const carNo = useMemo(() => Object.fromEntries(drivers.map((d) => [d.id, d.carNumber])), [drivers]);
+  const driverActiveRide = useMemo(() => {
+    const mapObj = {};
+    rides.forEach((r) => {
+      if (["dispatched", "in_transit"].includes(r.status) && r.driverId) {
+        mapObj[r.driverId] = r;
+      }
+    });
+    return mapObj;
+  }, [rides]);
 
   // Traced zones: pale fill and thin outline in each zone's own colour, name small and faded.
   useEffect(() => {
@@ -166,36 +177,81 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
     drivers
       .filter((d) => d.status === "ready" && d.zoneId === zid)
       .sort((a, b) => (a.lineKey ?? 0) - (b.lineKey ?? 0));
+  const onCallForZone = (zid) =>
+    drivers.filter((d) => d.status === "on_call" && (d.zoneId === zid || driverActiveRide[d.id]?.zoneId === zid));
+
   const Chip = ({ d }) => {
     const st = statusInfo(d.status);
     const okd = d.approval?.untilMs > now;
+    const ride = driverActiveRide[d.id];
+    const dropZoneName = ride ? (zoneName[ride.dropZoneId] || ride.dropZoneLabel || (ride.dropoff ? String(ride.dropoff).split(",")[0] : null)) : null;
+
+    const timerRef = useRef(null);
+    const startPos = useRef({ x: 0, y: 0 });
+
+    const handlePointerDown = (e) => {
+      startPos.current = { x: e.clientX, y: e.clientY };
+      timerRef.current = setTimeout(() => {
+        setDraggingCar(d);
+        try {
+          e.target.setPointerCapture(e.pointerId);
+        } catch {
+          // ignore
+        }
+      }, 300);
+    };
+
+    const handlePointerMove = (e) => {
+      if (!draggingCardIsThis()) {
+        if (Math.hypot(e.clientX - startPos.current.x, e.clientY - startPos.current.y) > 10) {
+          clearTimeout(timerRef.current);
+        }
+      }
+      if (draggingCar?.id === d.id) {
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        const zEl = el?.closest("[data-zone-id]");
+        setOverZone(zEl ? zEl.getAttribute("data-zone-id") : null);
+      }
+    };
+
+    const handlePointerUp = async (e) => {
+      clearTimeout(timerRef.current);
+      if (draggingCar?.id === d.id) {
+        try {
+          e.target.releasePointerCapture(e.pointerId);
+        } catch {
+          // ignore
+        }
+        if (overZone) {
+          await place(d, overZone);
+        }
+        setDraggingCar(null);
+        setOverZone(null);
+      } else {
+        if (Math.hypot(e.clientX - startPos.current.x, e.clientY - startPos.current.y) < 10) {
+          if (picked?.id === d.id) setPicked(null);
+          else onCarClick?.(d);
+        }
+      }
+    };
+
+    const draggingCardIsThis = () => draggingCar?.id === d.id;
+
     return (
       <button
         type="button"
-        draggable
         data-testid={`car-chip-${d.carNumber}`}
-        onDragStart={(e) => e.dataTransfer.setData("text/car", d.id)}
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={async (e) => {
-          e.preventDefault();
-          const rideId = e.dataTransfer.getData("text/ride");
-          if (rideId && d.id) {
-            setMsg("");
-            try {
-              await assignRide({ rideId, uid: d.id });
-            } catch (err) {
-              setMsg(err?.message || "Couldn't assign ride.");
-            }
-          }
-        }}
-        onClick={() => (picked?.id === d.id ? setPicked(null) : onCarClick?.(d))}
-        onDoubleClick={() => setPicked(d)}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onDragStart={(e) => e.preventDefault()}
         title={`Car ${d.carNumber}: ${st.label}${okd ? " (OK'd, no GPS)" : ""}${d.radioOnly ? " (radio-only)" : ""}`}
-        className={`rounded-full px-2.5 py-1 text-sm font-bold text-white border-2 ${picked?.id === d.id ? "ring-4 ring-amber-300" : ""} ${d.radioOnly ? "border-dashed border-slate-700" : "border-transparent"}`}
-        style={{ background: st.color }}
+        className={`rounded-full px-2.5 py-1 text-sm font-bold text-white border-2 inline-flex items-center gap-1 ${picked?.id === d.id ? "ring-4 ring-amber-300" : ""} ${d.radioOnly ? "border-dashed border-slate-700" : "border-transparent"}`}
+        style={{ background: st.color, touchAction: draggingCar?.id === d.id ? "none" : "auto" }}
       >
-        {d.carNumber}
-        {okd && <span className="ml-1 text-[10px]">OK</span>}
+        <span>{d.carNumber}</span>
+        {okd && <span className="text-[10px]">OK</span>}
+        {d.status === "on_call" && dropZoneName && <span className="text-[11px] font-normal opacity-90">&rarr; {dropZoneName}</span>}
       </button>
     );
   };
@@ -224,13 +280,14 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
           <button
             key={z.id}
             type="button"
+            data-zone-id={z.id}
             onDragOver={(e) => e.preventDefault()}
             onDrop={dropOn(z.id)}
             onClick={() => picked && place(picked, z.id)}
-            className="rounded-xl border px-3 py-2 text-sm font-semibold text-slate-800"
-            style={{ borderColor: zoneColor(z, i), background: `${zoneColor(z, i)}33` }}
+            className={`rounded-xl border px-3 py-2 text-sm font-semibold text-slate-800 ${overZone === z.id ? "ring-2 ring-blue-600 bg-blue-50" : ""}`}
+            style={{ borderColor: zoneColor(z, i), background: overZone === z.id ? undefined : `${zoneColor(z, i)}33` }}
           >
-            {z.label} <span className="text-slate-500">({ready(z.id).length})</span>
+            {z.label} <span className="text-slate-500">({ready(z.id).length + onCallForZone(z.id).length})</span>
           </button>
         ))}
         {picked && <span className="self-center text-sm font-semibold text-amber-700">Car {picked.carNumber}: tap a zone to put him there</span>}
@@ -286,15 +343,20 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
           </div>
 
           <div>
-            <p className="text-xs font-bold uppercase text-slate-500">Ready</p>
+            <p className="text-xs font-bold uppercase text-slate-500">Ready &amp; On Call by Zone</p>
             {zones.map((z) => {
               const cars = ready(z.id);
-              return cars.length ? (
-                <div key={z.id} className="flex items-center gap-2 py-1">
+              const onCalls = onCallForZone(z.id);
+              if (!cars.length && !onCalls.length) return null;
+              return (
+                <div key={z.id} className="flex items-center gap-2 py-1" data-testid={`zone-col-${z.id}`}>
                   <span className="w-28 text-sm font-semibold text-slate-700">{z.label}</span>
-                  <div className="flex gap-1.5 flex-wrap">{cars.map((d) => <Chip key={d.id} d={d} />)}</div>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {cars.map((d) => <Chip key={d.id} d={d} />)}
+                    {onCalls.map((d) => <Chip key={d.id} d={d} />)}
+                  </div>
                 </div>
-              ) : null;
+              );
             })}
             {moving.length > 0 && (
               <div className="flex items-center gap-2 py-1">
@@ -302,7 +364,7 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
                 <div className="flex gap-1.5 flex-wrap">{moving.map((d) => <Chip key={d.id} d={d} />)}</div>
               </div>
             )}
-            {drivers.filter((d) => ["on_call", "offered"].includes(d.status)).map((d) => (
+            {drivers.filter((d) => d.status === "offered" || (d.status === "on_call" && !ready(d.zoneId).includes(d) && !onCallForZone(d.zoneId).includes(d))).map((d) => (
               <div key={d.id} className="flex items-center gap-2 py-1 text-sm">
                 <Chip d={d} />
                 <span className="text-slate-600">{d.radioCall ? `Radio call${d.radioCall.note ? `: ${d.radioCall.note}` : ""}` : d.status === "offered" ? "Being offered a call" : "On a call"}</span>
