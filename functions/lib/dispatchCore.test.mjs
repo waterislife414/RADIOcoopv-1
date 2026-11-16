@@ -186,6 +186,37 @@ test('applyLocation: ready driver keeps spot inside zone, timer starts outside, 
   assert.equal(moved.board.lastEvent.zoneId, 'rose-hill');
 });
 
+test('parkedAutoPlace: moving through = no change; parked 119s = no change; parked 120s = moved; leaves and returns = resets; on_call never moved', () => {
+  const t0 = 1_000_000;
+  const driver = { status: 'ready', zoneId: 'zone-a' };
+  // 1. same zone -> no change
+  let res = c.parkedAutoPlace(driver, 'zone-a', t0, 2, null, null);
+  assert.equal(res.patch, null);
+
+  // 2. parked in zone-b for 119s
+  res = c.parkedAutoPlace(driver, 'zone-b', t0, 2, null, null);
+  assert.equal(res.patch, null);
+  const since1 = res.parkedSinceMs;
+  res = c.parkedAutoPlace(driver, 'zone-b', t0 + 119_000, 2, since1, res.parkedZoneId);
+  assert.equal(res.patch, null);
+
+  // 3. parked in zone-b for 120s -> moves to ready in zone-b
+  res = c.parkedAutoPlace(driver, 'zone-b', t0 + 120_000, 2, since1, res.parkedZoneId);
+  assert.deepEqual(res.patch, { status: 'ready', zoneId: 'zone-b', lineKey: t0 + 120_000 });
+
+  // 4. leaves zone-b and returns -> timer restarts
+  res = c.parkedAutoPlace(driver, 'zone-c', t0 + 150_000, 2, null, null);
+  assert.equal(res.patch, null);
+  const since2 = res.parkedSinceMs;
+  res = c.parkedAutoPlace(driver, 'zone-b', t0 + 160_000, 2, since2, res.parkedZoneId);
+  assert.equal(res.patch, null); // timer restarted at t0+160_000
+
+  // 5. on_call driver never moved
+  const onCallDriver = { status: 'on_call', zoneId: 'zone-a' };
+  res = c.parkedAutoPlace(onCallDriver, 'zone-b', t0 + 300_000, 2, null, null);
+  assert.equal(res.patch, null);
+});
+
 test('applyLocation: on-call and offered drivers are never moved', () => {
   const t0 = 1_000_000;
   assert.equal(c.applyLocation({ status: 'on_call', zoneId: 'east' }, null, t0 + 1e7).board, null);
@@ -256,9 +287,9 @@ test('leaseLocked: owed today locks after 4 PM; older debt locks all day; nothin
 test('cardCreditCents: card/wallet fares count, cash and unpaid overrides do not', () => {
   assert.deepEqual(c.cardCreditCents({ paymentMethod: 'card', finalFare: 12.4, tipAmount: 2, stripeStatus: 'succeeded' }), { fareCents: 1240, tipCents: 200 });
   assert.deepEqual(c.cardCreditCents({ paymentMethod: 'card', finalFare: 10, stripeStatus: 'wallet_charge' }), { fareCents: 1000, tipCents: 0 });
-  assert.equal(c.cardCreditCents({ paymentMethod: 'cash', finalFare: 10, stripeStatus: 'succeeded' }), null);
-  assert.equal(c.cardCreditCents({ paymentMethod: 'card', finalFare: 10, stripeStatus: 'manual_override' }), null);
-  assert.equal(c.cardCreditCents({ paymentMethod: 'card', finalFare: null, stripeStatus: 'succeeded' }), null);
+  assert.deepEqual(c.cardCreditCents({ paymentMethod: 'cash', finalFare: 10, stripeStatus: 'succeeded' }), null);
+  assert.deepEqual(c.cardCreditCents({ paymentMethod: 'card', finalFare: 10, stripeStatus: 'manual_override' }), null);
+  assert.deepEqual(c.cardCreditCents({ paymentMethod: 'card', finalFare: null, stripeStatus: 'succeeded' }), null);
 });
 
 test('incentives: 14-day periods, score from 30-day strikes, bonus rules', () => {
