@@ -4,12 +4,16 @@ name: ai-task
 on:
   push:
     branches: ['ai-go/**']
+  workflow_dispatch:
+    inputs:
+      task: { description: 'Task id, e.g. T7', required: true }
+run-name: ai ${{ inputs.task || github.ref_name }}
 permissions:
   contents: write
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with: { ref: step1-wip, fetch-depth: 0 }
@@ -27,17 +31,23 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           BR: ${{ github.ref_name }}
+          INPUT_TASK: ${{ inputs.task }}
         run: |
-          T="${BR#ai-go/}"
+          T="${INPUT_TASK:-${BR#ai-go/}}"
           TESTCMD="npm run build:demo"; { [ "$T" = T7 ] || [ "$T" = T2 ] || [ "$T" = T5 ]; } && TESTCMD="bash tests/qa/run.sh"; MODEL=gemini/gemini-2.5-flash; [ "$T" = T6 ] && MODEL=openrouter/cohere/north-mini-code:free
           git config user.name "ai-bot"; git config user.email "ai-bot@users.noreply.github.com"
           git checkout -b "ai/$T"
           { cat docs/ai/style-$(echo $MODEL|cut -d/ -f1).txt; cat AGENTS.md; echo; echo "TASK:"; grep -E "^$T " AI_PROMPT.md; echo "Rules: small diff; touch only needed files; no keys/deploys/money logic."; } > /tmp/task.txt
+          for ATTEMPT in 1 2; do
           for M in gemini/gemini-3.5-flash-lite openrouter/cohere/north-mini-code:free openrouter/google/gemma-4-31b-it:free groq/llama-3.3-70b-versatile "$MODEL"; do
             echo "trying $M" >> /tmp/models.txt
             aider --yes-always --no-check-update --model "$M" --map-tokens 8192 --read AGENTS.md --read docs/ai/KNOWLEDGE.md --read docs/ai/lessons.md --lint-cmd "javascript: npx oxlint" --auto-lint --test-cmd "$TESTCMD" --auto-test --read docs/CHANGES-AND-TODO.md --read docs/HANDOVER.md --read branding.config.json --read firestore.rules $(for r in $(grep -E "^$T " AI_PROMPT.md | sed -n "s/.*READ: //p"); do echo --read $r; done) --message-file /tmp/task.txt $(grep -E "^$T " AI_PROMPT.md | sed -n "s/.*FILES: \([^R]*\).*/\1/p") > /tmp/aider.log 2>&1 || true
             grep -qiE "rate.?limit|NotFoundError|quota|RESOURCE_EXHAUSTED|is unavailable|overloaded" /tmp/aider.log || break
             sleep 40
+          done
+            [ "$(git diff --name-only origin/step1-wip -- src tests | wc -l)" != "0" ] && break
+            echo "NUDGE: no code change after attempt $ATTEMPT" >> /tmp/models.txt
+            printf "\nYOU MADE NO CODE CHANGE LAST TIME. The task requires editing the named FILES. Read them, then make the edit now. Do not ask questions.\n" >> /tmp/task.txt
           done
           mkdir -p docs/ai; tail -40 /tmp/aider.log > "docs/ai/log-$T.txt"
           npx oxlint src functions > /tmp/lint.txt 2>&1 || true
