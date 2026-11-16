@@ -37,4 +37,4 @@ jobs:
           npm run build:demo > /dev/null 2>&1 && D=pass || D=FAIL
           printf "review %s\nunit %s\nbuild %s\nbuild:demo %s\n" "$T" $U $B $D >> "docs/ai/report-$T.txt"
           git add -A && git commit -qm "AI review $T (unit $U, build $B, demo $D)" || true
-          git push origin "ai/$T"
+          git push -f origin "ai/$T"
