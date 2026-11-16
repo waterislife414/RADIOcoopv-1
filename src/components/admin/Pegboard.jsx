@@ -9,6 +9,7 @@ import { STATUS_COLORS, statusInfo, zoneColor } from "../../utils/statusColors";
 import { pickupPoint, waitClock, rulesFrom } from "../../../functions/lib/rideTiming.mjs";
 
 const move = httpsCallable(functions, "dispatcherBoardAction");
+const assignRideFn = httpsCallable(functions, "dispatcherAssignRide");
 const DISPATCH = BRAND.dispatch;
 const RULES = rulesFrom(BRAND.rideRules);
 const STALE_MS = (DISPATCH.gps?.staleMin ?? 3) * 60000;
@@ -172,15 +173,38 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
       <button
         type="button"
         draggable
+<<<<<<< ours
+        data-testid={`car-chip-${d.carNumber}`}
+=======
+        data-testid="car-chip"
+>>>>>>> theirs
         onDragStart={(e) => e.dataTransfer.setData("text/car", d.id)}
-        onClick={() => (picked?.id === d.id ? setPicked(null) : onCarClick?.(d))}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={async (e) => {
+          e.preventDefault();
+          const rideId = e.dataTransfer.getData("text/ride");
+          if (!rideId) return;
+          try {
+            await assignRideFn({ rideId, uid: d.id });
+          } catch (err) {
+            setMsg(err?.message || "Couldn't assign ride.");
+          }
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (picked?.id === d.id) {
+            setPicked(null);
+          } else {
+            onCarClick?.(d);
+          }
+        }}
         onDoubleClick={() => setPicked(d)}
         title={`Car ${d.carNumber}: ${st.label}${okd ? " (OK'd, no GPS)" : ""}${d.radioOnly ? " (radio-only)" : ""}`}
         className={`rounded-full px-2.5 py-1 text-sm font-bold text-white border-2 ${picked?.id === d.id ? "ring-4 ring-amber-300" : ""} ${d.radioOnly ? "border-dashed border-slate-700" : "border-transparent"}`}
         style={{ background: st.color }}
       >
         {d.carNumber}
-        {okd && <span className="ml-1 text-[10px]">OK&apos;d</span>}
+        {okd && <span className="ml-1 text-[10px]">OK</span>}
       </button>
     );
   };
@@ -255,7 +279,7 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
                 </span>
                 <span>&rarr;</span>
                 <span className="font-semibold">{zoneName[r.dropZoneId] || ""}</span>
-                <span className="text-slate-600 truncate">{r.dropoff || r.dropoffAddress || ""}</span>
+                <span className="text-slate-600 truncate">{r.dropoff || r.dropoffAddress || "?"}</span>
                 {r.paymentMethod === "cash" && <span className="px-1.5 rounded bg-emerald-100 text-emerald-800 text-xs font-bold">CASH</span>}
                 <span className="ml-auto font-semibold" style={{ color: STATUS_COLORS.onCall }}>
                   {rideWord(r, now)}
@@ -295,7 +319,13 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
               {needsYou.map((r) => {
                 const late = now - tsMs(r.timestamp) > ALERT_MS;
                 return (
-                  <div key={r.id} className={`flex items-center gap-2 flex-wrap py-2 px-2 mt-1 rounded-xl border ${late ? "border-red-400 bg-red-50 animate-pulse" : "border-amber-300 bg-amber-50"}`}>
+                  <div
+                    key={r.id}
+                    draggable
+                    onDragStart={(e) => e.dataTransfer.setData("text/ride", r.id)}
+                    data-testid="call-chip"
+                    className={`flex items-center gap-2 flex-wrap py-2 px-2 mt-1 rounded-xl border cursor-grab ${late ? "border-red-400 bg-red-50 animate-pulse" : "border-amber-300 bg-amber-50"}`}
+                  >
                     <span className="px-2 py-0.5 rounded bg-slate-900 text-white text-xs font-bold">{reasonTag(r)}</span>
                     <span className="text-sm font-semibold">{r.name || r.firstName || "Caller"}</span>
                     <span className="text-sm text-slate-600 truncate">{r.zoneLabel ? `${r.zoneLabel} ` : ""}&rarr; {r.dropoff || r.dropoffAddress || "?"}</span>
@@ -323,7 +353,7 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
             {out.length === 0 && <span className="text-sm text-slate-500">Everyone is on the board.</span>}
             {out.map((d) => <Chip key={d.id} d={d} />)}
           </div>
-          <button onClick={() => onCarClick?.("new")} className="mt-3 text-sm font-semibold text-blue-700">
+          <button onClick={() => onCarClick?.("new")} className="mt-3 text-sm font-semibold text-blue-700" data-testid="add-radio-car">
             + Radio car
           </button>
         </div>

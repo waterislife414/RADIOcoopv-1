@@ -1,0 +1,7 @@
+baseline (step1-wip): == Step 1: 5/8 passed
+T7 alone: == Step 1: 6/8 passed  ()
+T2 alone: == Step 1: 5/8 passed  ()
+T5 alone: == Step 1: 5/8 passed  ()
+T5: skipped in combined
+ALL TOGETHER: 
+build FAIL
