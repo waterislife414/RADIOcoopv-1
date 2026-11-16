@@ -2,3 +2,7 @@ task T3
 unit pass
 build pass
 build:demo pass
+review T3
+unit pass
+build pass
+build:demo pass
