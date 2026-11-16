@@ -1,0 +1,46 @@
+name: ai-review
+# Push branch ai-review/<task>: a DIFFERENT model than the author reviews ai/<task>, attacks the diff, fixes problems, re-runs checks.
+on:
+  push:
+    branches: ['ai-review/**']
+permissions:
+  contents: write
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install aider-chat && npm ci && (cd functions && npm ci)
+      - name: Review
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          BR: ${{ github.ref_name }}
+        run: |
+          T="${BR#ai-review/}"
+          git config user.name "ai-reviewer"; git config user.email "ai-bot@users.noreply.github.com"
+          git checkout -B "ai/$T" "origin/ai/$T"
+          MODEL=gemini/gemini-3.5-flash-lite
+          git diff origin/step1-wip --stat -- . ':!docs' ':!.gitignore' | awk '{print $1}' | grep -E '^(src|functions|tests)/' > /tmp/files.txt || true
+          { cat AGENTS.md; echo; echo "You are the REVIEWER, not the author. Another AI made this change for task: $(grep -E "^$T " AI_PROMPT.md)"; echo "Attack it: wrong collection/field names, missing null checks, hooks rules, unused imports, broken styling, security rules, anything outside the task. Read the real code for every name it uses. Fix real problems with minimal edits; if nothing is wrong change nothing. End by listing each issue found and fixed."; } > /tmp/review.txt
+          for M in "$MODEL" openrouter/cohere/north-mini-code:free openrouter/google/gemma-4-31b-it:free gemini/gemini-3.5-flash-lite groq/llama-3.3-70b-versatile; do
+            echo "trying $M" >> /tmp/models.txt
+            aider --yes-always --no-check-update --model "$M" --map-tokens 8192 --read AGENTS.md --read docs/CHANGES-AND-TODO.md --read firestore.rules --message-file /tmp/review.txt $(cat /tmp/files.txt) > /tmp/rev.log 2>&1 || true
+            grep -qiE "rate.?limit|NotFoundError|quota|RESOURCE_EXHAUSTED|is unavailable|overloaded" /tmp/aider.log || break
+            sleep 40
+          done
+          mkdir -p docs/ai; tail -40 /tmp/rev.log > "docs/ai/review-$T.txt"
+          npx oxlint src functions > /tmp/lint.txt 2>&1 || true
+          node --test functions/lib/*.test.mjs > /dev/null 2>&1 && U=pass || U=FAIL
+          npm run build > /dev/null 2>&1 && B=pass || B=FAIL
+          npm run build:demo > /dev/null 2>&1 && D=pass || D=FAIL
+          printf "review %s\nunit %s\nbuild %s\nbuild:demo %s\n" "$T" $U $B $D >> "docs/ai/report-$T.txt"
+          git add -A && git commit -qm "AI review $T (unit $U, build $B, demo $D)" || true
+          git push -f origin "ai/$T"
