@@ -1,0 +1,40 @@
++    const q = query(collection(db, "approval_requests"), where("uid", "==",    
+uid));                                                                          
++    const processSnap = (snap) => {                                            
++      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));          
+                                                                                
+-  const text = answer                                                          
+-    ? answer.status === "approved"                                             
+-      ? `Dispatch OK'd you. You're at the back of the ${answer.zoneLabel}      
+line.`                                                                          
+-      : `Dispatch said no. ${answer.reason || ""}`                             
+-    : "";                                                                      
+-  useEffect(() => {                                                            
+-    if (!answer || spoken.current === answer.id) return;                       
+-    spoken.current = answer.id;                                                
+-    try {                                                                      
+-      window.speechSynthesis?.speak(new SpeechSynthesisUtterance(text));       
+-    } catch {                                                                  
+-      // No speech on this phone: the screen still shows it.                   
+-    }                                                                          
+-  }, [answer, text]);                                                          
++    const unsub = onSnapshot(q, processSnap);                                  
++    const poll = setInterval(async () => {                                     
++      try {                                                                    
++        const snap = await getDocs(q);                                         
++        processSnap(snap);                                                     
++      } catch {}                                                               
++    }, 1000);                                                                  
+                                                                                
+justify-center p-6 text-center ${ok ? "bg-emerald-600" : "bg-red-700"}`}        
+         <p className="text-4xl font-display font-extrabold text-white">{ok ?   
+"Approved" : "Not approved"}</p>                                                
+         <p className="mt-4 text-2xl font-semibold text-white">{text}</p>       
+         {ok && <p className="mt-2 text-lg text-white/90">Good for about an     
+hour, then the normal checks apply again.</p>}                                  
++  49 /  62 lines [███████████████████████░░░░░░░]  79%                         
+                                                                                
+Tokens: 49k sent, 910 received. Cost: $0.02 message, $0.02 session.
+Applied edit to src/components/driver/ApprovalAnswer.jsx
+Commit 2fe25d3 fix(driver): add polling fallback to ApprovalAnswer for real-time
+updates
