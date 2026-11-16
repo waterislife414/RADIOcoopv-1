@@ -29,7 +29,12 @@ jobs:
           MODEL=gemini/gemini-2.5-flash-lite
           git diff origin/step1-wip --stat -- . ':!docs' ':!.gitignore' | awk '{print $1}' | grep -E '^(src|functions|tests)/' > /tmp/files.txt || true
           { cat AGENTS.md; echo; echo "You are the REVIEWER, not the author. Another AI made this change for task: $(grep -E "^$T " AI_PROMPT.md)"; echo "Attack it: wrong collection/field names, missing null checks, hooks rules, unused imports, broken styling, security rules, anything outside the task. Read the real code for every name it uses. Fix real problems with minimal edits; if nothing is wrong change nothing. End by listing each issue found and fixed."; } > /tmp/review.txt
-          aider --yes-always --no-check-update --model "$MODEL" --map-tokens 8192 --read AGENTS.md --read docs/CHANGES-AND-TODO.md --read firestore.rules --message-file /tmp/review.txt $(cat /tmp/files.txt) > /tmp/rev.log 2>&1 || true
+          for M in "$MODEL" openrouter/cohere/north-mini-code:free openrouter/google/gemma-4-31b-it:free gemini/gemini-2.5-flash-lite; do
+            echo "trying $M" >> /tmp/models.txt
+            aider --yes-always --no-check-update --model "$M" --map-tokens 8192 --read AGENTS.md --read docs/CHANGES-AND-TODO.md --read firestore.rules --message-file /tmp/review.txt $(cat /tmp/files.txt) > /tmp/rev.log 2>&1 || true
+            grep -qiE "rate.?limit|NotFoundError|quota|RESOURCE_EXHAUSTED|is unavailable|overloaded" /tmp/aider.log || break
+            sleep 40
+          done
           mkdir -p docs/ai; tail -40 /tmp/rev.log > "docs/ai/review-$T.txt"
           npx oxlint src functions > /tmp/lint.txt 2>&1 || true
           node --test functions/lib/*.test.mjs > /dev/null 2>&1 && U=pass || U=FAIL
