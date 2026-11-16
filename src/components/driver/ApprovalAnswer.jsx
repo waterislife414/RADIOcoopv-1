@@ -24,7 +24,7 @@ export default function ApprovalAnswer({ uid }) {
         setPending(docs.some((d) => d.status === "pending"));
         const seen = seenIds();
         const fresh = docs
-          .filter((d) => d.status !== "pending" && !seen.includes(d.id) && Date.now() - (d.decidedAtMs || 0) < 10 * 60000)
+          .filter((d) => d.status !== "pending" && (!seen.includes(d.id) || Date.now() - (d.decidedAtMs || 0) < 60000) && Date.now() - (d.decidedAtMs || 0) < 10 * 60000)
           .sort((a, b) => b.decidedAtMs - a.decidedAtMs)[0];
         setAnswer(fresh || null);
       }),

@@ -129,7 +129,7 @@ export default function ApprovalPopup() {
             <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Why not? (he'll see this)" className="w-full border border-slate-300 rounded-xl px-3 py-3 text-base" aria-label="Reason" />
             <div className="flex gap-2">
               <button disabled={busy || reason.trim().length < 3} onClick={() => send("deny")} className="flex-1 min-h-[52px] rounded-xl bg-red-600 text-white font-bold disabled:opacity-50">
-                Send &ldquo;No&rdquo;
+                Send No
               </button>
               <button onClick={() => setDenying(false)} className="min-h-[52px] px-4 rounded-xl bg-slate-200 font-semibold">
                 Back
