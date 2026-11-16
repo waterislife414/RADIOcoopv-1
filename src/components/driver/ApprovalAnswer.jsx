@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, getDocs, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "../../config/firebase";
 
 /** The dispatcher's answer to "Ask dispatch": a full-screen message, read aloud. */
@@ -8,18 +8,31 @@ export default function ApprovalAnswer({ uid }) {
   const [pending, setPending] = useState(false);
   const spoken = useRef(null);
 
-  useEffect(
-    () =>
-      onSnapshot(query(collection(db, "approval_requests"), where("uid", "==", uid)), (snap) => {
-        const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        setPending(docs.some((d) => d.status === "pending"));
-        const fresh = docs
-          .filter((d) => d.status !== "pending" && Date.now() - (d.decidedAtMs || 0) < 15 * 60000)
-          .sort((a, b) => (b.decidedAtMs || 0) - (a.decidedAtMs || 0))[0];
-        setAnswer(fresh || null);
-      }),
-    [uid]
-  );
+  useEffect(() => {
+    if (!uid) return;
+    const q = query(collection(db, "approval_requests"), where("uid", "==", uid));
+    const processSnap = (snap) => {
+      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setPending(docs.some((d) => d.status === "pending"));
+      const fresh = docs
+        .filter((d) => d.status !== "pending" && Date.now() - (d.decidedAtMs || 0) < 15 * 60000)
+        .sort((a, b) => (b.decidedAtMs || 0) - (a.decidedAtMs || 0))[0];
+      setAnswer(fresh || null);
+    };
+
+    const unsub = onSnapshot(q, processSnap);
+    const poll = setInterval(async () => {
+      try {
+        const snap = await getDocs(q);
+        processSnap(snap);
+      } catch {}
+    }, 1000);
+
+    return () => {
+      unsub();
+      clearInterval(poll);
+    };
+  }, [uid]);
 
   const text = answer
     ? answer.status === "approved"
