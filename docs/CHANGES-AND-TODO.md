@@ -23,3 +23,7 @@ Also: §9 header shift label and zone-parked auto placement; 1.2 member ride on 
 - (was) Unconfirmed proposal (7 points): board plain-words status, activity feed, driver enters meter fare, "Needs you" box, phone call in two taps, radio cars simple, today-at-a-glance. Ask user whether to build; partly superseded by spec.
 - Test link demo-v16 is stale; updating needs fresh OK for Cloud Shell Authorize.
 - Handover to Malcolm must change only API keys and account settings.
+
+## 2026-11-16 step 1 status
+- Merged: T7 (approval popup/answer fixes; its ApprovalAnswer hack reverted), T2 (accuracy circle), T8 (on-call cars stay on board), demo storage-event sync, Escape closes New call drawer, QA check 6 updated. Click-through 8/8, verify 18/18. Reviewer edits NOT merged (they re-added a polling hack).
+- NOT done: T5 drag-call-onto-car (conflicts, re-run on new base), §9 header shift label + zone-parked auto placement, 1.2 member-ride verify, §30 pass/fail report, phone GPS test (Jared), settings signal for T3 how-to, simplify wave (6 items), card meter-fare + tip flow, legal wording.
