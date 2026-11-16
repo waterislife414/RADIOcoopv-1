@@ -9,6 +9,7 @@ import DriverAgreement from "./pages/DriverAgreement";
 import AdStrip from "./components/AdStrip";
 import DriverCallLayer from "./components/driver/DriverCallLayer";
 import SiteMenu from "./components/SiteMenu";
+import InstallPrompt from "./components/InstallPrompt";
 import Home from "./pages/Home";
 import Careers from "./pages/Careers";
 import Terms from "./pages/Terms";
@@ -220,6 +221,7 @@ export default function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
           <AdStrip position="bottom" />
+          <InstallPrompt />
         </BrowserRouter>
       </RideProvider>
     </AuthProvider>
