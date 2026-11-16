@@ -7,8 +7,7 @@ const addRadio = httpsCallable(functions, "addRadioCar");
 
 /**
  * Dispatcher moves a car on the board, puts it on a radio call, or adds a
- * radio-only car (car = null). The dispatcher can step in any time; the one
- * thing he can't do is put an app driver in a zone his GPS says he isn't in.
+ * radio-only car (car = null).
  */
 export default function CarActionsModal({ car, zones, gps = null, onClose }) {
   const [zoneId, setZoneId] = useState(car?.zoneId || gps?.zoneId || zones[0]?.id || "");
@@ -51,15 +50,11 @@ export default function CarActionsModal({ car, zones, gps = null, onClose }) {
           <>
             <p className="font-bold text-xl">
               Car {car.carNumber}
-              {car.radioOnly && <span className="ml-2 text-sm font-semibold text-slate-500">radio</span>}
+              {car.radioOnly && <span className="ml-2 text-sm font-semibold text-slate-500">Radio</span>}
             </p>
             {gpsLabel && !car.radioOnly && <p className="text-sm text-slate-600">GPS: {gpsLabel}</p>}
-            {radioCall && (
-              <p className="text-sm text-amber-700">
-                {"\u{1F4FB}"} On a radio call{car.radioCall?.note ? `: ${car.radioCall.note}` : ""}. Moving him clears it.
-              </p>
-            )}
-            {onCall && !radioCall && <p className="text-sm text-amber-700">On an app call. Any change you make takes him off it: if he hasn&rsquo;t picked up yet, the ride comes back to you to re-send.</p>}
+            {radioCall && <p className="text-sm text-amber-700">On radio call</p>}
+            {onCall && !radioCall && <p className="text-sm text-amber-700">On app call</p>}
             {confirmMove ? (
               <div className="rounded-xl border-2 border-amber-400 bg-amber-50 p-3 space-y-2">
                 <p className="font-bold text-amber-900">{confirmMove.text}</p>
@@ -73,7 +68,7 @@ export default function CarActionsModal({ car, zones, gps = null, onClose }) {
                       onClick={() => run(act, { ...confirmMove.data, zoneId: confirmMove.gpsZoneId })}
                       className="rounded-xl py-3 font-bold bg-amber-500 text-navy-950"
                     >
-                      Put him in {confirmMove.gpsZoneLabel}
+                      Put in {confirmMove.gpsZoneLabel}
                     </button>
                   )}
                 </div>
@@ -81,17 +76,27 @@ export default function CarActionsModal({ car, zones, gps = null, onClose }) {
             ) : null}
             {zoneSelect}
             <div className="grid grid-cols-2 gap-2">
-              <button disabled={busy} onClick={() => run(act, { uid: car.id, action: "front", zoneId })} className="rounded-xl py-3 font-bold bg-navy-950 text-white">
-                Next up
+              <button
+                disabled={busy}
+                data-testid="car-on-call"
+                onClick={() => run(act, { uid: car.id, action: "radio_call", note })}
+                className="rounded-xl py-3 font-bold bg-orange-500 text-white"
+              >
+                On call
               </button>
-              <button disabled={busy} onClick={() => run(act, { uid: car.id, action: "ready", zoneId })} className="rounded-xl py-3 font-bold bg-slate-200">
-                Back of line
+              <button
+                disabled={busy}
+                data-testid="car-dropped-ready"
+                onClick={() => run(act, { uid: car.id, action: "ready", zoneId })}
+                className="rounded-xl py-3 font-bold bg-green-600 text-white"
+              >
+                Ready
               </button>
-              <button disabled={busy} onClick={() => run(act, { uid: car.id, action: "moving" })} className="rounded-xl py-3 font-bold bg-sky-100 text-sky-800">
+              <button disabled={busy} onClick={() => run(act, { uid: car.id, action: "moving" })} className="rounded-xl py-3 font-bold bg-blue-600 text-white">
                 Moving
               </button>
               <button disabled={busy} onClick={() => run(act, { uid: car.id, action: "off" })} className="rounded-xl py-3 font-bold bg-red-50 text-red-700">
-                Off the board
+                Off
               </button>
             </div>
             {car.status !== "offline" && (
@@ -99,25 +104,22 @@ export default function CarActionsModal({ car, zones, gps = null, onClose }) {
                 <input
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  placeholder="Radio call pickup (optional)"
+                  placeholder="Radio note (optional)"
                   maxLength={120}
                   className="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-base"
                 />
-                <button disabled={busy} onClick={() => run(act, { uid: car.id, action: "radio_call", note })} className="w-full rounded-xl py-3 font-bold bg-emerald-600 text-white">
-                  {"\u{1F4FB}"} Gave him a radio call
-                </button>
               </div>
             )}
             {car.radioOnly && !onCall && (
               <button disabled={busy} onClick={() => run(act, { uid: car.id, action: "remove" })} className="w-full text-sm font-semibold text-red-600">
-                Remove radio car from the board
+                Remove radio car
               </button>
             )}
           </>
         ) : (
           <>
-            <p className="font-bold text-xl">Add a radio car</p>
-            <p className="text-sm text-slate-500">For a driver without the app. You move him on the board yourself; auto-dispatch skips him.</p>
+            <p className="font-bold text-xl">Add radio car</p>
+            <p className="text-sm text-slate-500">No app driver.</p>
             <input
               value={carNumber}
               onChange={(e) => setCarNumber(e.target.value)}
@@ -126,7 +128,7 @@ export default function CarActionsModal({ car, zones, gps = null, onClose }) {
             />
             {zoneSelect}
             <button disabled={busy || !carNumber.trim()} onClick={() => run(addRadio, { carNumber, zoneId })} className="w-full rounded-xl py-3 font-bold bg-navy-950 text-white disabled:opacity-50">
-              Add to back of line
+              Add radio car
             </button>
           </>
         )}
