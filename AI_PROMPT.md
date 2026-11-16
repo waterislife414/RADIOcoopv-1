@@ -1,3 +1,4 @@
+GLOBAL RULE (Jared): everything must be SIMPLE. Phone-first, big tap targets, few words (labels max 3 words, notes max 8), no extra buttons or paragraphs, plain browser features only (no desktop-only hover or drag-and-drop, no new libraries) so the app wraps cleanly into Android and iOS store apps later. When unsure, do less.
 # Lead prompt (paste into OpenCode/Aider in the Codespace)
 
 Read AGENTS.md first and obey it. Repo: Radio Co-op Taxi PWA (React+Vite+Firebase, plain JS). Branch `step1-wip` holds unfinished "step 1" work. Run `git checkout step1-wip`, `npm ci`, `cd functions && npm ci`.
