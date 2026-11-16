@@ -15,6 +15,8 @@ jobs:
         with: { ref: step1-wip, fetch-depth: 0 }
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
       - run: pip install aider-chat && npm ci && (cd functions && npm ci)
       - name: Run task
         env:
