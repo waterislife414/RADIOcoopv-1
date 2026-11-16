@@ -29,12 +29,12 @@ jobs:
           git config user.name "ai-bot"; git config user.email "ai-bot@users.noreply.github.com"
           git checkout -b "ai/$T"
           { cat docs/ai/style-$(echo $MODEL|cut -d/ -f1).txt; cat AGENTS.md; echo; echo "TASK:"; grep -E "^$T " AI_PROMPT.md; echo "Rules: small diff; touch only needed files; no keys/deploys/money logic."; } > /tmp/task.txt
-          aider --yes-always --no-check-update --model "$MODEL" --map-tokens 8192 --read AGENTS.md --read docs/CHANGES-AND-TODO.md --read docs/HANDOVER.md --read branding.config.json --read firestore.rules $(for r in $(grep -E "^$T " AI_PROMPT.md | sed -n "s/.*READ: //p"); do echo --read $r; done) --message-file /tmp/task.txt $(grep -E "^$T " AI_PROMPT.md | sed -n "s/.*FILES: \([^R]*\).*/\1/p") > /tmp/aider.log 2>&1 || true
+          aider --yes-always --no-check-update --model "$MODEL" --map-tokens 8192 --read AGENTS.md --read docs/ai/KNOWLEDGE.md --read docs/ai/lessons.md --lint-cmd "javascript: npx oxlint" --auto-lint --test-cmd "npm run build:demo" --auto-test --read docs/CHANGES-AND-TODO.md --read docs/HANDOVER.md --read branding.config.json --read firestore.rules $(for r in $(grep -E "^$T " AI_PROMPT.md | sed -n "s/.*READ: //p"); do echo --read $r; done) --message-file /tmp/task.txt $(grep -E "^$T " AI_PROMPT.md | sed -n "s/.*FILES: \([^R]*\).*/\1/p") > /tmp/aider.log 2>&1 || true
           mkdir -p docs/ai; tail -40 /tmp/aider.log > "docs/ai/log-$T.txt"
           npx oxlint src functions > /tmp/lint.txt 2>&1 || true
           node --test functions/lib/*.test.mjs > /tmp/unit.txt 2>&1 && U=pass || U=FAIL
           npm run build > /tmp/build.txt 2>&1 && B=pass || B=FAIL
           npm run build:demo > /tmp/demo.txt 2>&1 && D=pass || D=FAIL
-          mkdir -p docs/ai && printf "task %s\nunit %s\nbuild %s\nbuild:demo %s\n" "$T" $U $B $D > "docs/ai/report-$T.txt"
+          mkdir -p docs/ai && CH=$(git diff --name-only origin/step1-wip -- src tests functions | wc -l); printf "task %s\ncode_files_changed %s\nunit %s\nbuild %s\nbuild:demo %s\n" "$T" $CH $U $B $D > "docs/ai/report-$T.txt"
           git add -A && git commit -qm "AI task $T (unit $U, build $B, demo $D)" || true
           git push -f origin "ai/$T"
