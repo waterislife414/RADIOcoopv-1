@@ -27,3 +27,8 @@ Also: §9 header shift label and zone-parked auto placement; 1.2 member ride on 
 ## 2026-11-16 step 1 status
 - Merged: T7 (approval popup/answer fixes; its ApprovalAnswer hack reverted), T2 (accuracy circle), T8 (on-call cars stay on board), demo storage-event sync, Escape closes New call drawer, QA check 6 updated. Click-through 8/8, verify 18/18. Reviewer edits NOT merged (they re-added a polling hack).
 - NOT done: T5 drag-call-onto-car (conflicts, re-run on new base), §9 header shift label + zone-parked auto placement, 1.2 member-ride verify, §30 pass/fail report, phone GPS test (Jared), settings signal for T3 how-to, simplify wave (6 items), card meter-fare + tip flow, legal wording.
+
+## 2026-11-16 Jared requests (queued, not built yet)
+- Queued to workers: T12 car window 4 buttons; T13 real street address + location wording + disclaimer + Contact us; T14 consent boxes default on; T15 compare rates table 2/5/10/20 mi; T16 perks dropdown; T17 orange car stays in pickup zone with -> drop-off zone.
+- Needs Claude/decisions: card fee max rate (verify legal cap) minus 0.5% for members; tiers: guest no texts, Free (close-driver updates, offers), Basic (live driver map, message/call, 1x$5 priority/month), Premium (3x$5/month, driver photo+name); trials only next tier up, no priority 3 days running; referral bonus only after verified + first paid trip, 24-48h hold.
+- Bugs to fix: driver drop-off stuck after location cancel (no error popup); drop-off should suggest zone from GPS; photo upload freezes after about 5 pics; veteran driver with accessibility skips weekly inspection; driver Ask dispatch popup missed by dispatcher when GPS error; setting a car Next up must not skip the line; owner tab (applications, money in/out).
