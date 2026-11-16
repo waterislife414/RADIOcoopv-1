@@ -43,6 +43,44 @@ const reasonTag = (r) => {
   return r.officeWhy || "Phone / needs you";
 };
 
+function CarChip({ d, now, picked, onCarClick, onSetPicked, onAssignRideMsg }) {
+  const st = statusInfo(d.status);
+  const okd = d.approval?.untilMs > now;
+  const isReady = d.status === "ready";
+  return (
+    <button
+      type="button"
+      draggable
+      data-testid={`car-chip-${d.carNumber}`}
+      onDragStart={(e) => e.dataTransfer.setData("text/car", d.id)}
+      onDragOver={isReady ? (e) => e.preventDefault() : undefined}
+      onDrop={
+        isReady
+          ? async (e) => {
+              e.preventDefault();
+              const rideId = e.dataTransfer.getData("text/ride");
+              if (rideId && d.id) {
+                try {
+                  await assignRide({ rideId, uid: d.id });
+                } catch (err) {
+                  onSetPicked(err?.message || "Couldn't assign ride.");
+                }
+              }
+            }
+          : undefined
+      }
+      onClick={() => (picked?.id === d.id ? onSetPicked(null) : onCarClick?.(d))}
+      onDoubleClick={() => onSetPicked(d)}
+      title={`Car ${d.carNumber}: ${st.label}${okd ? " (OK'd, no GPS)" : ""}${d.radioOnly ? " (radio-only)" : ""}`}
+      className={`rounded-full px-2.5 py-1 text-sm font-bold text-white border-2 ${picked?.id === d.id ? "ring-4 ring-amber-300" : ""} ${d.radioOnly ? "border-dashed border-slate-700" : "border-transparent"}`}
+      style={{ background: st.color }}
+    >
+      {d.carNumber}
+      {okd && <span className="ml-1 text-[10px]">OK</span>}
+    </button>
+  );
+}
+
 /**
  * The digital pegboard (spec section 9): live map on top; "Working" bottom
  * left; "Off / out" bottom right. The dispatcher can change any car at any
@@ -166,39 +204,6 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
     drivers
       .filter((d) => d.status === "ready" && d.zoneId === zid)
       .sort((a, b) => (a.lineKey ?? 0) - (b.lineKey ?? 0));
-  const Chip = ({ d }) => {
-    const st = statusInfo(d.status);
-    const okd = d.approval?.untilMs > now;
-    return (
-      <button
-        type="button"
-        draggable
-        data-testid={`car-chip-${d.carNumber}`}
-        onDragStart={(e) => e.dataTransfer.setData("text/car", d.id)}
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={async (e) => {
-          e.preventDefault();
-          const rideId = e.dataTransfer.getData("text/ride");
-          if (rideId && d.id) {
-            setMsg("");
-            try {
-              await assignRide({ rideId, uid: d.id });
-            } catch (err) {
-              setMsg(err?.message || "Couldn't assign ride.");
-            }
-          }
-        }}
-        onClick={() => (picked?.id === d.id ? setPicked(null) : onCarClick?.(d))}
-        onDoubleClick={() => setPicked(d)}
-        title={`Car ${d.carNumber}: ${st.label}${okd ? " (OK'd, no GPS)" : ""}${d.radioOnly ? " (radio-only)" : ""}`}
-        className={`rounded-full px-2.5 py-1 text-sm font-bold text-white border-2 ${picked?.id === d.id ? "ring-4 ring-amber-300" : ""} ${d.radioOnly ? "border-dashed border-slate-700" : "border-transparent"}`}
-        style={{ background: st.color }}
-      >
-        {d.carNumber}
-        {okd && <span className="ml-1 text-[10px]">OK</span>}
-      </button>
-    );
-  };
 
   return (
     <section className="px-3 pt-4 max-w-[1500px] mx-auto" data-testid="pegboard">
@@ -292,22 +297,67 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
               return cars.length ? (
                 <div key={z.id} className="flex items-center gap-2 py-1">
                   <span className="w-28 text-sm font-semibold text-slate-700">{z.label}</span>
-                  <div className="flex gap-1.5 flex-wrap">{cars.map((d) => <Chip key={d.id} d={d} />)}</div>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {cars.map((d) => (
+                      <CarChip
+                        key={d.id}
+                        d={d}
+                        now={now}
+                        picked={picked}
+                        onCarClick={onCarClick}
+                        onSetPicked={(val) => {
+                          if (typeof val === "string") setMsg(val);
+                          else setPicked(val);
+                        }}
+                      />
+                    ))}
+                  </div>
                 </div>
               ) : null;
             })}
             {moving.length > 0 && (
               <div className="flex items-center gap-2 py-1">
                 <span className="w-28 text-sm font-semibold text-slate-700">Moving</span>
-                <div className="flex gap-1.5 flex-wrap">{moving.map((d) => <Chip key={d.id} d={d} />)}</div>
+                <div className="flex gap-1.5 flex-wrap">
+                  {moving.map((d) => (
+                    <CarChip
+                      key={d.id}
+                      d={d}
+                      now={now}
+                      picked={picked}
+                      onCarClick={onCarClick}
+                      onSetPicked={(val) => {
+                        if (typeof val === "string") setMsg(val);
+                        else setPicked(val);
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
             )}
-            {drivers.filter((d) => ["on_call", "offered"].includes(d.status)).map((d) => (
-              <div key={d.id} className="flex items-center gap-2 py-1 text-sm">
-                <Chip d={d} />
-                <span className="text-slate-600">{d.radioCall ? `Radio call${d.radioCall.note ? `: ${d.radioCall.note}` : ""}` : d.status === "offered" ? "Being offered a call" : "On a call"}</span>
-              </div>
-            ))}
+            {drivers
+              .filter((d) => ["on_call", "offered"].includes(d.status))
+              .map((d) => (
+                <div key={d.id} className="flex items-center gap-2 py-1 text-sm">
+                  <CarChip
+                    d={d}
+                    now={now}
+                    picked={picked}
+                    onCarClick={onCarClick}
+                    onSetPicked={(val) => {
+                      if (typeof val === "string") setMsg(val);
+                      else setPicked(val);
+                    }}
+                  />
+                  <span className="text-slate-600">
+                    {d.radioCall
+                      ? `Radio call${d.radioCall.note ? `: ${d.radioCall.note}` : ""}`
+                      : d.status === "offered"
+                        ? "Being offered a call"
+                        : "On a call"}
+                  </span>
+                </div>
+              ))}
           </div>
 
           {needsYou.length > 0 && (
@@ -325,7 +375,9 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
                   >
                     <span className="px-2 py-0.5 rounded bg-slate-900 text-white text-xs font-bold">{reasonTag(r)}</span>
                     <span className="text-sm font-semibold">{r.name || r.firstName || "Caller"}</span>
-                    <span className="text-sm text-slate-600 truncate">{r.zoneLabel ? `${r.zoneLabel} ` : ""}&rarr; {r.dropoff || r.dropoffAddress || "?"}</span>
+                    <span className="text-sm text-slate-600 truncate">
+                      {r.zoneLabel ? `${r.zoneLabel} ` : ""}&rarr; {r.dropoff || r.dropoffAddress || "?"}
+                    </span>
                     <span className="ml-auto flex gap-2">
                       {r.phone && (
                         <a href={`tel:${r.phone}`} className="min-h-[36px] px-3 inline-flex items-center rounded-lg bg-white border border-slate-300 font-semibold text-sm">
@@ -348,7 +400,19 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
           <p className="text-xs text-slate-500 mb-2">Drag a car onto a zone above (or double-tap it, then tap a zone). Tap a car to change anything about it.</p>
           <div className="flex flex-wrap gap-1.5">
             {out.length === 0 && <span className="text-sm text-slate-500">Everyone is on the board.</span>}
-            {out.map((d) => <Chip key={d.id} d={d} />)}
+            {out.map((d) => (
+              <CarChip
+                key={d.id}
+                d={d}
+                now={now}
+                picked={picked}
+                onCarClick={onCarClick}
+                onSetPicked={(val) => {
+                  if (typeof val === "string") setMsg(val);
+                  else setPicked(val);
+                }}
+              />
+            ))}
           </div>
           <button onClick={() => onCarClick?.("new")} className="mt-3 text-sm font-semibold text-blue-700" data-testid="add-radio-car">
             + Radio car
