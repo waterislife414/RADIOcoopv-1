@@ -19,6 +19,7 @@ Also: §9 header shift label and zone-parked auto placement; 1.2 member ride on 
 
 ## OPEN / UNRESOLVED (from earlier sessions)
 - rideflow e2e leaks a Firestore transaction lock; ride-trigger cost; queueStatus reads; client-supplied arrival evidence; `needsAccessibleVehicle` waiver; legal items (claude/lawyer-review.md).
-- Unconfirmed proposal (7 points): board plain-words status, activity feed, driver enters meter fare, "Needs you" box, phone call in two taps, radio cars simple, today-at-a-glance. Ask user whether to build; partly superseded by spec.
+- APPROVED 2026-11-16 by Jared ("Simplify it... have them simplify"): build the 6 UI-only points of the 7-point dispatcher simplification as a wave AFTER step 1 is green (plain-words board status, activity feed, "Needs you" box, phone call in two taps, radio cars simple, today-at-a-glance). HOLD "driver enters meter fare" (touches money) until Jared confirms. Must not break spec §9.
+- (was) Unconfirmed proposal (7 points): board plain-words status, activity feed, driver enters meter fare, "Needs you" box, phone call in two taps, radio cars simple, today-at-a-glance. Ask user whether to build; partly superseded by spec.
 - Test link demo-v16 is stale; updating needs fresh OK for Cloud Shell Authorize.
 - Handover to Malcolm must change only API keys and account settings.
