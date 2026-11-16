@@ -108,6 +108,16 @@ channel?.addEventListener("message", (e) => {
   }
 });
 
+// Second sync signal: other tabs writing localStorage fire "storage" even when BroadcastChannel is missed.
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key === DB_KEY) {
+      load();
+      notifyAll();
+    }
+  });
+}
+
 export function subscribe(fn) {
   listeners.add(fn);
   return () => listeners.delete(fn);

@@ -53,6 +53,12 @@ export default function DispatcherDashboard() {
   const [assignRide, setAssignRide] = useState(null);
   const [carAction, setCarAction] = useState(null); // board entry, or "new" for a radio car
   const [callDrawer, setCallDrawer] = useState(false);
+  useEffect(() => {
+    if (!callDrawer) return undefined;
+    const onKey = (e) => e.key === "Escape" && setCallDrawer(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [callDrawer]);
   const [gps, setGps] = useState({}); // driver uid -> { zoneId, at } from his phone
 
   useEffect(

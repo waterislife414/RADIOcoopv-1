@@ -278,7 +278,8 @@
     "needsDispatcherAlertMinutes": 3,
     "approvalValidMinutes": 60,
     "approvalsBeforeFlag": 2,
-    "approvalRepeatSeconds": 120
+    "approvalRepeatSeconds": 120,
+    "autoPlaceParkedMin": 2
   },
   "infrastructure": {
     "_note": "Per-client Firebase project + Stripe key. Also update .firebaserc projectId when switching clients.",

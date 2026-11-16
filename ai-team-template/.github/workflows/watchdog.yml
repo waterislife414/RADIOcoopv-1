@@ -1,0 +1,41 @@
+name: watchdog
+# Free bot, no AI. Every 5 min: restarts a worker (max 2 retries) if its run is stuck >10 min, failed, or finished with 0 code files changed.
+on:
+  schedule: [{ cron: '*/5 * * * *' }]
+  workflow_dispatch:
+permissions:
+  actions: write
+  contents: read
+concurrency: { group: watchdog, cancel-in-progress: false }
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Check workers
+        env: { GH_TOKEN: "${{ github.token }}", R: "${{ github.repository }}", WATCH: "T2 T5 T7" }
+        run: |
+          for ROUND in 1 2 3 4 5 6 7 8 9; do
+            gh run list -R $R --workflow ai-task.yml --limit 40 --json databaseId,status,conclusion,createdAt,event,displayTitle > /tmp/runs.json
+            NOW=$(date +%s)
+            for T in $WATCH; do
+              jq -c --arg t "$T" '[.[]|select(.displayTitle|test("\\b"+$t+"$"))]|sort_by(.createdAt)|reverse' /tmp/runs.json > /tmp/t.json
+              [ "$(jq length /tmp/t.json)" = "0" ] && continue
+              RETRIES=$(jq '[.[]|select(.event=="workflow_dispatch")]|length' /tmp/t.json)
+              ST=$(jq -r '.[0].status' /tmp/t.json); CO=$(jq -r '.[0].conclusion' /tmp/t.json); ID=$(jq -r '.[0].databaseId' /tmp/t.json)
+              AGE=$(( NOW - $(date -d "$(jq -r '.[0].createdAt' /tmp/t.json)" +%s) ))
+              WHY=""
+              if [ "$ST" = "in_progress" ] && [ $AGE -gt 600 ]; then gh run cancel $ID -R $R; WHY="stuck ${AGE}s"; fi
+              if [ "$ST" = "completed" ] && [ "$CO" != "success" ] && [ "$CO" != "cancelled" ]; then WHY="run $CO"; fi
+              if [ "$ST" = "completed" ] && [ "$CO" = "success" ]; then
+                CH=$(gh api "repos/$R/contents/docs/ai/report-$T.txt?ref=ai/$T" --jq .content 2>/dev/null | base64 -d 2>/dev/null | awk '/code_files_changed/{print $2}')
+                [ "${CH:-0}" = "0" ] && WHY="finished with 0 code files changed"
+              fi
+              [ -z "$WHY" ] && echo "OK $T: $ST $CO age=${AGE}s"
+            if [ -n "$WHY" ] && [ "$RETRIES" -lt 2 ]; then
+                echo "RESTART $T ($WHY), retry $((RETRIES+1))"; gh workflow run ai-task.yml -R $R --ref step1-wip -f task=$T
+              elif [ -n "$WHY" ]; then echo "GIVE UP $T ($WHY): retries used"; fi
+            done
+            echo "round $ROUND: checked $WATCH"
+            sleep 30
+          done
