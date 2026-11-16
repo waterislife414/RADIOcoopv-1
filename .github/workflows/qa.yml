@@ -1,0 +1,28 @@
+name: qa
+# Push branch qa-run/<anything>: builds the demo, serves it, runs tests/qa/step1.py with Playwright, saves output to branch qa/result.
+on:
+  push:
+    branches: ['qa-run/**']
+permissions:
+  contents: write
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: step1-wip, fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: npm ci && npm run build:demo
+      - run: pip install playwright && python -m playwright install --with-deps chromium
+      - name: Run click-through
+        run: |
+          node tests/qa/serve.cjs dist-demo 8790 > /tmp/serve.log 2>&1 &
+          sleep 3
+          QA_BASE=http://127.0.0.1:8790 python tests/qa/step1.py > /tmp/qa.txt 2>&1 || true
+          mkdir -p docs/ai; cp /tmp/qa.txt docs/ai/qa-step1.txt
+          git config user.name qa-bot; git config user.email qa-bot@users.noreply.github.com
+          git checkout -B qa/result; git add docs/ai/qa-step1.txt; git commit -qm "QA step 1 result"; git push -f origin qa/result

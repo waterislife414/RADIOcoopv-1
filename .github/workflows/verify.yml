@@ -1,0 +1,37 @@
+name: verify
+# Free "full test" bot. Push branch verify/<anything> (or let ai-review end). Tests the tip of step1-wip unless the branch name is verify/<other-branch>.
+on:
+  push:
+    branches: ['verify/**']
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: step1-wip, fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21' }
+      - run: npm ci && (cd functions && npm ci) && (cd tests/rules && npm install --no-audit --no-fund)
+      - name: Run everything
+        run: |
+          O=/tmp/verify.txt; : > $O
+          step(){ n="$1"; shift; if "$@" > /tmp/step.log 2>&1; then echo "PASS $n" >> $O; else echo "FAIL $n" >> $O; tail -6 /tmp/step.log | cut -c1-200 | sed 's/^/    /' >> $O; fi; }
+          step lint npx oxlint src functions
+          step unit node --test functions/lib/*.test.mjs
+          step build npm run build
+          step build:demo npm run build:demo
+          cat > /tmp/e2e.sh <<'SH'
+          for t in profile board dispatch dispatcher lease closeout incentives phone fastpass inspections callissues rideflow support; do
+            if node tests/e2e/$t.e2e.cjs > /tmp/e2e-$t.log 2>&1; then echo "PASS e2e:$t" >> /tmp/verify.txt; else echo "FAIL e2e:$t" >> /tmp/verify.txt; tail -6 /tmp/e2e-$t.log | cut -c1-200 | sed 's/^/    /' >> /tmp/verify.txt; fi
+          done
+          (cd tests/rules && npm test > /tmp/rules.log 2>&1) && echo "PASS rules" >> /tmp/verify.txt || { echo "FAIL rules" >> /tmp/verify.txt; tail -8 /tmp/rules.log | cut -c1-200 | sed 's/^/    /' >> /tmp/verify.txt; }
+          SH
+          npx -y firebase-tools@latest emulators:exec --config tests/emu/firebase.json --only firestore,auth --project demo-radio "bash /tmp/e2e.sh" > /tmp/emu.log 2>&1 || echo "NOTE emulator run exited non-zero" >> $O
+          mkdir -p docs/ai; cp $O docs/ai/verify.txt
+          git config user.name verify-bot; git config user.email verify-bot@users.noreply.github.com
+          git checkout -B verify/result; git add docs/ai/verify.txt; git commit -qm "verify result"; git push -f origin verify/result
