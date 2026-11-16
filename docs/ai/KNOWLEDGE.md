@@ -7,3 +7,4 @@ Admin: src/components/admin/Pegboard.jsx (dispatcher board), ApprovalPopup.jsx, 
 Test ids you can rely on: pegboard, pegboard-map, status-key, new-call, working, off-out, needs-dispatcher, zone-strip, gps-accuracy, ready-blocker, ask-dispatch, approval-answer, call-drawer, demo-clock, demo-location.
 Demo: `npm run build:demo` -> dist-demo; sessions via ?as=guest|demo-rider|demo-driver-44|demo-driver-12|demo-admin|demo-mechanic. QA scripts in tests/qa (Playwright, QA_BASE env).
 Routes: /driver-agreement exists. Config values go in branding.config.json; no hard-coded names, phones, prices, colours.
+QA: tests/qa/step1.py (193 lines, full step 1 click-through) and tests/qa/common.py (helpers: BASE, check, report, watch, db, accept_gate) already exist; serve with `node tests/qa/serve.cjs dist-demo 8790`. The qa workflow runs it (push branch qa-run/x).
