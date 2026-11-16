@@ -5,7 +5,7 @@ import { db } from "../config/firebase";
 import { useAuth } from "../context/AuthContext";
 import ConsentModal from "../components/legal/ConsentModal";
 import { readLocationOnce } from "../utils/rideLive";
-import { BRAND } from "../config/constants";
+import { BRAND, COMPANY_EMAIL, COMPANY_PHONE_DISPLAY } from "../config/constants";
 
 const RIDER_DOCS = ["rider-terms", "privacy"];
 import { useRide } from "../context/RideContext";
@@ -23,6 +23,13 @@ import {
 const includedMiles = Math.floor(
   (OUT_OF_AREA_MINIMUM_FARE - OUT_OF_AREA_ENTRY_FEE) / FARE_CONFIG.PER_MILE
 );
+
+function looksLikeStreetAddress(s) {
+  const str = String(s || "").trim();
+  if (!/\d{1,6}\s+\S+/.test(str)) return false;
+  const words = str.split(/\s+/);
+  return words.length >= 2;
+}
 
 function RecentChips({ places, current, onPick, label }) {
   const list = places.filter((p) => p !== current);
@@ -113,8 +120,9 @@ export default function TripDetails() {
       setError("First and last name are required.");
       return;
     }
-    if (!ride.pickup.trim() || !ride.dropoff.trim()) {
-      setError("Pickup and drop-off are required.");
+    const hasGpsPickup = typeof ride.pickupLat === "number" && typeof ride.pickupLng === "number";
+    if ((!hasGpsPickup && !looksLikeStreetAddress(ride.pickup)) || !looksLikeStreetAddress(ride.dropoff)) {
+      setError("Please enter a full street address, like 123 Broad St. Not sure? Tap Use my location or Find it on Google Maps.");
       return;
     }
     if (ride.outOfArea && !ride.outOfAreaCity) {
@@ -231,6 +239,17 @@ export default function TripDetails() {
                 onChange={(e) => updateRide({ pickup: e.target.value })}
                 placeholder={COPY.pickupPlaceholder}
               />
+              <div className="mt-1 flex justify-between items-center text-sm">
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ride.pickup)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="find-on-maps-pickup"
+                  className="text-blue-600 font-semibold hover:underline"
+                >
+                  Find it on Google Maps
+                </a>
+              </div>
               <RecentChips places={recent} current={ride.pickup} label="Recent places" onPick={(p) => updateRide({ pickup: p })} />
               <button
                 type="button"
@@ -263,6 +282,17 @@ export default function TripDetails() {
                 onChange={(e) => updateRide({ dropoff: e.target.value })}
                 placeholder={COPY.dropoffPlaceholder}
               />
+              <div className="mt-1 flex justify-between items-center text-sm">
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ride.dropoff)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="find-on-maps-dropoff"
+                  className="text-blue-600 font-semibold hover:underline"
+                >
+                  Find it on Google Maps
+                </a>
+              </div>
               <RecentChips places={recent} current={ride.dropoff} label="Recent places" onPick={(p) => updateRide({ dropoff: p })} />
             </div>
 
@@ -562,30 +592,46 @@ export default function TripDetails() {
             )}
           </div>
 
+          <p className="text-xs text-slate-500 mt-6 mb-3" data-testid="address-disclaimer">
+            Check your addresses before you book. You are responsible for the pickup and drop-off information you enter. If it is wrong, the company is not responsible, and the normal cancellation fee still applies. Anything about the trip is between you and your driver.
+          </p>
+
           <button
             onClick={handleContinue}
-            className="w-full mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4 min-h-[56px] rounded-full shadow-luxury transition hover:-translate-y-0.5 duration-200"
+            className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4 min-h-[56px] rounded-full shadow-luxury transition hover:-translate-y-0.5 duration-200"
             disabled={going}
           >
             {going ? "Checking your location\u2026" : "Continue to Payment"}
           </button>
+
+          <div className="mt-4 text-center">
+            {COMPANY_EMAIL.startsWith("[INSERT") ? (
+              <Link to="/contact" className="text-sm font-semibold text-blue-600 hover:underline">
+                Need help? Contact us
+              </Link>
+            ) : (
+              <a href={`mailto:${COMPANY_EMAIL}`} className="text-sm font-semibold text-blue-600 hover:underline">
+                Need help? Contact us
+              </a>
+            )}
+          </div>
+
           {locBlocked && (
             <div className="fixed inset-0 z-[80] bg-black/60 flex items-end sm:items-center justify-center p-3" role="dialog" aria-modal="true" aria-label="Location is off">
               <div className="w-full max-w-sm rounded-3xl bg-white p-6 space-y-3 text-center">
-                <p className="text-xl font-bold text-slate-800">Location is off on this phone</p>
-                <p className="text-slate-600">
-                  App rides use your location so your driver can find you. Without it, your ride goes to our dispatcher like a phone
-                  call. To get an app driver, turn on Location for this site in your phone&rsquo;s settings and try again.
+                <p className="text-xl font-bold text-slate-800">Location is off</p>
+                <p className="text-slate-600 text-sm">
+                  Turn on Location for this site so your driver can find you.
                 </p>
-                <button type="button" onClick={() => proceed(locBlocked.consent)} className="w-full min-h-[52px] rounded-xl bg-blue-600 text-white font-bold">
-                  I turned it on, try again
+                <button type="button" onClick={() => proceed(locBlocked.consent)} className="w-full min-h-[48px] rounded-xl bg-blue-600 text-white font-bold text-base">
+                  Try again
                 </button>
                 <button
                   type="button"
                   onClick={() => finish(locBlocked.consent, { callIn: true, bookedFrom: null })}
-                  className="w-full min-h-[52px] rounded-xl border-2 border-slate-300 font-bold text-slate-700"
+                  className="w-full min-h-[48px] rounded-xl border-2 border-slate-300 font-bold text-slate-700 text-base"
                 >
-                  Book as a call-in ride
+                  Call-in ride
                 </button>
               </div>
             </div>
