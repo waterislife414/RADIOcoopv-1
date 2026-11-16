@@ -59,6 +59,7 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
   const [msg, setMsg] = useState("");
   const [draggingCar, setDraggingCar] = useState(null);
   const [overZone, setOverZone] = useState(null);
+  const [activeZoneId, setActiveZoneId] = useState(null);
 
   useEffect(() => {
     const u = onSnapshot(collection(db, "driverLocations"), (s) => setLocs(Object.fromEntries(s.docs.map((d) => [d.id, d.data()]))));
@@ -171,6 +172,32 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
     if (car) place(car, zoneId);
   };
 
+  const handleZoneClick = (z) => {
+    if (picked) {
+      place(picked, z.id);
+    } else {
+      if (activeZoneId === z.id) {
+        setActiveZoneId(null);
+        if (map.current) {
+          map.current.setView([DISPATCH.mapCenter.lat, DISPATCH.mapCenter.lng], DISPATCH.mapZoom);
+        }
+      } else {
+        setActiveZoneId(z.id);
+        if (map.current && z.points?.length >= 3) {
+          const bounds = L.latLngBounds(z.points.map((p) => [p.lat, p.lng]));
+          map.current.fitBounds(bounds, { padding: [20, 20] });
+        }
+      }
+    }
+  };
+
+  const handleResetZoom = () => {
+    setActiveZoneId(null);
+    if (map.current) {
+      map.current.setView([DISPATCH.mapCenter.lat, DISPATCH.mapCenter.lng], DISPATCH.mapZoom);
+    }
+  };
+
   const out = drivers.filter((d) => ["offline", "suspended", "closed"].includes(d.status) || !d.status);
   const moving = drivers.filter((d) => d.status === "moving");
   const ready = (zid) =>
@@ -276,20 +303,31 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
       <div ref={mapEl} className="w-full h-[38vh] rounded-2xl border border-slate-300 z-0" data-testid="pegboard-map" />
 
       <div className="flex flex-wrap gap-2 mt-2" data-testid="zone-strip">
-        {zones.map((z, i) => (
-          <button
-            key={z.id}
-            type="button"
-            data-zone-id={z.id}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={dropOn(z.id)}
-            onClick={() => picked && place(picked, z.id)}
-            className={`rounded-xl border px-3 py-2 text-sm font-semibold text-slate-800 ${overZone === z.id ? "ring-2 ring-blue-600 bg-blue-50" : ""}`}
-            style={{ borderColor: zoneColor(z, i), background: overZone === z.id ? undefined : `${zoneColor(z, i)}33` }}
-          >
-            {z.label} <span className="text-slate-500">({ready(z.id).length + onCallForZone(z.id).length})</span>
-          </button>
-        ))}
+        <button
+          type="button"
+          data-testid="zone-all"
+          onClick={handleResetZoom}
+          className={`rounded-xl border px-3 py-2 text-sm font-semibold ${activeZoneId === null ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-800 border-slate-300"}`}
+        >
+          All
+        </button>
+        {zones.map((z, i) => {
+          const isActive = activeZoneId === z.id;
+          return (
+            <button
+              key={z.id}
+              type="button"
+              data-zone-id={z.id}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={dropOn(z.id)}
+              onClick={() => handleZoneClick(z)}
+              className={`rounded-xl border px-3 py-2 text-sm font-semibold text-slate-800 ${overZone === z.id || isActive ? "ring-2 ring-blue-600 bg-blue-50" : ""}`}
+              style={{ borderColor: zoneColor(z, i), background: overZone === z.id || isActive ? undefined : `${zoneColor(z, i)}33` }}
+            >
+              {z.label} <span className="text-slate-500">({ready(z.id).length + onCallForZone(z.id).length})</span>
+            </button>
+          );
+        })}
         {picked && <span className="self-center text-sm font-semibold text-amber-700">Car {picked.carNumber}: tap a zone to put him there</span>}
       </div>
       {msg && <p className="text-sm font-semibold text-red-700 mt-1">{msg}</p>}
