@@ -15,7 +15,6 @@ export default function AccuracyCircle({ lat, lng, accuracy, max }) {
 
   useEffect(() => {
     if (!el.current || map.current) return undefined;
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return undefined;
 
     const m = L.map(el.current, {
       zoomControl: false,
@@ -29,12 +28,22 @@ export default function AccuracyCircle({ lat, lng, accuracy, max }) {
     L.tileLayer(TILES.url, { attribution: TILES.attribution, maxZoom: 19 }).addTo(m);
     layer.current = L.layerGroup().addTo(m);
     map.current = m;
-    m.setView([lat, lng], 15);
-    setTimeout(() => {
-      if (map.current) map.current.invalidateSize();
-    }, 50);
+
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      m.setView([lat, lng], 15);
+    }
+
+    const t = setTimeout(() => {
+      if (map.current) {
+        map.current.invalidateSize();
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          map.current.setView([lat, lng], map.current.getZoom());
+        }
+      }
+    }, 100);
 
     return () => {
+      clearTimeout(t);
       m.remove();
       map.current = null;
     };
@@ -67,11 +76,13 @@ export default function AccuracyCircle({ lat, lng, accuracy, max }) {
     });
     marker.addTo(layer.current);
 
-    m.setView([lat, lng], m.getZoom());
-    try {
-      m.fitBounds(circle.getBounds(), { padding: [20, 20], maxZoom: 17 });
-    } catch {
-      // ignore fitBounds errors if map size isn't ready
+    if (m.getSize().x > 0 && m.getSize().y > 0) {
+      try {
+        m.setView([lat, lng], m.getZoom());
+        m.fitBounds(circle.getBounds(), { padding: [20, 20], maxZoom: 17 });
+      } catch {
+        // ignore if bounds/size not ready
+      }
     }
   }, [lat, lng, accuracy, max]);
 
