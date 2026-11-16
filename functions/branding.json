@@ -134,7 +134,8 @@
     "needsDispatcherAlertMinutes": 3,
     "approvalValidMinutes": 60,
     "approvalsBeforeFlag": 2,
-    "approvalRepeatSeconds": 120
+    "approvalRepeatSeconds": 120,
+    "autoPlaceParkedMin": 2
   },
   "legalVersion": "2026-11-15.1",
   "rideRules": {

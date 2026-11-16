@@ -13,7 +13,7 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 24
     steps:
       - uses: actions/checkout@v4
         with: { ref: step1-wip, fetch-depth: 0 }
@@ -41,8 +41,9 @@ jobs:
           for ATTEMPT in 1 2; do
           for M in gemini/gemini-3.5-flash-lite openrouter/cohere/north-mini-code:free openrouter/google/gemma-4-31b-it:free groq/llama-3.3-70b-versatile "$MODEL"; do
             echo "trying $M" >> /tmp/models.txt
-            aider --yes-always --no-check-update --model "$M" --map-tokens 8192 --read AGENTS.md --read docs/ai/KNOWLEDGE.md --read docs/ai/lessons.md --lint-cmd "javascript: npx oxlint" --auto-lint --test-cmd "$TESTCMD" --auto-test --read docs/CHANGES-AND-TODO.md --read docs/HANDOVER.md --read branding.config.json --read firestore.rules $(for r in $(grep -E "^$T " AI_PROMPT.md | sed -n "s/.*READ: //p"); do echo --read $r; done) --message-file /tmp/task.txt $(grep -E "^$T " AI_PROMPT.md | sed -n "s/.*FILES: \([^R]*\).*/\1/p") > /tmp/aider.log 2>&1 || true
-            grep -qiE "rate.?limit|NotFoundError|quota|RESOURCE_EXHAUSTED|is unavailable|overloaded" /tmp/aider.log || break
+            timeout 230 aider --yes-always --no-check-update --model "$M" --map-tokens 8192 --read AGENTS.md --read docs/ai/KNOWLEDGE.md --read docs/ai/lessons.md --lint-cmd "javascript: npx oxlint" --auto-lint --test-cmd "$TESTCMD" --auto-test --read docs/CHANGES-AND-TODO.md --read docs/HANDOVER.md --read branding.config.json --read firestore.rules $(for r in $(grep -E "^$T " AI_PROMPT.md | sed -n "s/.*READ: //p"); do echo --read $r; done) --message-file /tmp/task.txt $(grep -E "^$T " AI_PROMPT.md | sed -n "s/.*FILES: \([^R]*\).*/\1/p") > /tmp/aider.log 2>&1 || true
+            RC=$?
+            [ "$RC" = "124" ] || grep -qiE "rate.?limit|NotFoundError|quota|RESOURCE_EXHAUSTED|is unavailable|overloaded" /tmp/aider.log || break
             sleep 40
           done
             [ "$(git diff --name-only origin/step1-wip -- src tests | wc -l)" != "0" ] && break
