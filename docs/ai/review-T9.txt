@@ -1,0 +1,40 @@
+
+docs/HANDOVER.md
+
+docs/LAWYER-REVIEW.md
+
+docs/ai/KNOWLEDGE.md
+
+docs/ai/lessons.md
+
+functions/board.js
+
+functions/lib/dispatchCore.mjs
+Warning: it's best to only add files that need changes to the chat.
+https://aider.chat/docs/troubleshooting/edit-errors.html
+
+functions/lib/dispatchCore.test.mjs
+
+functions/zones.js
+
+src/demo/engine.js
+
+tests/qa/step1.py
+Initial repo scan can be slow in larger repos, but only happens once.
+Scanning repo:   0%|          | 0/269 [00:00<?, ?it/s]Scanning repo:  20%|██        | 54/269 [00:00<00:00, 503.33it/s]Scanning repo:  39%|███▉      | 105/269 [00:00<00:01, 148.55it/s]Scanning repo:  49%|████▉     | 132/269 [00:01<00:01, 93.93it/s] Scanning repo:  55%|█████▌    | 149/269 [00:01<00:01, 86.59it/s]Scanning repo:  60%|██████    | 162/269 [00:01<00:01, 82.68it/s]Scanning repo:  64%|██████▍   | 173/269 [00:01<00:01, 80.32it/s]Scanning repo:  68%|██████▊   | 183/269 [00:01<00:01, 76.90it/s]Scanning repo:  71%|███████▏  | 192/269 [00:02<00:00, 77.79it/s]Scanning repo:  75%|███████▍  | 201/269 [00:02<00:00, 74.49it/s]Scanning repo:  78%|███████▊  | 209/269 [00:02<00:00, 69.60it/s]Scanning repo:  81%|████████  | 217/269 [00:02<00:00, 67.50it/s]Scanning repo:  83%|████████▎ | 224/269 [00:02<00:00, 66.22it/s]Scanning repo:  86%|████████▌ | 231/269 [00:02<00:00, 65.60it/s]Scanning repo:  89%|████████▉ | 240/269 [00:02<00:00, 69.87it/s]Scanning repo: 100%|██████████| 269/269 [00:02<00:00, 94.66it/s]
+As the reviewer for task T9, I have carefully inspected the implementation      
+across branding.config.json, functions/lib/dispatchCore.mjs,                    
+functions/lib/dispatchCore.test.mjs, functions/board.js, and src/demo/engine.js.
+
+Issues Found and Fixed:                                                         
+
+ 1 None. The implementation correctly adds "autoPlaceParkedMin": 2 to           
+   configuration, provides the pure parkedAutoPlace function with robust        
+   handling of zone changes, timers, and status checks, includes comprehensive  
+   unit tests covering all required scenarios (moving through, 119s vs 120s     
+   parked, leaving/returning, on-call immunity), and properly integrates into   
+   driverPing in functions/board.js.                                            
+
+No code changes are necessary.                                                  
+
+Tokens: 53k sent, 154 received. Cost: $0.02 message, $0.02 session.
