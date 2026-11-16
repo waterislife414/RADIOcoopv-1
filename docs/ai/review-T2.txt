@@ -1,0 +1,40 @@
+       m.remove();                                                              
+       map.current = null;                                                      
+     };                                                                         
+   }, []);                                                                      
+                                                                                
+@@ -44,5 +53,6 @@                                                               
+     const m = map.current;                                                     
+       weight: 2,                                                               
+     });                                                                        
+     marker.addTo(layer.current);                                               
+                                                                                
++    if (m.getSize().x > 0 && m.getSize().y > 0) {                              
++      try {                                                                    
+-      m.fitBounds(circle.getBounds(), { padding: [20, 20], maxZoom: 17 });     
+-    } catch {                                                                  
+-      // ignore fitBounds errors if map size isn't ready                       
++    if (m.getSize().x > 0 && m.getSize().y > 0) {                              
++      try {                                                                    
++        m.setView([lat, lng], m.getZoom());                                    
++        m.fitBounds(circle.getBounds(), { padding: [20, 20], maxZoom: 17 });   
++      } catch {                                                                
++        // ignore if bounds/size not ready                                     
++      }                                                                        
+     }                                                                          
+   }, [lat, lng, accuracy, max]);                                               
+                                                                                
+   return (                                                                     
+     <div                                                                       
+@@ -81,5 +92,6 @@                                                               
+       className="w-full h-[160px] rounded-2xl overflow-hidden border-2         
+border-slate-200 z-0 relative"                                                  
+     >                                                                          
+       <div ref={el} className="w-full h-full" />                               
+     </div>                                                                     
+   );                                                                           
++  85 /  86 lines [█████████████████████████████░]  99%                         
+                                                                                
+Tokens: 44k sent, 685 received. Cost: $0.01 message, $0.01 session.
+Applied edit to src/components/driver/AccuracyCircle.jsx
+Commit a7b2439 feat: add map bounds and size checks to AccuracyCircle component
