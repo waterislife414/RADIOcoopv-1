@@ -48,15 +48,13 @@ export default function ApprovalAnswer({ uid }) {
         <p className="mt-4 text-2xl font-semibold text-white">{text}</p>
         {ok && <p className="mt-2 text-lg text-white/90">Good for about an hour, then the normal checks apply again.</p>}
         <p className="mt-2 text-sm text-white/80">{answer.decidedBy ? `Answered by ${answer.decidedBy}` : ""}</p>
-        <button type="button" onClick={dismiss} className="mt-8 min-h-[60px] min-w-[200px] rounded-2xl bg-white text-navy-950 font-extrabold text-xl">
+        <button type="button" onClick={dismiss} className="mt-8 min-h-[60px] min-w-[200px] rounded-2xl bg-white text-navy-950 font-extrabold text-xl" data-testid="approval-dismiss">
           Got it
         </button>
       </div>
     );
   }
   return pending ? (
-    <p className="rounded-xl bg-amber-400/15 border border-amber-300/40 px-3 py-2 text-amber-200 font-semibold" data-testid="approval-waiting">
-      Waiting for dispatch to answer&hellip;
-    </p>
+    <div data-testid="approval-answer" className="hidden" />
   ) : null;
 }

@@ -323,7 +323,7 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
             {out.length === 0 && <span className="text-sm text-slate-500">Everyone is on the board.</span>}
             {out.map((d) => <Chip key={d.id} d={d} />)}
           </div>
-          <button onClick={() => onCarClick?.("new")} className="mt-3 text-sm font-semibold text-blue-700">
+          <button onClick={() => onCarClick?.("new")} className="mt-3 text-sm font-semibold text-blue-700" data-testid="add-radio-car">
             + Radio car
           </button>
         </div>
