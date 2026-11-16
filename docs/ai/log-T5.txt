@@ -1,0 +1,40 @@
+r.id)}                                                                          
++                    className={`flex items-center gap-2 flex-wrap py-2 px-2    
+mt-1 rounded-xl border cursor-grab ${late ? "border-red-400 bg-red-50           
+animate-pulse" : "border-amber-300 bg-amber-50"}`}                              
++                  >                                                            
+                     <span className="px-2 py-0.5 rounded bg-slate-900          
+text-white text-xs font-bold">{reasonTag(r)}</span>                             
+                     <span className="text-sm font-semibold">{r.name ||         
+r.firstName || "Caller"}</span>                                                 
+                     <span className="text-sm text-slate-600                    
+truncate">{r.zoneLabel ? `${r.zoneLabel} ` : ""}&rarr; {r.dropoff ||            
+r.dropoffAddress || "?"}</span>                                                 
+                     <span className="ml-auto flex gap-2">                      
+                       {r.phone && (                                            
+                         <a href={`tel:${r.phone}`} className="min-h-[36px] px-3
+inline-flex items-center rounded-lg bg-white border border-slate-300            
+         </div>                                                                 
+data-testid="off-out">                                                          
+           <h3 className="font-bold text-slate-700">Off / out</h3>              
+ • Did not verify via Playwright end-to-end tests (requires emulator/running    
+   server environment).                                                         
+ • Verified building via Vite (npm run build / npm run build:demo).             
+
+Tokens: 30k sent, 4.7k received. Cost: $0.02 message, $0.02 session.
+Applied edit to src/components/admin/Pegboard.jsx
+Commit f32d4fc feat: add HTML5 drag-and-drop for waiting calls onto ready car 
+chips in Pegboard
+::warning file=src/components/admin/Pegboard.jsx,line=34,endLine=34,col=17,endColumn=25,title=react(only-export-components)::Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.
+
+Found 1 warning and 0 errors.
+Finished in 9ms on 1 file with 93 rules using 4 threads.
+PASS 1 Dispatcher: pegboard, map, panes, status key, + New call drawer with Quick Entry 
+PASS 2 Rider books card ride; shows in dispatcher Working list 
+PASS 3 Driver 44: demo location, Go Online, Check Ready, DemoBar location + 2 PM popup 
+PASS 4a Driver: Report a problem with note -> Thanks, we've got it 
+PASS 4b Ask-dispatch Check Ready -> approval popup -> approve -> driver answer, car 44 in zone 
+PASS 5 Deny needs a reason, then reaches driver 
+PASS 6 Dispatcher chip -> CarActionsModal takes ready and on-call/offered car off 
+PASS 7 No console errors / failed requests (dispatcher + driver) 
+== Step 1: 8/8 passed
