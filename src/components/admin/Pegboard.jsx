@@ -9,6 +9,7 @@ import { STATUS_COLORS, statusInfo, zoneColor } from "../../utils/statusColors";
 import { pickupPoint, waitClock, rulesFrom } from "../../../functions/lib/rideTiming.mjs";
 
 const move = httpsCallable(functions, "dispatcherBoardAction");
+const assignRide = httpsCallable(functions, "dispatcherAssignRide");
 const DISPATCH = BRAND.dispatch;
 const RULES = rulesFrom(BRAND.rideRules);
 const STALE_MS = (DISPATCH.gps?.staleMin ?? 3) * 60000;
@@ -174,6 +175,19 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
         draggable
         data-testid={`car-chip-${d.carNumber}`}
         onDragStart={(e) => e.dataTransfer.setData("text/car", d.id)}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={async (e) => {
+          e.preventDefault();
+          const rideId = e.dataTransfer.getData("text/ride");
+          if (rideId && d.id) {
+            setMsg("");
+            try {
+              await assignRide({ rideId, uid: d.id });
+            } catch (err) {
+              setMsg(err?.message || "Couldn't assign ride.");
+            }
+          }
+        }}
         onClick={() => (picked?.id === d.id ? setPicked(null) : onCarClick?.(d))}
         onDoubleClick={() => setPicked(d)}
         title={`Car ${d.carNumber}: ${st.label}${okd ? " (OK'd, no GPS)" : ""}${d.radioOnly ? " (radio-only)" : ""}`}
@@ -231,7 +245,13 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
             <div>
               <p className="text-xs font-bold uppercase text-slate-500">Needs a car</p>
               {waiting.map((r) => (
-                <div key={r.id} className="flex items-center gap-2 py-1 text-sm border-b border-slate-100" data-testid="call-waiting">
+                <div
+                  key={r.id}
+                  draggable
+                  data-testid="call-chip"
+                  onDragStart={(e) => e.dataTransfer.setData("text/ride", r.id)}
+                  className="flex items-center gap-2 py-1 text-sm border-b border-slate-100 cursor-grab"
+                >
                   <span className="font-semibold">{r.zoneLabel || "No zone"}</span>
                   <span className="text-slate-600 truncate">&rarr; {r.dropoff || r.dropoffAddress || "?"}</span>
                   {r.paymentMethod === "cash" && <span className="px-1.5 rounded bg-emerald-100 text-emerald-800 text-xs font-bold">CASH</span>}
@@ -296,7 +316,13 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
               {needsYou.map((r) => {
                 const late = now - tsMs(r.timestamp) > ALERT_MS;
                 return (
-                  <div key={r.id} className={`flex items-center gap-2 flex-wrap py-2 px-2 mt-1 rounded-xl border ${late ? "border-red-400 bg-red-50 animate-pulse" : "border-amber-300 bg-amber-50"}`}>
+                  <div
+                    key={r.id}
+                    draggable
+                    data-testid="call-chip"
+                    onDragStart={(e) => e.dataTransfer.setData("text/ride", r.id)}
+                    className={`flex items-center gap-2 flex-wrap py-2 px-2 mt-1 rounded-xl border cursor-grab ${late ? "border-red-400 bg-red-50 animate-pulse" : "border-amber-300 bg-amber-50"}`}
+                  >
                     <span className="px-2 py-0.5 rounded bg-slate-900 text-white text-xs font-bold">{reasonTag(r)}</span>
                     <span className="text-sm font-semibold">{r.name || r.firstName || "Caller"}</span>
                     <span className="text-sm text-slate-600 truncate">{r.zoneLabel ? `${r.zoneLabel} ` : ""}&rarr; {r.dropoff || r.dropoffAddress || "?"}</span>
