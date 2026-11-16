@@ -11,6 +11,7 @@ import { hasCert, linePosition, ordinal, zoneLine } from "../../../functions/lib
 import { inspectionNeeded } from "../../../functions/lib/inspectionCore.mjs";
 import AskDispatch from "./AskDispatch";
 import ApprovalAnswer from "./ApprovalAnswer";
+import AccuracyCircle from "./AccuracyCircle";
 
 const OUT_OF_ZONE_MIN = BRAND.dispatch?.gps?.outOfZoneMin ?? 3;
 const MAX_WARNINGS = BRAND.dispatch?.maxWarnings ?? 3;
@@ -222,11 +223,14 @@ export default function DriverStatusPanel({ driver, board, drivers, zones, rideS
 
       <GpsLine gps={gps.gps} error={gps.error} zoneLabel={gpsZone?.label} />
       {gps.gps === "ok" && gps.fix?.accuracy != null && (
-        <p className={`text-sm ${gps.fix.accuracy > MAX_ACCURACY_M ? "text-amber-300 font-semibold" : "text-slate-400"}`} data-testid="gps-accuracy">
-          {gps.fix.accuracy > MAX_ACCURACY_M
-            ? `Waiting for a better GPS signal (\u00b1${Math.round(gps.fix.accuracy)} m)`
-            : `GPS accuracy \u00b1${Math.round(gps.fix.accuracy)} m`}
-        </p>
+        <>
+          <p className={`text-sm ${gps.fix.accuracy > MAX_ACCURACY_M ? "text-amber-300 font-semibold" : "text-slate-400"}`} data-testid="gps-accuracy">
+            {gps.fix.accuracy > MAX_ACCURACY_M
+              ? `Waiting for a better GPS signal (\u00b1${Math.round(gps.fix.accuracy)} m)`
+              : `GPS accuracy \u00b1${Math.round(gps.fix.accuracy)} m`}
+          </p>
+          <AccuracyCircle lat={gps.fix.lat} lng={gps.fix.lng} accuracy={gps.fix.accuracy} max={MAX_ACCURACY_M} />
+        </>
       )}
       <ApprovalAnswer uid={uid} />
       {problem && (
