@@ -9,3 +9,4 @@ tests/rules/package-lock.json
 .firebase/
 dist-demo/
 .env.mobile
+.aider*

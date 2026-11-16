@@ -1,0 +1,40 @@
+            )}                                                                  
+            <button type="button" className="min-h-[48px] px-4 rounded-xl       
+bg-white/10 text-white font-bold" onClick={() => setAsking(true)}>              
+              Ask dispatch                                                      
+            </button>                                                           
+          </div>                                                                
+        </div>                                                                  
+=======                                                                         
+            {problem.details.weakGps && (                                       
+              <button type="button" className="min-h-[48px] px-4 rounded-xl     
+bg-gold-400 text-navy-950 font-bold" onClick={() => run(problem.retry)}>        
+                Try again                                                       
+              </button>                                                         
+            )}                                                                  
+            {problem.details.agreement && (                                     
+              <button type="button" className="min-h-[48px] px-4 rounded-xl     
+bg-gold-400 text-navy-950 font-bold" onClick={() =>                             
+navigate("/driver-agreement")}>                                                 
+                Sign agreement                                                  
+              </button>                                                         
+            )}                                                                  
+            <button type="button" className="min-h-[48px] px-4 rounded-xl       
+bg-white/10 text-white font-bold" onClick={() => setAsking(true)}>              
+              Ask dispatch                                                      
+            </button>                                                           
+          </div>                                                                
+          {problem.details.settings && (                                        
+            <p className="text-sm text-slate-300">                              
+              Go to your phone&apos;s Settings &gt; Apps &gt; Radio Co-op &gt;  
+Permissions to turn them on.                                                    
+            </p>                                                                
+          )}                                                                    
+        </div>                                                                  
+>>>>>>> REPLACE                                                                 
+                                                                                
+
+Tokens: 26k sent, 449 received. Cost: $0.01 message, $0.01 session.
+Applied edit to src/components/driver/DriverStatusPanel.jsx
+Commit e43d98e fix: Add agreement link and settings instructions to driver ready
+blocker
