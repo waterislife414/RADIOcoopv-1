@@ -1,0 +1,4 @@
+task T6
+unit pass
+build pass
+build:demo pass
