@@ -2,19 +2,31 @@ import re, json
 BASE=__import__("os").environ.get("QA_BASE","http://127.0.0.1:8790")
 KEY="rc-demo-db-v1"
 results=[]
+PAGES=[]
+def diag():
+    # Free diagnostics bot: on a failed check, say what each open page actually shows.
+    out=[]
+    for pg in PAGES:
+        try:
+            ids=pg.evaluate("[...new Set([...document.querySelectorAll('[data-testid]')].map(e=>e.dataset.testid))]")
+            btn=pg.evaluate("[...document.querySelectorAll('button')].filter(b=>b.offsetParent).map(b=>b.innerText.trim().slice(0,22)).filter(Boolean).slice(0,24)")
+            out.append(f"[{pg.url[-38:]}] testids={ids} buttons={btn}")
+        except Exception: pass
+    return " || ".join(out)[:1100]
 def check(name, fn):
     try:
         r=fn()
         # Pass = True, None, or another truthy non-string value. A string is a failure reason.
         ok = (r is None or r is True or (bool(r) and not isinstance(r,str)))
-        results.append((ok,name,"" if ok else (r if isinstance(r,str) else "failed")))
+        results.append((ok,name,"" if ok else ((r if isinstance(r,str) else "failed")+" :: SCREEN "+diag())))
     except Exception as e:
-        results.append((False,name,str(e).split("\n")[0][:160]))
+        results.append((False,name,str(e).split("\n")[0][:160]+" :: SCREEN "+diag()))
 def report(title):
     bad=[r for r in results if not r[0]]
     print(f"== {title}: {len(results)-len(bad)}/{len(results)} passed")
     for ok,n,why in bad: print("  FAIL", n, "->", why)
 def watch(pg, errs):
+    PAGES.append(pg)
     pg.on("pageerror", lambda e: errs.append("PAGE "+str(e)[:160]))
     pg.on("console", lambda m: errs.append("CONSOLE "+m.text[:160]) if m.type=="error" and "favicon" not in m.text else None)
     pg.on("response", lambda r: errs.append(f"HTTP {r.status} {r.url[-60:]}") if r.status>=400 and r.url.startswith(BASE) else None)

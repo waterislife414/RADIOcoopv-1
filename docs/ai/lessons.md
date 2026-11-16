@@ -7,3 +7,4 @@ L5 Your final message must list: files changed, what you verified (lint/build re
 L6 If a condition needs data the server does not send (like details.settings), say so instead of coding a branch that can never run.
 L7 Before creating any file, check whether it already exists (ls / grep). If it exists, READ it and edit it; never overwrite or replace a working file with a new version.
 L8 Files under /tmp or outside the repo do not exist for you. Import helpers only from paths inside the repo (e.g. tests/qa/common.py).
+L9 When a QA check fails, the failure line now ends with ':: SCREEN [url] testids=[...] buttons=[...]' showing what the page really had. Compare that with the selector the test waits for before changing any code.
