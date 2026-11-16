@@ -2,15 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "../../config/firebase";
 
-const SEEN = "rc-approval-seen";
-const seenIds = () => {
-  try {
-    return JSON.parse(localStorage.getItem(SEEN) || "[]");
-  } catch {
-    return [];
-  }
-};
-
 /** The dispatcher's answer to "Ask dispatch": a full-screen message, read aloud. */
 export default function ApprovalAnswer({ uid }) {
   const [answer, setAnswer] = useState(null);
@@ -22,10 +13,9 @@ export default function ApprovalAnswer({ uid }) {
       onSnapshot(query(collection(db, "approval_requests"), where("uid", "==", uid)), (snap) => {
         const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
         setPending(docs.some((d) => d.status === "pending"));
-        const seen = seenIds();
         const fresh = docs
-          .filter((d) => d.status !== "pending" && (!seen.includes(d.id) || Date.now() - (d.decidedAtMs || 0) < 60000) && Date.now() - (d.decidedAtMs || 0) < 10 * 60000)
-          .sort((a, b) => b.decidedAtMs - a.decidedAtMs)[0];
+          .filter((d) => d.status !== "pending" && Date.now() - (d.decidedAtMs || 0) < 15 * 60000)
+          .sort((a, b) => (b.decidedAtMs || 0) - (a.decidedAtMs || 0))[0];
         setAnswer(fresh || null);
       }),
     [uid]
@@ -47,7 +37,6 @@ export default function ApprovalAnswer({ uid }) {
   }, [answer, text]);
 
   function dismiss() {
-    localStorage.setItem(SEEN, JSON.stringify([...seenIds(), answer.id].slice(-30)));
     setAnswer(null);
   }
 

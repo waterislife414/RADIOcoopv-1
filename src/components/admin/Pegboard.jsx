@@ -180,7 +180,7 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
         style={{ background: st.color }}
       >
         {d.carNumber}
-        {okd && <span className="ml-1 text-[10px]">OK&apos;d</span>}
+        {okd && <span className="ml-1 text-[10px]">OK</span>}
       </button>
     );
   };
@@ -255,7 +255,7 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
                 </span>
                 <span>&rarr;</span>
                 <span className="font-semibold">{zoneName[r.dropZoneId] || ""}</span>
-                <span className="text-slate-600 truncate">{r.dropoff || r.dropoffAddress || ""}</span>
+                <span className="text-slate-600 truncate">{r.dropoff || r.dropoffAddress || "?"}</span>
                 {r.paymentMethod === "cash" && <span className="px-1.5 rounded bg-emerald-100 text-emerald-800 text-xs font-bold">CASH</span>}
                 <span className="ml-auto font-semibold" style={{ color: STATUS_COLORS.onCall }}>
                   {rideWord(r, now)}
