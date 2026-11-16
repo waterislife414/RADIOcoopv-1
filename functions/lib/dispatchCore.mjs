@@ -16,6 +16,7 @@ export const DEFAULTS = Object.freeze({
     exitPayoutPct: 50,
     includeTips: true,
   },
+  autoPlaceParkedMin: 2,
 });
 
 // Driver statuses
@@ -326,6 +327,33 @@ export function applyLocation({ status, zoneId, outOfZoneSince = null }, gpsZone
     };
   }
   return { outOfZoneSince: since, board: null };
+}
+
+/**
+ * Parked auto-place: a Ready driver parked inside a DIFFERENT zone than the
+ * one he checked ready in, continuously for parkedMin minutes, moves to the
+ * back of that zone's line.
+ */
+export function parkedAutoPlace(driver, zoneIdNow, now, parkedMin = DEFAULTS.autoPlaceParkedMin, parkedSinceMs = null, parkedZoneId = null) {
+  if (driver.status !== STATUS.READY || !zoneIdNow || zoneIdNow === driver.zoneId) {
+    return { parkedSinceMs: null, parkedZoneId: null, patch: null };
+  }
+  const sameZone = zoneIdNow === parkedZoneId;
+  const since = sameZone && parkedSinceMs != null ? parkedSinceMs : now;
+  const zoneChanged = !sameZone;
+
+  if (zoneChanged) {
+    return { parkedSinceMs: now, parkedZoneId: zoneIdNow, patch: null };
+  }
+
+  if (now - since >= parkedMin * 60 * 1000) {
+    return {
+      parkedSinceMs: null,
+      parkedZoneId: null,
+      patch: { status: STATUS.READY, zoneId: zoneIdNow, lineKey: now },
+    };
+  }
+  return { parkedSinceMs: since, parkedZoneId: zoneIdNow, patch: null };
 }
 
 /** Sweep: a waiting or moving driver whose phone stopped reporting falls off the board. */

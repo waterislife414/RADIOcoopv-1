@@ -121,8 +121,38 @@ exports.driverPing = onCall(async (request) => {
       nowMs,
       GPS.outOfZoneMin
     );
-    if (res.board) tx.update(boardRef(uid), { ...res.board, updatedAt: serverNow() });
-    const status = res.board?.status ?? board.status;
+    let boardPatch = res.board ? { ...res.board } : null;
+    const currentStatus = boardPatch?.status ?? board.status;
+    let parkedSinceMs = board.parkedSinceMs ?? null;
+    let parkedZoneId = board.parkedZoneId ?? null;
+
+    if (!boardPatch && currentStatus === c.STATUS.READY && gpsZoneId) {
+      const parked = c.parkedAutoPlace(
+        { status: currentStatus, zoneId: board.zoneId },
+        gpsZoneId,
+        nowMs,
+        DISPATCH.autoPlaceParkedMin || 2,
+        parkedSinceMs,
+        parkedZoneId
+      );
+      parkedSinceMs = parked.parkedSinceMs;
+      parkedZoneId = parked.parkedZoneId;
+      if (parked.patch) {
+        boardPatch = parked.patch;
+      }
+    }
+
+    const updates = { updatedAt: serverNow() };
+    if (boardPatch) Object.assign(updates, boardPatch);
+    if (parkedSinceMs !== (board.parkedSinceMs ?? null) || parkedZoneId !== (board.parkedZoneId ?? null)) {
+      updates.parkedSinceMs = parkedSinceMs;
+      updates.parkedZoneId = parkedZoneId;
+    }
+    if (Object.keys(updates).length > 1) {
+      tx.update(boardRef(uid), updates);
+    }
+
+    const status = boardPatch?.status ?? board.status;
     tx.set(locationRef(uid), {
       ...fix,
       zoneId: gpsZoneId,
@@ -132,7 +162,7 @@ exports.driverPing = onCall(async (request) => {
     });
     return {
       status,
-      zoneId: res.board ? res.board.zoneId : board.zoneId ?? null,
+      zoneId: boardPatch ? (boardPatch.zoneId ?? null) : (board.zoneId ?? null),
       gpsZoneId,
       outOfZoneSince: res.outOfZoneSince,
     };
@@ -156,7 +186,7 @@ exports.driverGoOnline = onCall(async (request) => {
       throw new HttpsError("failed-precondition", "Read and agree to the Driver Agreement first.", { agreement: true });
     }
     if (board.status !== c.STATUS.OFFLINE) return null; // already on the board
-    return { status: c.STATUS.MOVING, zoneId: null, lineKey: null };
+    return { status: c.STATUS.MOVING, zoneId: null, lineKey: null, parkedSinceMs: null, parkedZoneId: null };
   });
 });
 
@@ -186,7 +216,7 @@ exports.driverCheckReady = onCall(async (request) => {
     }
     if (board.status === c.STATUS.READY && board.zoneId === gpsZoneId) return null; // keep your spot
     const ready = c.applyCheckReady(gpsZoneId, nowMs);
-    return { status: ready.status, zoneId: ready.zoneId, lineKey: ready.lineKey };
+    return { status: ready.status, zoneId: ready.zoneId, lineKey: ready.lineKey, parkedSinceMs: null, parkedZoneId: null };
   });
 });
 
@@ -199,7 +229,7 @@ exports.driverGoMoving = onCall(async (request) => {
     if (board.status === c.STATUS.OFFERED) throw new HttpsError("failed-precondition", "Answer the call first.");
     if (board.status === c.STATUS.ON_CALL) throw new HttpsError("failed-precondition", "Drop off your fare first.");
     if (board.status === c.STATUS.MOVING) return null;
-    return { status: c.STATUS.MOVING, zoneId: null, lineKey: null };
+    return { status: c.STATUS.MOVING, zoneId: null, lineKey: null, parkedSinceMs: null, parkedZoneId: null };
   });
 });
 
@@ -228,7 +258,7 @@ exports.driverDropOff = onCall(async (request) => {
 
     let patch;
     if (blockReason(driver, { c, nowMs })) {
-      patch = { status: c.STATUS.OFFLINE, zoneId: null, lineKey: null };
+      patch = { status: c.STATUS.OFFLINE, zoneId: null, lineKey: null, parkedSinceMs: null, parkedZoneId: null };
     } else {
       const certOk = !zone?.requiresCert || c.hasCert(driver, zone.requiresCert, nowMs);
       const dropZoneId = certOk ? gpsZoneId : null;
@@ -239,6 +269,8 @@ exports.driverDropOff = onCall(async (request) => {
           }))
         : [];
       patch = c.applyDropOff(line, uid, dropZoneId, DISPATCH.dropOffPlacement || "front", nowMs);
+      patch.parkedSinceMs = null;
+      patch.parkedZoneId = null;
     }
     tx.update(boardRef(uid), { ...patch, rideId: null, radioCall: null, updatedAt: serverNow() });
     // The fare is settled the usual way (rider self-checkout or dispatcher).
@@ -267,7 +299,7 @@ exports.driverGoOffline = onCall(async (request) => {
       if (board.status === c.STATUS.OFFERED) throw new HttpsError("failed-precondition", "Answer the call first.");
       if (board.status === c.STATUS.ON_CALL) throw new HttpsError("failed-precondition", "Drop off your fare first.");
       if (board.status === c.STATUS.OFFLINE) return null;
-      return { status: c.STATUS.OFFLINE, zoneId: null, lineKey: null };
+      return { status: c.STATUS.OFFLINE, zoneId: null, lineKey: null, parkedSinceMs: null, parkedZoneId: null };
     },
     { needFix: false }
   );
