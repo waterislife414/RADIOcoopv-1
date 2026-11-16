@@ -282,7 +282,7 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
                 <div className="flex gap-1.5 flex-wrap">{moving.map((d) => <Chip key={d.id} d={d} />)}</div>
               </div>
             )}
-            {drivers.filter((d) => ["on_call", "offered"].includes(d.status) && !inProgress.some((r) => r.driverId === d.id)).map((d) => (
+            {drivers.filter((d) => ["on_call", "offered"].includes(d.status)).map((d) => (
               <div key={d.id} className="flex items-center gap-2 py-1 text-sm">
                 <Chip d={d} />
                 <span className="text-slate-600">{d.radioCall ? `Radio call${d.radioCall.note ? `: ${d.radioCall.note}` : ""}` : d.status === "offered" ? "Being offered a call" : "On a call"}</span>
