@@ -105,6 +105,12 @@ export default function Home() {
             {COPY.motto.split("?")[0]}?{" "}
             <span className="not-italic font-extrabold text-chrome-gold whitespace-nowrap">{COPY.motto.split("?").slice(1).join("?").trim()}</span>
           </p>
+          <img
+            src="/images/hero-fleet.jpg"
+            alt="Your driver welcomes you in"
+            data-testid="hero-welcome"
+            className="mt-6 w-full aspect-[4/3] rounded-2xl object-cover object-[82%_center] ring-1 ring-gold-400/40 shadow-xl"
+          />
         </div>
       </div>
 
