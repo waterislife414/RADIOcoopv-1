@@ -146,7 +146,7 @@ with sync_playwright() as p:
     check("5 Deny needs a reason, then reaches driver", c5)
 
     # 6. Dispatcher car actions
-    def chip44(): return A.locator("[data-testid=pegboard] button:has-text('44')").first
+    def chip44(): return A.locator("[data-testid=car-chip-44]").first
     def c6():
         global stage
         stage='a'
@@ -165,7 +165,7 @@ with sync_playwright() as p:
             D.locator("button:has-text('Check Ready in')").click(); D.wait_for_timeout(1500)
         A.reload(); A.wait_for_timeout(2000)
         stage='c'
-        card = A.locator("[data-testid=pegboard] div", has_text="QA Step1 Dropoff").locator("button:has-text('DISPATCH')").last
+        card = A.locator("[data-testid=pegboard] div", has_text="QA Step1 Dropoff").locator("button:has-text('Pick a car'), button:has-text('Accept & assign')").last
         card.click(); A.wait_for_timeout(600)
         A.locator("button", has_text="Car 44").first.click(); A.wait_for_timeout(600)
         if A.locator("button:has-text('Send anyway')").count(): A.click("button:has-text('Send anyway')")
