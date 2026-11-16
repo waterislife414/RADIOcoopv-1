@@ -172,6 +172,7 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
       <button
         type="button"
         draggable
+        data-testid={`car-chip-${d.carNumber}`}
         onDragStart={(e) => e.dataTransfer.setData("text/car", d.id)}
         onClick={() => (picked?.id === d.id ? setPicked(null) : onCarClick?.(d))}
         onDoubleClick={() => setPicked(d)}
@@ -180,7 +181,7 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
         style={{ background: st.color }}
       >
         {d.carNumber}
-        {okd && <span className="ml-1 text-[10px]">OK&apos;d</span>}
+        {okd && <span className="ml-1 text-[10px]">OK</span>}
       </button>
     );
   };
@@ -255,7 +256,7 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
                 </span>
                 <span>&rarr;</span>
                 <span className="font-semibold">{zoneName[r.dropZoneId] || ""}</span>
-                <span className="text-slate-600 truncate">{r.dropoff || r.dropoffAddress || ""}</span>
+                <span className="text-slate-600 truncate">{r.dropoff || r.dropoffAddress || "?"}</span>
                 {r.paymentMethod === "cash" && <span className="px-1.5 rounded bg-emerald-100 text-emerald-800 text-xs font-bold">CASH</span>}
                 <span className="ml-auto font-semibold" style={{ color: STATUS_COLORS.onCall }}>
                   {rideWord(r, now)}
@@ -323,7 +324,7 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
             {out.length === 0 && <span className="text-sm text-slate-500">Everyone is on the board.</span>}
             {out.map((d) => <Chip key={d.id} d={d} />)}
           </div>
-          <button onClick={() => onCarClick?.("new")} className="mt-3 text-sm font-semibold text-blue-700">
+          <button onClick={() => onCarClick?.("new")} className="mt-3 text-sm font-semibold text-blue-700" data-testid="add-radio-car">
             + Radio car
           </button>
         </div>
