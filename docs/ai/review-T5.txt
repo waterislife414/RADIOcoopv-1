@@ -1,0 +1,40 @@
+                         <a href={`tel:${r.phone}`} className="min-h-[36px] px-3
+inline-flex items-center rounded-lg bg-white border border-slate-300            
+font-semibold text-sm">                                                         
+                           Call rider                                           
+                         </a>                                                   
+@@ -338,5 +390,6 @@                                                             
+                     </span>                                                    
+         </div>                                                                 
+           <h3 className="font-bold text-slate-700">Off / out</h3>              
+           <p className="text-xs text-slate-500 mb-2">Drag a car onto a zone    
+above (or double-tap it, then tap a zone). Tap a car to change anything about   
+it.</p>                                                                         
+           <div className="flex flex-wrap gap-1.5">                             
+             {out.length === 0 && <span className="text-sm                      
+text-slate-500">Everyone is on the board.</span>}                               
+-            {out.map((d) => <Chip key={d.id} d={d} />)}                        
++            {out.map((d) => (                                                  
++              <CarChip                                                         
++                key={d.id}                                                     
++                d={d}                                                          
++                now={now}                                                      
++                picked={picked}                                                
++                onCarClick={onCarClick}                                        
++                onSetPicked={(val) => {                                        
++                  if (typeof val === "string") setMsg(val);                    
++                  else setPicked(val);                                         
++                }}                                                             
++              />                                                               
++            ))}                                                                
+           </div>                                                               
+           <button onClick={() => onCarClick?.("new")} className="mt-3 text-sm  
+font-semibold text-blue-700" data-testid="add-radio-car">                       
+             + Radio car                                                        
+           </button>                                                            
+         </div>                                                                 
+                                                                                
+
+Tokens: 48k sent, 4.8k received. Cost: $0.03 message, $0.03 session.
+Applied edit to src/components/admin/Pegboard.jsx
+Commit 0bc0b5d refactor: extract CarChip component out of Pegboard render scope
