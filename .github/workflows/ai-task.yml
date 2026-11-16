@@ -25,6 +25,7 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           BR: ${{ github.ref_name }}
         run: |
           T="${BR#ai-go/}"
@@ -32,7 +33,7 @@ jobs:
           git config user.name "ai-bot"; git config user.email "ai-bot@users.noreply.github.com"
           git checkout -b "ai/$T"
           { cat docs/ai/style-$(echo $MODEL|cut -d/ -f1).txt; cat AGENTS.md; echo; echo "TASK:"; grep -E "^$T " AI_PROMPT.md; echo "Rules: small diff; touch only needed files; no keys/deploys/money logic."; } > /tmp/task.txt
-          for M in "$MODEL" openrouter/cohere/north-mini-code:free openrouter/google/gemma-4-31b-it:free gemini/gemini-3.5-flash-lite; do
+          for M in "$MODEL" openrouter/cohere/north-mini-code:free openrouter/google/gemma-4-31b-it:free gemini/gemini-3.5-flash-lite groq/llama-3.3-70b-versatile; do
             echo "trying $M" >> /tmp/models.txt
             aider --yes-always --no-check-update --model "$M" --map-tokens 8192 --read AGENTS.md --read docs/ai/KNOWLEDGE.md --read docs/ai/lessons.md --lint-cmd "javascript: npx oxlint" --auto-lint --test-cmd "$TESTCMD" --auto-test --read docs/CHANGES-AND-TODO.md --read docs/HANDOVER.md --read branding.config.json --read firestore.rules $(for r in $(grep -E "^$T " AI_PROMPT.md | sed -n "s/.*READ: //p"); do echo --read $r; done) --message-file /tmp/task.txt $(grep -E "^$T " AI_PROMPT.md | sed -n "s/.*FILES: \([^R]*\).*/\1/p") > /tmp/aider.log 2>&1 || true
             grep -qiE "rate.?limit|NotFoundError|quota|RESOURCE_EXHAUSTED|is unavailable|overloaded" /tmp/aider.log || break

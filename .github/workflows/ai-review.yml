@@ -21,6 +21,7 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           BR: ${{ github.ref_name }}
         run: |
           T="${BR#ai-review/}"
@@ -29,7 +30,7 @@ jobs:
           MODEL=gemini/gemini-3.5-flash-lite
           git diff origin/step1-wip --stat -- . ':!docs' ':!.gitignore' | awk '{print $1}' | grep -E '^(src|functions|tests)/' > /tmp/files.txt || true
           { cat AGENTS.md; echo; echo "You are the REVIEWER, not the author. Another AI made this change for task: $(grep -E "^$T " AI_PROMPT.md)"; echo "Attack it: wrong collection/field names, missing null checks, hooks rules, unused imports, broken styling, security rules, anything outside the task. Read the real code for every name it uses. Fix real problems with minimal edits; if nothing is wrong change nothing. End by listing each issue found and fixed."; } > /tmp/review.txt
-          for M in "$MODEL" openrouter/cohere/north-mini-code:free openrouter/google/gemma-4-31b-it:free gemini/gemini-3.5-flash-lite; do
+          for M in "$MODEL" openrouter/cohere/north-mini-code:free openrouter/google/gemma-4-31b-it:free gemini/gemini-3.5-flash-lite groq/llama-3.3-70b-versatile; do
             echo "trying $M" >> /tmp/models.txt
             aider --yes-always --no-check-update --model "$M" --map-tokens 8192 --read AGENTS.md --read docs/CHANGES-AND-TODO.md --read firestore.rules --message-file /tmp/review.txt $(cat /tmp/files.txt) > /tmp/rev.log 2>&1 || true
             grep -qiE "rate.?limit|NotFoundError|quota|RESOURCE_EXHAUSTED|is unavailable|overloaded" /tmp/aider.log || break
