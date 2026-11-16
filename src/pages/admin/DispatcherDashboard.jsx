@@ -29,6 +29,7 @@ import AssignCarModal from "../../components/admin/AssignCarModal";
 import CarActionsModal from "../../components/admin/CarActionsModal";
 import LeaseAlert from "../../components/admin/LeaseAlert";
 import QuickEntry from "../../components/admin/QuickEntry";
+import Pegboard from "../../components/admin/Pegboard";
 import { useLiveBoard } from "../../hooks/useLiveBoard";
 import { OFFICE_ADDRESS, COMPANY_PHONE_DISPLAY, COPY } from "../../config/constants";
 
@@ -51,6 +52,7 @@ export default function DispatcherDashboard() {
   const liveBoard = useLiveBoard();
   const [assignRide, setAssignRide] = useState(null);
   const [carAction, setCarAction] = useState(null); // board entry, or "new" for a radio car
+  const [callDrawer, setCallDrawer] = useState(false);
   const [gps, setGps] = useState({}); // driver uid -> { zoneId, at } from his phone
 
   useEffect(
@@ -282,8 +284,26 @@ export default function DispatcherDashboard() {
 
       <div className="px-6 pt-6 max-w-6xl mx-auto space-y-4">
         <LeaseAlert />
-        <QuickEntry zones={liveBoard.zones} board={liveBoard.drivers} />
       </div>
+
+      <Pegboard
+        rides={[...pending, ...active.filter((r) => r.status !== "finished")]}
+        drivers={liveBoard.drivers}
+        zones={liveBoard.zones}
+        onCarClick={setCarAction}
+        onNewCall={() => setCallDrawer(true)}
+        onAssignRide={setAssignRide}
+      />
+      {callDrawer && (
+        <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setCallDrawer(false)}>
+          <aside className="absolute right-0 top-0 h-full w-full max-w-xl bg-slate-100 overflow-y-auto p-4 shadow-2xl" onClick={(e) => e.stopPropagation()} data-testid="call-drawer">
+            <button onClick={() => setCallDrawer(false)} className="mb-3 min-h-[44px] px-4 rounded-xl bg-white border border-slate-300 font-semibold">
+              Close
+            </button>
+            <QuickEntry zones={liveBoard.zones} board={liveBoard.drivers} />
+          </aside>
+        </div>
+      )}
 
       {/* The calls that need him come first: phone calls, cash, guests, no GPS, ID not checked, nobody took it. */}
       <section className="px-6 pt-6 max-w-6xl mx-auto" data-testid="send-by-radio">
@@ -311,30 +331,6 @@ export default function DispatcherDashboard() {
         </div>
       </section>
 
-      <section className="px-6 pt-6 max-w-6xl mx-auto">
-        <div className="flex items-baseline gap-4 mb-3 flex-wrap">
-          <h2 className="font-bold text-xl text-slate-700">Board</h2>
-          <p className="text-sm text-slate-500">
-            {(boardCounts.ready || 0) + (boardCounts.offered || 0)} waiting &middot; {boardCounts.on_call || 0} on call
-            &middot; {boardCounts.moving || 0} moving
-          </p>
-          <p className="text-xs text-slate-500">
-            Tap a car to move it or give it a radio call. {"\u{1F4FB}"} = radio call &middot; <b>!</b> = GPS in another zone
-          </p>
-          {liveBoard.zones.length > 0 && (
-            <button onClick={() => setCarAction("new")} className="ml-auto text-sm font-semibold text-blue-700">
-              + Radio car
-            </button>
-          )}
-        </div>
-        {liveBoard.zones.length === 0 ? (
-          <p className="text-slate-500">
-            No zones yet. Set them up in <Link to="/admin/zones" className="text-blue-600 underline">Zones</Link>.
-          </p>
-        ) : (
-          <ZoneBoard drivers={liveBoard.drivers} zones={liveBoard.zones} variant="dispatcher" onCarClick={setCarAction} gps={gps} />
-        )}
-      </section>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 max-w-6xl mx-auto">
         <section className="space-y-6">

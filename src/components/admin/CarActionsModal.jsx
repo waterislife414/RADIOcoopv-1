@@ -59,7 +59,7 @@ export default function CarActionsModal({ car, zones, gps = null, onClose }) {
                 {"\u{1F4FB}"} On a radio call{car.radioCall?.note ? `: ${car.radioCall.note}` : ""}. Moving him clears it.
               </p>
             )}
-            {onCall && !radioCall && <p className="text-sm text-amber-700">On an app call. Moving him drops off his fare for him.</p>}
+            {onCall && !radioCall && <p className="text-sm text-amber-700">On an app call. Any change you make takes him off it: if he hasn&rsquo;t picked up yet, the ride comes back to you to re-send.</p>}
             {confirmMove ? (
               <div className="rounded-xl border-2 border-amber-400 bg-amber-50 p-3 space-y-2">
                 <p className="font-bold text-amber-900">{confirmMove.text}</p>
@@ -94,7 +94,7 @@ export default function CarActionsModal({ car, zones, gps = null, onClose }) {
                 Off the board
               </button>
             </div>
-            {!onCall && car.status !== "offline" && (
+            {car.status !== "offline" && (
               <div className="rounded-xl border border-slate-200 p-3 space-y-2">
                 <input
                   value={note}

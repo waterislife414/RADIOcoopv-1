@@ -16,7 +16,7 @@ let inspectionCorePromise = null;
 const inspectionCore = () => (inspectionCorePromise ||= import("./lib/inspectionCore.mjs"));
 
 const DISPATCH = BRANDING.dispatch || {};
-const GPS = { staleMin: 3, outOfZoneMin: 3, ...(DISPATCH.gps || {}) };
+const GPS = { staleMin: 3, outOfZoneMin: 3, maxAccuracyMeters: 100, ...(DISPATCH.gps || {}) };
 const TIME_ZONE = DISPATCH.timeZone || "America/New_York";
 
 const db = () => admin.firestore();
@@ -113,9 +113,11 @@ exports.driverPing = onCall(async (request) => {
       if (ride.perks?.liveMap) patch.driverPos = { lat: fix.lat, lng: fix.lng, at: nowMs };
       if (Object.keys(patch).length) tx.update(rideDoc, patch);
     }
+    // A dispatcher OK'd him into this zone (his GPS glitched): don't drop him for the approval window.
+    const okd = board.approval && board.approval.untilMs > nowMs && board.approval.zoneId === board.zoneId;
     const res = c.applyLocation(
       { status: board.status, zoneId: board.zoneId, outOfZoneSince: l.exists ? l.data().outOfZoneSince : null },
-      gpsZoneId,
+      okd ? board.zoneId : gpsZoneId,
       nowMs,
       GPS.outOfZoneMin
     );
@@ -166,6 +168,15 @@ exports.driverCheckReady = onCall(async (request) => {
     if (blocked) throw new HttpsError("failed-precondition", blocked);
     if (board.status === c.STATUS.OFFERED) throw new HttpsError("failed-precondition", "Answer the call first.");
     if (board.status === c.STATUS.ON_CALL) throw new HttpsError("failed-precondition", "Drop off your fare first.");
+    // A weak fix can't place a car: wait for a better one (never fall back to a coarse position).
+    const acc = Number(request.data?.accuracy);
+    if (!Number.isFinite(acc) || acc > GPS.maxAccuracyMeters) {
+      throw new HttpsError(
+        "failed-precondition",
+        `Waiting for a better GPS signal (${Number.isFinite(acc) ? `\u00b1${Math.round(acc)} m` : "no accuracy reading"}).`,
+        { weakGps: true, accuracy: Number.isFinite(acc) ? Math.round(acc) : null }
+      );
+    }
     if (!gpsZoneId) {
       throw new HttpsError("failed-precondition", "You're not inside a zone. Drive into one, then check ready.");
     }
@@ -282,7 +293,8 @@ exports.sweepStaleDrivers = onSchedule(
         const [b, l] = await Promise.all([tx.get(boardRef(doc.id)), tx.get(doc.ref)]);
         const loc = l.data();
         if (!loc?.live || loc.at >= cutoff) return; // pinged since the query
-        const patch = b.exists ? c.staleLocationPatch(b.data(), loc.at, nowMs, GPS.staleMin) : null;
+        const okd = b.exists && b.data().approval?.untilMs > nowMs;
+        const patch = b.exists && !okd ? c.staleLocationPatch(b.data(), loc.at, nowMs, GPS.staleMin) : null;
         if (patch) {
           tx.update(boardRef(doc.id), { ...patch, updatedAt: serverNow() });
           dropped++;

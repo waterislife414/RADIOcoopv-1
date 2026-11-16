@@ -1,13 +1,13 @@
 import { buildBoard } from "../../../functions/lib/dispatchCore.mjs";
 
 const DOT = {
-  green: "bg-emerald-500 text-white",
-  red: "bg-red-500 text-white",
+  green: "bg-orange-500 text-white", // on a call
+  red: "bg-green-600 text-white", // ready, waiting in line
   "blue-ring": "border-[5px] border-blue-400 bg-transparent",
   "blue-filled": "bg-blue-500 text-white",
-  moving: "bg-slate-400 text-white",
+  moving: "bg-blue-600 text-white",
 };
-const TITLE = { green: "On call", red: "Waiting", "blue-ring": "You", "blue-filled": "You (on call)", moving: "Moving" };
+const TITLE = { green: "On a call", red: "Ready", "blue-ring": "You", "blue-filled": "You (on call)", moving: "Moving" };
 
 function Dot({ d, kind, showCars, dark, onClick, gpsWarn = null }) {
   const size = showCars ? "h-9 min-w-9 px-1.5 text-sm" : "h-7 w-7";
@@ -95,17 +95,17 @@ export default function ZoneBoard({ drivers, zones, viewer = null, variant = "dr
 
       {!dark && (
         <div className="flex flex-wrap gap-x-4 gap-y-1 pt-3 text-xs text-slate-500" data-testid="board-key">
-          <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-red-500" />Waiting in line (first on the left)</span>
-          <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-red-500 ring-2 ring-amber-400 ring-offset-1" />Being offered a call</span>
-          <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-emerald-500" />On a call</span>
-          <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-slate-400" />Moving / free</span>
+          <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-green-600" />Ready, waiting in line (first on the left)</span>
+          <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-green-600 ring-2 ring-amber-400 ring-offset-1" />Being offered a call</span>
+          <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-orange-500" />On a call</span>
+          <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-blue-600" />Moving</span>
           <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full outline outline-2 outline-dashed outline-slate-500" />Radio-only car</span>
         </div>
       )}
       {dark && (
         <div className="flex flex-wrap gap-x-4 gap-y-1 pt-3 text-xs text-slate-500">
-          <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-emerald-500" />On call</span>
-          <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-red-500" />Waiting</span>
+          <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-orange-500" />On call</span>
+          <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-green-600" />Ready</span>
           <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full border-[3px] border-blue-400" />Your spot</span>
           <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-blue-500" />You, on call</span>
         </div>

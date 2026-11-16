@@ -1,5 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import ApprovalPopup from "./admin/ApprovalPopup";
 
 export function RequireAuth({ children }) {
   const { currentUser } = useAuth();
@@ -11,7 +12,13 @@ export function RequireAdmin({ children }) {
   const { currentUser, isAdmin, loading } = useAuth();
   if (loading) return null;
   if (!currentUser || !isAdmin) return <Navigate to="/admin/login" replace />;
-  return children;
+  // Driver permission requests pop up over every dispatcher page.
+  return (
+    <>
+      {children}
+      <ApprovalPopup />
+    </>
+  );
 }
 
 // Driver area: any signed-in account can open it — the page itself shows

@@ -4,9 +4,11 @@ import { functions } from "../config/firebase";
 import { BRAND } from "../config/constants";
 import { metersBetween } from "../../functions/lib/dispatchCore.mjs";
 
-const GPS = { minMoveMeters: 50, maxIntervalSec: 45, ...(BRAND.dispatch?.gps || {}) };
+const GPS = { minMoveMeters: 50, maxIntervalSec: 45, maxAccuracyMeters: 100, ...(BRAND.dispatch?.gps || {}) };
+export const MAX_ACCURACY_M = GPS.maxAccuracyMeters;
 const MAX_INTERVAL_MS = GPS.maxIntervalSec * 1000;
-const FIX_OPTS = { enableHighAccuracy: true, maximumAge: 10_000, timeout: 30_000 };
+// Never a cached position, never a coarse (IP/Wi-Fi) one.
+const FIX_OPTS = { enableHighAccuracy: true, maximumAge: 0, timeout: 15_000 };
 const ping = httpsCallable(functions, "driverPing");
 
 function toFix(p) {
@@ -110,7 +112,7 @@ export function useDriverGps(active) {
     () =>
       new Promise((resolve, reject) => {
         const f = latest.current;
-        if (f && Date.now() - f.t < 60_000) return resolve(f);
+        if (f && Date.now() - f.t < 15_000) return resolve(f);
         if (!("geolocation" in navigator)) return reject(new Error("This phone can't share location."));
         navigator.geolocation.getCurrentPosition(
           (p) => {

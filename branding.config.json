@@ -2,7 +2,7 @@
   "_README": "THIS IS THE ONLY FILE YOU EDIT FOR A NEW CLIENT (plus swapping images in public/). Every company name, phone, color, city, price, and tagline in the app reads from here. After editing, run: npm run build (manifest + backend config regenerate automatically).",
   "company": {
     "name": "Radio Co-op",
-    "wordmark": "Radio Co\u2011op",
+    "wordmark": "Radio Co‑op",
     "tagline": "Taxi Service",
     "hubName": "Radio Hub",
     "phoneDisplay": "(706) 322-0700",
@@ -34,8 +34,8 @@
     "statsAreaLabel": "Columbus & Beyond"
   },
   "copy": {
-    "heroEyebrow": "Columbus \u00b7 Phenix City \u00b7 Fort Benning \u00b7 Midland",
-    "heroSubtext": "Round the clock, every day. A real dispatcher answers \u2014 not an app.",
+    "heroEyebrow": "Columbus · Phenix City · Fort Benning · Midland",
+    "heroSubtext": "Round the clock, every day. A real dispatcher answers — not an app.",
     "aboutQuote": "Gotta Go? CALL RADIO!",
     "aboutBody": "We love our customers and have proudly served the Columbus area for decades.",
     "dispatcherFooterLabel": "Radio Co-op Dispatcher",
@@ -45,9 +45,9 @@
     "pickupPlaceholder": "123 Broadway, Columbus GA",
     "dropoffPlaceholder": "456 14th St, Phenix City AL",
     "metaTitle": "Radio Co-op | 24/7 Taxi Service",
-    "metaDescription": "Radio Co-op \u2014 24/7 taxi service in Columbus, GA & Phenix City, AL. Call (706) 322-0700.",
+    "metaDescription": "Radio Co-op — 24/7 taxi service in Columbus, GA & Phenix City, AL. Call (706) 322-0700.",
     "outOfAreaNote": "Going outside Columbus, Phenix City, Fort Benning or Midland? Call for pricing and availability.",
-    "adStripText": "Advertise your business here \u2014 Call us today",
+    "adStripText": "Advertise your business here — Call us today",
     "memberPitchHeading": "Become a member and unlock perks",
     "memberPerks": [
       "Free account: $1.80 card fee instead of $2.00",
@@ -64,9 +64,9 @@
       "perks": [
         "Move up the line ahead of regular riders",
         "Watch your driver on the map as they come to you",
-        "Call your driver directly. It\u2019s private, and no numbers are shared."
+        "Call your driver directly. It’s private, and no numbers are shared."
       ],
-      "fine": "Good until midnight. Premium members still dispatch first. Your driver may not pick up while driving and will call back when it\u2019s safe."
+      "fine": "Good until midnight. Premium members still dispatch first. Your driver may not pick up while driving and will call back when it’s safe."
     }
   },
   "colors": {
@@ -266,8 +266,19 @@
       "staleMin": 3,
       "outOfZoneMin": 3,
       "minMoveMeters": 50,
-      "maxIntervalSec": 45
-    }
+      "maxIntervalSec": 45,
+      "maxAccuracyMeters": 100
+    },
+    "statusColors": {
+      "ready": "#16a34a",
+      "onCall": "#f97316",
+      "moving": "#2563eb",
+      "out": "#dc2626"
+    },
+    "needsDispatcherAlertMinutes": 3,
+    "approvalValidMinutes": 60,
+    "approvalsBeforeFlag": 2,
+    "approvalRepeatSeconds": 120
   },
   "infrastructure": {
     "_note": "Per-client Firebase project + Stripe key. Also update .firebaserc projectId when switching clients.",
@@ -342,5 +353,10 @@
     "maxCallMinutes": 10,
     "callsPerRidePerPerson": 6,
     "greeting": "Connecting you now. This call may be recorded for quality and safety."
+  },
+  "support": {
+    "_note": "Problem reports (Report a problem / Ask dispatch) are saved and emailed to these addresses. Fill in when handing over.",
+    "devEmail": "[INSERT_DEV_EMAIL]",
+    "ownerEmail": "[INSERT_OWNER_EMAIL]"
   }
 }

@@ -188,7 +188,6 @@ exports.dispatcherBoardAction = onCall(async (request) => {
     const bs = await tx.get(boardRef(uid));
     if (!bs.exists) throw new HttpsError("not-found", "Car not found.");
     const board = bs.data();
-    if (board.status === "offered") throw new HttpsError("failed-precondition", "That car is being offered a call. Wait for his answer.");
     if (action === "remove") {
       if (!board.radioOnly) throw new HttpsError("failed-precondition", "Only radio cars can be removed. Use Off the board.");
       if (board.status === "on_call") throw new HttpsError("failed-precondition", "Drop off his fare first.");
@@ -197,6 +196,8 @@ exports.dispatcherBoardAction = onCall(async (request) => {
     }
     const line = zoneId ? (await tx.get(db().collection("board").where("zoneId", "==", zoneId))).docs.map((d) => ({ id: d.id, ...d.data() })) : [];
     const rideSnap = board.status === "on_call" && board.rideId ? await tx.get(rideRef(board.rideId)) : null;
+    // The manager can change any car at any time, even mid-offer. Pull the offer back to the office.
+    const offerSnap = board.status === "offered" && board.offerRideId ? await tx.get(rideRef(board.offerRideId)) : null;
     const loc = board.radioOnly ? null : (await tx.get(db().collection("driverLocations").doc(uid))).data();
 
     // An app driver's phone says where he really is. He can only be put in
@@ -212,9 +213,6 @@ exports.dispatcherBoardAction = onCall(async (request) => {
         gpsZoneLabel: here,
       });
     }
-    if (action === "radio_call" && board.status === "on_call" && board.rideId) {
-      throw new HttpsError("failed-precondition", "He's on an app call. Drop that off first.");
-    }
 
     const patch = c.dispatcherMove(line, uid, action, action === "radio_call" ? board.zoneId ?? loc?.zoneId ?? null : zoneId, nowMs);
     tx.update(boardRef(uid), {
@@ -227,7 +225,17 @@ exports.dispatcherBoardAction = onCall(async (request) => {
     });
     const ride = rideSnap?.data();
     if (ride && ["dispatched", "in_transit"].includes(ride.status) && ride.driverId === uid) {
-      tx.update(rideSnap.ref, { status: "finished", droppedOffAt: nowMs, droppedOffBy: "dispatcher" });
+      if (ride.status === "dispatched") {
+        // Not picked up yet: take him off it and hand the ride back to the dispatcher.
+        tx.update(rideSnap.ref, { status: "pending", driverId: null, dispatchState: "escalated", offer: null, offerDriverId: null, releasedBy: "dispatcher", releasedAt: nowMs });
+      } else {
+        tx.update(rideSnap.ref, { status: "finished", droppedOffAt: nowMs, droppedOffBy: "dispatcher" });
+      }
+    }
+    const offered = offerSnap?.data();
+    if (offered && offered.offerDriverId === uid) {
+      tx.update(offerSnap.ref, { dispatchState: "escalated", offer: null, offerDriverId: null });
+      tx.set(inboxRef(uid), { offer: null }, { merge: true });
     }
     if (!board.radioOnly) {
       if (board.status === "on_call" && board.rideId) tx.set(inboxRef(uid), { current: null }, { merge: true });

@@ -44,6 +44,7 @@ const backend = {
   calling: branding.calling,
   waitPerMinuteCents: Math.round(branding.pricing.fare.WAIT_TIME_PER_MINUTE * 100),
   dayPassCopy: branding.copy.dayPass,
+  support: branding.support,
 };
 writeFileSync(join(root, "functions/branding.json"), JSON.stringify(backend, null, 2) + "\n");
 

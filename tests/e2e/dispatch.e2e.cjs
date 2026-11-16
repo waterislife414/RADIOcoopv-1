@@ -21,7 +21,7 @@ const sq = (lat, lng, r = 0.01) => [
   { lat: lat - r, lng: lng - r }, { lat: lat - r, lng: lng + r },
   { lat: lat + r, lng: lng + r }, { lat: lat + r, lng: lng - r },
 ];
-const RH = { lat: 32.48, lng: -84.95 }, EAST = { lat: 32.48, lng: -84.9 }, FB = { lat: 32.36, lng: -84.95 };
+const RH = { lat: 32.48, lng: -84.95, accuracy: 10 }, EAST = { lat: 32.48, lng: -84.9, accuracy: 10 }, FB = { lat: 32.36, lng: -84.95, accuracy: 10 };
 const as = (uid) => ({ uid, token: { driver: true } });
 const call = (fn, uid, data) => f[fn].run({ data, auth: as(uid) });
 const get = async (p) => (await db.doc(p).get()).data();

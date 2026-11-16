@@ -4,11 +4,13 @@ import { httpsCallable } from "firebase/functions";
 import { functions } from "../../config/firebase";
 import { BRAND } from "../../config/constants";
 import { CERT_LABELS } from "../../config/driverCerts";
-import { useDriverGps } from "../../hooks/useDriverGps";
+import { useDriverGps, MAX_ACCURACY_M } from "../../hooks/useDriverGps";
 import { unlockAudio } from "../../utils/alertSound";
 import { enableDriverPush, pushPermission } from "../../push/driverPush";
 import { hasCert, linePosition, ordinal, zoneLine } from "../../../functions/lib/dispatchCore.mjs";
 import { inspectionNeeded } from "../../../functions/lib/inspectionCore.mjs";
+import AskDispatch from "./AskDispatch";
+import ApprovalAnswer from "./ApprovalAnswer";
 
 const OUT_OF_ZONE_MIN = BRAND.dispatch?.gps?.outOfZoneMin ?? 3;
 const MAX_WARNINGS = BRAND.dispatch?.maxWarnings ?? 3;
@@ -95,6 +97,8 @@ export default function DriverStatusPanel({ driver, board, drivers, zones, rideS
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [push, setPush] = useState(() => pushPermission());
+  const [problem, setProblem] = useState(null); // why the last tap was refused: { message, details }
+  const [asking, setAsking] = useState(false);
 
   const navigate = useNavigate();
   const [shiftCheck, setShiftCheck] = useState(false);
@@ -115,12 +119,15 @@ export default function DriverStatusPanel({ driver, board, drivers, zones, rideS
   async function run(fn, { withFix = true } = {}) {
     setBusy(true);
     setMsg("");
+    setProblem(null);
     try {
       const fix = withFix ? await gps.getFix() : null;
       const res = await fn(fix ? { lat: fix.lat, lng: fix.lng, accuracy: fix.accuracy } : {});
       if (fix) gps.noteZone(res.data.gpsZoneId, fix);
     } catch (e) {
-      setMsg((e?.code !== "functions/internal" && e?.message) || "Something went wrong. Try again.");
+      const message = (e?.code !== "functions/internal" && e?.message) || "Something went wrong. Try again.";
+      setMsg(message);
+      setProblem({ message, details: e?.details || {}, retry: fn });
       return false;
     } finally {
       setBusy(false);
@@ -214,6 +221,34 @@ export default function DriverStatusPanel({ driver, board, drivers, zones, rideS
       </div>
 
       <GpsLine gps={gps.gps} error={gps.error} zoneLabel={gpsZone?.label} />
+      {gps.gps === "ok" && gps.fix?.accuracy != null && (
+        <p className={`text-sm ${gps.fix.accuracy > MAX_ACCURACY_M ? "text-amber-300 font-semibold" : "text-slate-400"}`} data-testid="gps-accuracy">
+          {gps.fix.accuracy > MAX_ACCURACY_M
+            ? `Waiting for a better GPS signal (\u00b1${Math.round(gps.fix.accuracy)} m)`
+            : `GPS accuracy \u00b1${Math.round(gps.fix.accuracy)} m`}
+        </p>
+      )}
+      <ApprovalAnswer uid={uid} />
+      {problem && (
+        <div className="rounded-2xl border border-red-400/40 bg-red-500/10 p-4 space-y-2" data-testid="ready-blocker">
+          <p className="text-lg font-bold text-red-200">{problem.message}</p>
+          <div className="flex flex-wrap gap-2">
+            {problem.details.inspection && (
+              <button type="button" className="min-h-[48px] px-4 rounded-xl bg-gold-400 text-navy-950 font-bold" onClick={() => navigate(`/driver/inspection?type=${problem.details.inspection === "shift" ? "weekly" : problem.details.inspection}&then=online`)}>
+                Do the vehicle check
+              </button>
+            )}
+            {problem.details.weakGps && (
+              <button type="button" className="min-h-[48px] px-4 rounded-xl bg-gold-400 text-navy-950 font-bold" onClick={() => run(problem.retry)}>
+                Try again
+              </button>
+            )}
+            <button type="button" className="min-h-[48px] px-4 rounded-xl bg-white/10 text-white font-bold" onClick={() => setAsking(true)}>
+              Ask dispatch
+            </button>
+          </div>
+        </div>
+      )}
       <EventBanner event={board?.lastEvent} uid={uid} zoneLabel={zoneLabel} />
 
       {status === "ready" && gps.gps === "ok" && gps.gpsZoneId !== board.zoneId && (
@@ -278,7 +313,27 @@ export default function DriverStatusPanel({ driver, board, drivers, zones, rideS
         )}
       </div>
 
-      {msg && <p className="text-red-300 text-sm">{msg}</p>}
+      {msg && !problem && <p className="text-red-300 text-sm">{msg}</p>}
+
+      <button
+        type="button"
+        data-testid="report-problem"
+        className="w-full min-h-[48px] rounded-xl bg-white/5 border border-white/15 text-slate-200 font-semibold"
+        onClick={() => setAsking(true)}
+      >
+        Report a problem / Ask dispatch
+      </button>
+      {asking && (
+        <AskDispatch
+          onClose={() => setAsking(false)}
+          defaultArea={status === "moving" || status === "offline" ? (status === "offline" ? "go_online" : "check_ready") : "other"}
+          reason={problem?.message || ""}
+          zones={zones}
+          defaultZoneId={gps.gpsZoneId || board?.zoneId || ""}
+          gps={gps}
+          onAsked={() => setProblem(null)}
+        />
+      )}
 
       {onBoard && push === "default" && (
         <button

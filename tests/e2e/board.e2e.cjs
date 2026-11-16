@@ -7,7 +7,7 @@ const sq = (lat, lng, r = 0.01) => [
   { lat: lat - r, lng: lng - r }, { lat: lat - r, lng: lng + r },
   { lat: lat + r, lng: lng + r }, { lat: lat + r, lng: lng - r },
 ];
-const RH = { lat: 32.48, lng: -84.95 }, FB = { lat: 32.36, lng: -84.95 }, NOWHERE = { lat: 32.6, lng: -84.6 };
+const RH = { lat: 32.48, lng: -84.95, accuracy: 10 }, FB = { lat: 32.36, lng: -84.95, accuracy: 10 }, NOWHERE = { lat: 32.6, lng: -84.6, accuracy: 10 };
 const auth = (uid, extra = {}) => ({ uid, token: { driver: true, ...extra } });
 const call = (fn, uid, data, a) => f[fn].run({ data, auth: a || auth(uid) });
 const board = async (uid) => (await db.doc(`board/${uid}`).get()).data();

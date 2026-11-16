@@ -25,6 +25,7 @@ export async function bootDemo() {
     url.searchParams.delete("as");
     window.history.replaceState(null, "", url.pathname + url.search + url.hash);
   }
-  installGeo({ ...center("the-park"), zoneId: "the-park" });
+  // Real device GPS by default; the DEMO menu can still place this device on a zone.
+  installGeo({ real: true });
   startEngine();
 }

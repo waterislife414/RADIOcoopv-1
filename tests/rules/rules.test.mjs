@@ -15,8 +15,18 @@ before(async () => {
   env = await initializeTestEnvironment({ projectId: "demo-radio", firestore: { rules, host, port: Number(port) } });
 });
 after(async () => env?.cleanup());
+// A suite run just before this one in the same emulator (rideflow) can leave a transaction lock
+// that expires on its own; wait it out instead of failing every test.
+async function clearWithRetry() {
+  for (let i = 0; ; i++) {
+    try { return await env.clearFirestore(); } catch (e) {
+      if (i >= 40 || !/lock timeout|ABORTED/i.test(String(e?.message ?? e))) throw e;
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+  }
+}
 beforeEach(async () => {
-  await env.clearFirestore();
+  await clearWithRetry();
   await env.withSecurityRulesDisabled(async (ctx) => {
     const db = ctx.firestore();
     const put = (p, d) => setDoc(doc(db, p), d);
@@ -224,4 +234,26 @@ test("alerts: office reads them; nobody writes them from the app", async () => {
   await assertFails(setDoc(doc(driver, "alerts/a2"), { type: "emergency", driverId: "d1", status: "open" }));
   await assertSucceeds(getDoc(doc(office, "alerts/a1")));
   await assertFails(updateDoc(doc(office, "alerts/a1"), { status: "handled" }));
+});
+
+test("problem reports and approvals: office reads; a driver reads only his own answer; nobody writes", async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    const db = ctx.firestore();
+    await setDoc(doc(db, "support_tickets/t1"), { uid: "d1", status: "open" });
+    await setDoc(doc(db, "approval_requests/a1"), { uid: "d1", status: "pending" });
+    await setDoc(doc(db, "approval_requests/a2"), { uid: "d2", status: "pending" });
+    await setDoc(doc(db, "owner_inbox/o1"), { kind: "repeat_approvals" });
+    await setDoc(doc(db, "mail_queue/m1"), { to: ["x@example.com"] });
+  });
+  await assertSucceeds(getDoc(doc(office(), "support_tickets/t1")));
+  await assertFails(getDoc(doc(driver(), "support_tickets/t1")));
+  await assertFails(setDoc(doc(driver(), "support_tickets/t2"), { uid: "d1" }));
+  await assertSucceeds(getDoc(doc(driver(), "approval_requests/a1")));
+  await assertFails(getDoc(doc(driver(), "approval_requests/a2")));
+  await assertFails(updateDoc(doc(driver(), "approval_requests/a1"), { status: "approved" }));
+  await assertFails(updateDoc(doc(office(), "approval_requests/a1"), { status: "approved" }));
+  await assertSucceeds(getDoc(doc(office(), "owner_inbox/o1")));
+  await assertFails(getDoc(doc(rider(), "owner_inbox/o1")));
+  await assertFails(getDoc(doc(office(), "mail_queue/m1")));
+  await assertFails(getDoc(doc(guest(), "approval_requests/a1")));
 });

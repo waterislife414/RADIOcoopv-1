@@ -9,11 +9,13 @@ import { BRAND } from "../../config/constants";
 const DISPATCH = BRAND.dispatch;
 const STALE_MS = (DISPATCH.gps?.staleMin ?? 3) * 60 * 1000;
 
+import { STATUS_COLORS } from "../../utils/statusColors";
+
 const STATUS_STYLE = {
-  ready: { color: "#EF4444", label: "Waiting" },
-  offered: { color: "#F59E0B", label: "Being offered" },
-  on_call: { color: "#10B981", label: "On call" },
-  moving: { color: "#3B82F6", label: "Moving" },
+  ready: { color: STATUS_COLORS.ready, label: "Ready" },
+  offered: { color: STATUS_COLORS.onCall, label: "Being offered" },
+  on_call: { color: STATUS_COLORS.onCall, label: "On a call" },
+  moving: { color: STATUS_COLORS.moving, label: "Moving" },
 };
 const ORDER = ["offered", "on_call", "ready", "moving"];
 

@@ -122,8 +122,19 @@
       "staleMin": 3,
       "outOfZoneMin": 3,
       "minMoveMeters": 50,
-      "maxIntervalSec": 45
-    }
+      "maxIntervalSec": 45,
+      "maxAccuracyMeters": 100
+    },
+    "statusColors": {
+      "ready": "#16a34a",
+      "onCall": "#f97316",
+      "moving": "#2563eb",
+      "out": "#dc2626"
+    },
+    "needsDispatcherAlertMinutes": 3,
+    "approvalValidMinutes": 60,
+    "approvalsBeforeFlag": 2,
+    "approvalRepeatSeconds": 120
   },
   "legalVersion": "2026-11-15.1",
   "rideRules": {
@@ -177,5 +188,10 @@
       "Call your driver directly. It’s private, and no numbers are shared."
     ],
     "fine": "Good until midnight. Premium members still dispatch first. Your driver may not pick up while driving and will call back when it’s safe."
+  },
+  "support": {
+    "_note": "Problem reports (Report a problem / Ask dispatch) are saved and emailed to these addresses. Fill in when handing over.",
+    "devEmail": "[INSERT_DEV_EMAIL]",
+    "ownerEmail": "[INSERT_OWNER_EMAIL]"
   }
 }

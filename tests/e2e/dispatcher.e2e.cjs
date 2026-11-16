@@ -84,19 +84,18 @@ const sq = (lat, lng, r = 0.01) => [{ lat: lat - r, lng: lng - r }, { lat: lat -
   await as("dispatcherBoardAction", { uid: "radio-9", action: "front", zoneId: "east" });
   const r9 = await get("board/radio-9");
   assert.equal(r9.status, "ready"); assert.ok(r9.lineKey < 100);
-  assert.equal((await get("rides/w4")).status, "finished");
+  // He was only dispatched (not picked up): the ride goes back to the office, not "finished".
+  const w4 = await get("rides/w4");
+  assert.deepEqual([w4.status, w4.dispatchState, w4.driverId ?? null], ["pending", "escalated", null]);
   await rejects(as("dispatcherBoardAction", { uid: "d3", action: "remove" }), /Only radio cars/);
   await as("dispatcherBoardAction", { uid: "radio-9", action: "remove" });
   assert.equal(await get("board/radio-9"), undefined);
 
-  // Board moves on app drivers; offered car can't be moved
+  // Board moves on app drivers; the manager can move any car, even an offered one
   await as("dispatcherBoardAction", { uid: "d3", action: "moving" });
   assert.equal((await get("board/d3")).status, "moving");
   await as("dispatcherBoardAction", { uid: "d3", action: "ready", zoneId: "rose-hill" });
   assert.equal((await get("board/d3")).zoneId, "rose-hill");
-  await db.doc("board/d3").update({ status: "offered" });
-  await rejects(as("dispatcherBoardAction", { uid: "d3", action: "off" }), /being offered/);
-  await db.doc("board/d3").update({ status: "ready" });
 
   // Re-zone an unzoned ride; auto picks it up
   await db.doc("settings/dispatch").set({ mode: "auto" }); E._resetSettingsCache();

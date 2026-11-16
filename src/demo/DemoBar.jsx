@@ -20,6 +20,9 @@ export default function DemoBar() {
   const [open, setOpen] = useState(false);
   const [zones, setZones] = useState([]);
   const [note, setNote] = useState("");
+  const [popup, setPopup] = useState(null); // what a clock jump just did
+  const [jump, setJump] = useState(null); // { label } the demo clock after a jump
+  const [tick, setTick] = useState(() => Date.now());
   const [, force] = useState(0);
   const uid = accounts.currentUid();
   const sim = getSimulated();
@@ -40,15 +43,24 @@ export default function DemoBar() {
     if (newTab) window.open(url, "_blank");
     else window.location.assign(url);
   }
-  async function act(fn, done) {
+  async function act(fn, done, clock = null) {
     setNote("Working…");
     try {
       const n = await fn();
-      setNote(done(n));
+      const msg = done(n);
+      setNote(msg);
+      if (clock) {
+        setJump({ label: clock });
+        setPopup({ title: `Demo clock: ${clock}`, text: msg });
+      }
     } catch (e) {
       setNote(e.message || "Didn't work.");
     }
   }
+  useEffect(() => {
+    const t = setInterval(() => setTick(Date.now()), 15000);
+    return () => clearInterval(t);
+  }, []);
 
   // Tab on the left edge, clear of the app's own buttons.
   const box = { position: "fixed", left: 0, top: "42%", zIndex: 9999, fontFamily: "system-ui, sans-serif" };
@@ -62,6 +74,16 @@ export default function DemoBar() {
   const btn = { display: "block", width: "100%", textAlign: "left", padding: "9px 10px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", fontSize: 14, cursor: "pointer" };
   const h = { fontSize: 11, fontWeight: 800, letterSpacing: 1, color: "#64748b", textTransform: "uppercase", margin: "12px 0 6px" };
   return (
+    <>
+    {popup && (
+      <div role="alertdialog" data-testid="demo-popup" style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(0,0,0,.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+        <div style={{ background: "#fff", color: "#0f172a", borderRadius: 18, padding: 22, maxWidth: 360, width: "100%", fontFamily: "system-ui, sans-serif" }}>
+          <p style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>{popup.title}</p>
+          <p style={{ fontSize: 16, margin: "10px 0 16px" }}>{popup.text}</p>
+          <button onClick={() => setPopup(null)} style={{ width: "100%", padding: 12, borderRadius: 12, border: 0, background: "#0f172a", color: "#fbbf24", fontWeight: 800, fontSize: 16 }}>OK</button>
+        </div>
+      </div>
+    )}
     <div style={{ ...box, top: 12, left: 12, width: 300, maxHeight: "86vh", overflowY: "auto", background: "#f8fafc", color: "#0f172a", borderRadius: 16, padding: 14, boxShadow: "0 10px 30px rgba(0,0,0,.4)", border: "2px solid #fbbf24" }}>
       <div style={{ display: "flex", alignItems: "center" }}>
         <strong style={{ flex: 1 }}>Demo &mdash; example data</strong>
@@ -83,6 +105,14 @@ export default function DemoBar() {
         </div>
       ))}
 
+      <p style={h}>Demo clock</p>
+      <p data-testid="demo-clock" style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>
+        {jump ? `${jump.label} (jumped)` : new Date(tick).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+      </p>
+      <p style={{ margin: "2px 0 0", fontSize: 11, color: "#64748b" }}>
+        The real clock can&apos;t be changed. The jump buttons below run the 2 PM and 4 PM lease steps right now.
+      </p>
+
       <p style={h}>This device is at</p>
       <select
         value={sim?.real ? "real" : sim?.zoneId || ""}
@@ -100,6 +130,9 @@ export default function DemoBar() {
         ))}
         <option value="real">Real GPS of this device</option>
       </select>
+      <p data-testid="demo-location" style={{ margin: "4px 0 0", fontSize: 12, color: sim && !sim.real ? "#b45309" : "#475569", fontWeight: sim && !sim.real ? 700 : 400 }}>
+        {sim && !sim.real ? `Demo location: ${zones.find((z) => z.id === sim.zoneId)?.label || "a set spot"}` : "Using this device's real GPS"}
+      </p>
 
       {String(uid || "").startsWith("demo-driver") && (
         <>
@@ -114,10 +147,10 @@ export default function DemoBar() {
       )}
 
       <p style={h}>Lease clock</p>
-      <button style={{ ...btn, marginBottom: 6 }} onClick={() => act(settleLeasesNow, (n) => `2 PM: settled ${n} lease day${n === 1 ? "" : "s"}.`)}>
+      <button style={{ ...btn, marginBottom: 6 }} onClick={() => act(settleLeasesNow, (n) => `2 PM: settled ${n} lease day${n === 1 ? "" : "s"}. Drivers who didn't pay show as owing.`, "2:00 PM")}>
         Jump to 2 PM &mdash; settle today&apos;s leases
       </button>
-      <button style={btn} onClick={() => act(lockUnpaidNow, (n) => `4 PM: ${n} driver${n === 1 ? "" : "s"} locked for unpaid lease.`)}>
+      <button style={btn} onClick={() => act(lockUnpaidNow, (n) => `4 PM: ${n} driver${n === 1 ? "" : "s"} put on hold for unpaid lease.`, "4:00 PM")}>
         Jump past 4 PM &mdash; lock unpaid drivers
       </button>
 
@@ -128,5 +161,6 @@ export default function DemoBar() {
       {note && <p style={{ fontSize: 13, color: "#0f766e", marginTop: 8 }}>{note}</p>}
       <p style={{ fontSize: 11, color: "#64748b", marginTop: 10 }}>Sign-in for any example account: password &ldquo;demo1234&rdquo;.</p>
     </div>
+    </>
   );
 }

@@ -16,9 +16,9 @@ const MIN = 60_000;
 const ADMIN = { uid: "boss", token: { admin: true } };
 const D1 = { uid: "d1", token: { driver: true } };
 const rider = (uid) => ({ uid, token: {} });
-const PICKUP = { lat: 32.47, lng: -84.98 };
-const FAR = { lat: 32.52, lng: -84.98 }; // ~5.5 km north
-const NEAR = { lat: 32.475, lng: -84.98 }; // ~550 m
+const PICKUP = { lat: 32.47, lng: -84.98, accuracy: 10 };
+const FAR = { lat: 32.52, lng: -84.98, accuracy: 10 }; // ~5.5 km north
+const NEAR = { lat: 32.475, lng: -84.98, accuracy: 10 }; // ~550 m
 const call = (fn, data, auth) => f[fn].run({ data, auth });
 const get = async (p) => (await db.doc(p).get()).data();
 async function rejects(p, re) {
