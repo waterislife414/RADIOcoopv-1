@@ -25,7 +25,7 @@ jobs:
           BR: ${{ github.ref_name }}
         run: |
           T="${BR#ai-go/}"
-          MODEL=gemini/gemini-2.5-flash
+          MODEL=gemini/gemini-2.5-flash; [ "$T" = T6 ] && MODEL=openrouter/cohere/north-mini-code:free
           git config user.name "ai-bot"; git config user.email "ai-bot@users.noreply.github.com"
           git checkout -b "ai/$T"
           { cat docs/ai/style-$(echo $MODEL|cut -d/ -f1).txt; cat AGENTS.md; echo; echo "TASK:"; grep -E "^$T " AI_PROMPT.md; echo "Rules: small diff; touch only needed files; no keys/deploys/money logic."; } > /tmp/task.txt
