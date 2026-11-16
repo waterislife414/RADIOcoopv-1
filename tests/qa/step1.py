@@ -153,7 +153,7 @@ with sync_playwright() as p:
         # (a) Ready car
         chip44().click(); A.wait_for_timeout(500)
         assert A.locator("text=Car 44").count(), "no CarActionsModal"
-        A.click("button:has-text('Off the board')"); A.wait_for_timeout(1500)
+        A.locator("button:text-is('Off')").click(); A.wait_for_timeout(1500)
         assert board(A,"demo-driver-44").get("status") in ("offline", None), "ready car not taken off: "+str(board(A,"demo-driver-44").get("status"))
         stage='b'
         # (b) on-call/offered car: put 44 back on, then offer a ride
@@ -174,7 +174,7 @@ with sync_playwright() as p:
         assert s in ("offered","on_call"), "could not put 44 on a call: "+str(s)
         stage='d'
         chip44().click(); A.wait_for_timeout(500)
-        A.click("button:has-text('Off the board')"); A.wait_for_timeout(1500)
+        A.locator("button:text-is('Off')").click(); A.wait_for_timeout(1500)
         s2 = board(A,"demo-driver-44").get("status")
         return s2 in ("offline", None) or f"{s} car not taken off: {s2}"
     stage=''
