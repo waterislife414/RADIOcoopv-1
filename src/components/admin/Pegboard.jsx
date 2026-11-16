@@ -172,6 +172,7 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
       <button
         type="button"
         draggable
+        data-testid={`car-chip-${d.carNumber}`}
         onDragStart={(e) => e.dataTransfer.setData("text/car", d.id)}
         onClick={() => (picked?.id === d.id ? setPicked(null) : onCarClick?.(d))}
         onDoubleClick={() => setPicked(d)}

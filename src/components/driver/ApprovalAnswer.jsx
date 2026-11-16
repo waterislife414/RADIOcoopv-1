@@ -55,6 +55,8 @@ export default function ApprovalAnswer({ uid }) {
     );
   }
   return pending ? (
-    <div data-testid="approval-answer" className="hidden" />
+    <div data-testid="approval-answer" className="p-3 bg-amber-500/20 text-amber-200 rounded-xl font-semibold text-center">
+      Waiting for dispatch to answer&hellip;
+    </div>
   ) : null;
 }
