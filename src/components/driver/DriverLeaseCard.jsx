@@ -47,7 +47,7 @@ export default function DriverLeaseCard({ driver }) {
   return (
     <section className={`glass-panel rounded-2xl p-5 space-y-3 border ${locked ? "border-red-500" : "border-white/10"}`}>
       <div className="flex items-baseline justify-between">
-        <p className="text-xs font-bold tracking-widest text-slate-500 uppercase">Lease &middot; due {DUE_TEXT}</p>
+        <p className="text-xs font-bold tracking-widest text-slate-500 uppercase">Lick &middot; due {DUE_TEXT}</p>
         <p className="text-sm text-slate-500">Credit {money(credit)}</p>
       </div>
 
@@ -80,25 +80,10 @@ export default function DriverLeaseCard({ driver }) {
 
       <div>
         <div className="flex justify-between text-sm text-slate-300">
-          <span>This lease day</span>
+          <span>This lick day</span>
           <span>
             {money(covered)} of {money(lease)}
           </span>
         </div>
         <div className="h-2.5 rounded-full bg-white/10 mt-1 overflow-hidden">
-          <div className="h-full bg-emerald-400" style={{ width: `${lease ? Math.round((covered / lease) * 100) : 100}%` }} />
-        </div>
-        <p className="text-sm text-slate-500 mt-2">
-          {lease === 0
-            ? "No lease this day."
-            : credit + card >= lease
-              ? `Paid by card · ${money(credit + card - lease)} credit toward tomorrow.`
-              : day
-                ? `Card ${money(card)} + credit ${money(credit)}. At ${clock(LEASE_CFG.lease.dueStart)} you'll owe ${money(lease - credit - card)} unless more card fares come in.`
-                : `Lease starts counting when you go online. Card fares go toward it.`}
-        </p>
-      </div>
-      {msg && <p className="text-red-300 text-sm">{msg}</p>}
-    </section>
-  );
-}
+          <div className="h-full bg-emerald-400" style={{ width: `${lease ?
