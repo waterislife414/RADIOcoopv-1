@@ -25,16 +25,16 @@ export default function ConsentModal({
 }) {
   const [atEnd, setAtEnd] = useState(false);
   const [terms, setTerms] = useState(false);
-  const [contact, setContact] = useState(false);
-  const [promo, setPromo] = useState(false);
+  const [contact, setContact] = useState(true);
+  const [promo, setPromo] = useState(true);
   const scroller = useRef(null);
 
   useEffect(() => {
     if (!open) return;
     setAtEnd(false);
     setTerms(false);
-    setContact(false);
-    setPromo(false);
+    setContact(true);
+    setPromo(true);
     scroller.current?.scrollTo(0, 0);
   }, [open]);
 
@@ -45,11 +45,11 @@ export default function ConsentModal({
     if (el && el.scrollTop + el.clientHeight >= el.scrollHeight - 40) setAtEnd(true);
   }
 
-  // "Check all" covers what's required; promotions are always the rider's own separate choice.
-  const all = terms && contact;
+  const all = terms && contact && promo;
   const setAll = (v) => {
     setTerms(v);
     setContact(v);
+    setPromo(v);
   };
   const ready = atEnd && terms && contact;
 
