@@ -243,10 +243,20 @@ export default function DriverStatusPanel({ driver, board, drivers, zones, rideS
                 Try again
               </button>
             )}
+            {problem.details.agreement && (
+              <button type="button" className="min-h-[48px] px-4 rounded-xl bg-gold-400 text-navy-950 font-bold" onClick={() => navigate("/driver-agreement")}>
+                Sign agreement
+              </button>
+            )}
             <button type="button" className="min-h-[48px] px-4 rounded-xl bg-white/10 text-white font-bold" onClick={() => setAsking(true)}>
               Ask dispatch
             </button>
           </div>
+          {problem.details.settings && (
+            <p className="text-sm text-slate-300">
+              Go to your phone&apos;s Settings &gt; Apps &gt; Radio Co-op &gt; Permissions to turn them on.
+            </p>
+          )}
         </div>
       )}
       <EventBanner event={board?.lastEvent} uid={uid} zoneLabel={zoneLabel} />
