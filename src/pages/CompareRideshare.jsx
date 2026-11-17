@@ -49,10 +49,10 @@ export default function CompareRideshare() {
                       <td className="p-3 font-medium text-slate-800">{miles} mi</td>
                       <td className="p-3 font-bold text-emerald-700 text-base">{money(ours)}</td>
                       <td className="p-3 text-slate-700">
-                        {money(theirs)} <span className="text-xs text-emerald-600 block font-semibold">{pct > 0 ? `Save ${pct}%` : ""}</span>
+                        {money(theirs)} <span className="text-xs text-emerald-600 block font-semibold">{pct > 0 ? `Up to ${pct}% less` : ""}</span>
                       </td>
                       <td className="p-3 text-slate-700">
-                        {money(theirs)} <span className="text-xs text-emerald-600 block font-semibold">{pct > 0 ? `Save ${pct}%` : ""}</span>
+                        {money(theirs)} <span className="text-xs text-emerald-600 block font-semibold">{pct > 0 ? `Up to ${pct}% less` : ""}</span>
                       </td>
                     </tr>
                   );
@@ -61,8 +61,8 @@ export default function CompareRideshare() {
             </table>
           </div>
 
-          <p className="text-xs text-center text-slate-500">
-            Based on standard fares compared to national rideshare medians.
+          <p className="text-xs text-center text-slate-500" data-testid="compare-footnote">
+            Estimates from published Uber and Lyft rates. Real prices vary by city, time and demand.
           </p>
 
           <Link
