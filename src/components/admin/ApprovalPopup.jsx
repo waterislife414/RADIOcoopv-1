@@ -126,6 +126,19 @@ export default function ApprovalPopup() {
         {reqs.length > 1 && <p className="text-sm font-semibold text-amber-700">{reqs.length - 1} more waiting after this one.</p>}
         {denying ? (
           <>
+            <div className="flex flex-wrap gap-1.5 mb-1">
+              {["Outside the zone", "GPS looks off", "Car not ready", "Call dispatch"].map((chipText) => (
+                <button
+                  key={chipText}
+                  type="button"
+                  data-testid="deny-chip"
+                  onClick={() => setReason(chipText)}
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-full border border-slate-300"
+                >
+                  {chipText}
+                </button>
+              ))}
+            </div>
             <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Why not? (he'll see this)" className="w-full border border-slate-300 rounded-xl px-3 py-3 text-base" aria-label="Reason" />
             <div className="flex gap-2">
               <button disabled={busy || reason.trim().length < 3} onClick={() => send("deny")} className="flex-1 min-h-[52px] rounded-xl bg-red-600 text-white font-bold disabled:opacity-50">
