@@ -266,3 +266,32 @@ exports.addRadioCar = onCall(async (request) => {
   });
   return { ok: true, uid: id };
 });
+
+// Dispatcher approves a rider's ID, then every ride of theirs that was waiting
+// on the office only because of the ID goes back through the normal system.
+exports.dispatcherApproveRiderId = onCall(async (request) => {
+  const adminUid = requireAdmin(request);
+  const userId = String(request.data?.userId || "");
+  if (!userId || userId === "guest") throw new HttpsError("invalid-argument", "Pick a rider.");
+  const userRef = db().collection("users").doc(userId);
+  if (!(await userRef.get()).exists) throw new HttpsError("not-found", "Rider not found.");
+  await userRef.update({ idVerified: true, idVerifiedAt: serverNow(), idVerifiedBy: adminUid });
+  const waiting = await db()
+    .collection("rides")
+    .where("customerId", "==", userId)
+    .where("status", "==", "pending")
+    .where("dispatchState", "==", "office")
+    .get();
+  let rerouted = 0;
+  for (const d of waiting.docs) {
+    const fields = await E.dispatchFieldsFor(d.data(), Date.now(), d.id);
+    if (fields.dispatchState === "office") {
+      await d.ref.update({ officeWhy: fields.officeWhy || [] }); // still needs the office for another reason
+      continue;
+    }
+    await d.ref.update({ ...fields, officeWhy: FieldValue.delete(), updatedAt: serverNow() });
+    await E.startDispatch(d.id);
+    rerouted += 1;
+  }
+  return { ok: true, rerouted };
+});
