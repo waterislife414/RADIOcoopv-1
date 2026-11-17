@@ -1,99 +1,131 @@
-const TAG_STYLES = {
-  cash: "bg-slate-700 text-white",
-  card: "bg-blue-600 text-white",
-  transfer: "bg-emerald-600 text-white",
-};
+import { useState, useEffect } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
+import { db, functions } from "../../config/firebase";
 
-function getWhyDispatcher(ride) {
-  if (!ride) return null;
-  if (!ride.pickupLat && !ride.lat && !ride.pickupCoords) return "No location shared";
-  if (ride.paymentMethod === "cash" || ride.paymentMethod === "phone" || ride.callIn) return "Cash call";
-  if (ride.idVerified === false) return "No verified ID";
-  if (ride.customerId === "guest" || !ride.customerId) return "Guest ride";
-  return null;
-}
+export default function RideRequestCard({
+  ride,
+  customerStatus,
+  carFor,
+  zones,
+  onSetZone,
+  onChangeCar,
+  onDispatchAdvance,
+  onDismiss,
+  onCaptureFare,
+  onChargeWallet,
+  onArchive,
+}) {
+  const [rider, setRider] = useState(null);
+  const [approving, setApproving] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
 
-export default function RideRequestCard({ ride, onAccept, onDecline, onFlag }) {
-  const isAsap = ride.scheduleType !== "later";
-  const why = getWhyDispatcher(ride);
+  useEffect(() => {
+    if (!ride.customerId || ride.customerId === "guest") return;
+    getDoc(doc(db, "users", ride.customerId))
+      .then((snap) => {
+        if (snap.exists()) setRider(snap.data());
+      })
+      .catch(() => {});
+  }, [ride.customerId]);
+
+  async function handleApprove() {
+    if (!ride.customerId) return;
+    setApproving(true);
+    try {
+      await httpsCallable(functions, "dispatcherApproveRiderId")({ userId: ride.customerId });
+      setRider((prev) => (prev ? { ...prev, idVerified: true } : prev));
+      setSuccessMsg("Sent back through the system");
+    } catch (e) {
+      alert(e?.message || "Couldn't approve ID.");
+    } finally {
+      setApproving(false);
+    }
+  }
+
+  const isGuest = !ride.customerId || ride.customerId === "guest";
+  const hasPhotos = rider?.idImageUrl || rider?.faceImageUrl;
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
-      <div className="flex justify-between items-start gap-2">
+      <div className="flex justify-between items-start">
         <div>
           <p className="font-semibold text-slate-800">{ride.pickup}</p>
-          <p className="text-sm text-slate-500">→ {ride.dropoff}</p>
+          <p className="text-sm text-slate-500">&rarr; {ride.dropoff}</p>
         </div>
-        <div className="flex flex-col items-end gap-1 shrink-0">
-          <span
-            className={`text-xs font-bold uppercase px-3 py-1 rounded-full ${
-              TAG_STYLES[ride.paymentMethod] || "bg-slate-300 text-slate-800"
-            }`}
-          >
-            {ride.paymentMethod}
-          </span>
-          <span
-            className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
-              isAsap ? "bg-blue-100 text-blue-700" : "bg-slate-200 text-slate-600"
-            }`}
-          >
-            {isAsap
-              ? "ASAP"
-              : ride.scheduledFor
-              ? new Date(ride.scheduledFor).toLocaleString([], {
-                  month: "short",
-                  day: "numeric",
-                  hour: "numeric",
-                  minute: "2-digit",
-                })
-              : "Scheduled"}
-          </span>
-          {ride.outOfArea && (
-            <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
-              Out of Area
-            </span>
-          )}
-        </div>
+        <span className="text-xs font-bold uppercase px-3 py-1 rounded-full bg-blue-100 text-blue-800">
+          {ride.status}
+        </span>
       </div>
 
-      <div className="text-xs text-slate-500 flex flex-wrap gap-x-4 gap-y-1">
-        <span>{ride.passengers} pax</span>
-        {ride.roundTrip && <span>Round trip</span>}
-        {ride.stops?.length > 0 && <span>{ride.stops.length} stop(s)</span>}
-        <span>{ride.estMiles} mi est.</span>
-      </div>
+      {!isGuest && (
+        <div data-testid="ride-id-strip" className="bg-slate-50 rounded-xl p-3 border border-slate-200 space-y-2">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-3">
+              {hasPhotos ? (
+                <div className="flex items-center gap-2">
+                  {rider.idImageUrl && (
+                    <a href={rider.idImageUrl} target="_blank" rel="noopener noreferrer">
+                      <img src={rider.idImageUrl} alt="ID" className="h-16 w-16 object-cover rounded-lg border border-slate-300" />
+                    </a>
+                  )}
+                  {rider.faceImageUrl && (
+                    <a href={rider.faceImageUrl} target="_blank" rel="noopener noreferrer">
+                      <img src={rider.faceImageUrl} alt="Face" className="h-16 w-16 object-cover rounded-lg border border-slate-300" />
+                    </a>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500 italic">No ID yet</p>
+              )}
+            </div>
 
-      {why && (
-        <p data-testid="why-dispatcher" className="text-xs font-medium text-amber-600">
-          {why}
-        </p>
+            <div>
+              {rider?.idVerified ? (
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                  ID verified
+                </span>
+              ) : rider?.idImageUrl ? (
+                <button
+                  type="button"
+                  data-testid="ride-id-approve"
+                  disabled={approving}
+                  onClick={handleApprove}
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
+                >
+                  {approving ? "Approving..." : "Approve ID"}
+                </button>
+              ) : null}
+            </div>
+          </div>
+
+          {successMsg && <p className="text-xs font-semibold text-emerald-600">{successMsg}</p>}
+        </div>
       )}
 
-      {ride.phone && (
-        <a href={`tel:${ride.phone}`} className="text-blue-600 text-sm font-medium">
-          {ride.phone}
-        </a>
+      {Array.isArray(ride.officeWhy) && ride.officeWhy.includes("id") && (
+        <p className="text-xs font-medium text-amber-700">Sent here: ID not verified</p>
       )}
 
-      <div className="flex gap-2 pt-1">
-        <button
-          onClick={() => onDecline(ride)}
-          className="flex-1 bg-red-50 text-red-700 font-semibold text-sm py-2 rounded-xl"
-        >
-          DECLINE
-        </button>
-        <button
-          onClick={() => onAccept(ride)}
-          className="flex-1 bg-blue-600 text-white font-semibold text-sm py-2 rounded-xl"
-        >
-          ACCEPT
-        </button>
-        <button
-          onClick={() => onFlag(ride)}
-          className="flex-1 bg-slate-200 text-slate-700 font-semibold text-xs py-2 rounded-xl"
-        >
-          FLAG
-        </button>
+      <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 text-xs">
+        {onDispatchAdvance && (
+          <button
+            type="button"
+            onClick={() => onDispatchAdvance(ride)}
+            className="px-3 py-1.5 rounded-lg bg-blue-600 text-white font-semibold"
+          >
+            Advance
+          </button>
+        )}
+        {onDismiss && (
+          <button
+            type="button"
+            onClick={() => onDismiss(ride)}
+            className="px-3 py-1.5 rounded-lg bg-slate-200 text-slate-700 font-semibold"
+          >
+            Dismiss
+          </button>
+        )}
       </div>
     </div>
   );
