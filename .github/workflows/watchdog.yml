@@ -13,7 +13,7 @@ jobs:
     timeout-minutes: 6
     steps:
       - name: Check workers
-        env: { GH_TOKEN: "${{ github.token }}", R: "${{ github.repository }}", WATCH: "T2 T5 T7" }
+        env: { GH_TOKEN: "${{ github.token }}", R: "${{ github.repository }}", WATCH: "T25 T26 T27" }
         run: |
           for ROUND in 1 2 3 4 5 6 7 8 9; do
             gh run list -R $R --workflow ai-task.yml --limit 40 --json databaseId,status,conclusion,createdAt,event,displayTitle > /tmp/runs.json
