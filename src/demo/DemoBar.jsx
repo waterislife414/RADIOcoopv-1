@@ -15,7 +15,7 @@ const ROLES = [
   { uid: "demo-mechanic", label: "Mechanic \u00b7 Shop board", path: "/shop" },
 ];
 
-/** Small floating menu, demo build only: switch role, set location, fast-forward the lease clock. */
+/** Small floating menu, demo build only: switch role, set location, fast-forward the lick clock. */
 export default function DemoBar() {
   const [open, setOpen] = useState(false);
   const [zones, setZones] = useState([]);
@@ -110,7 +110,7 @@ export default function DemoBar() {
         {jump ? `${jump.label} (jumped)` : new Date(tick).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
       </p>
       <p style={{ margin: "2px 0 0", fontSize: 11, color: "#64748b" }}>
-        The real clock can&apos;t be changed. The jump buttons below run the 2 PM and 4 PM lease steps right now.
+        The real clock can&apos;t be changed. The jump buttons below run the 2 PM and 4 PM lick steps right now.
       </p>
 
       <p style={h}>This device is at</p>
@@ -146,11 +146,11 @@ export default function DemoBar() {
         </>
       )}
 
-      <p style={h}>Lease clock</p>
-      <button style={{ ...btn, marginBottom: 6 }} onClick={() => act(settleLeasesNow, (n) => `2 PM: settled ${n} lease day${n === 1 ? "" : "s"}. Drivers who didn't pay show as owing.`, "2:00 PM")}>
-        Jump to 2 PM &mdash; settle today&apos;s leases
+      <p style={h}>Lick clock</p>
+      <button style={{ ...btn, marginBottom: 6 }} onClick={() => act(settleLeasesNow, (n) => `2 PM: settled ${n} lick day${n === 1 ? "" : "s"}. Drivers who didn't pay show as owing.`, "2:00 PM")}>
+        Jump to 2 PM &mdash; settle today&apos;s licks
       </button>
-      <button style={btn} onClick={() => act(lockUnpaidNow, (n) => `4 PM: ${n} driver${n === 1 ? "" : "s"} put on hold for unpaid lease.`, "4:00 PM")}>
+      <button style={btn} onClick={() => act(lockUnpaidNow, (n) => `4 PM: ${n} driver${n === 1 ? "" : "s"} put on hold for unpaid lick.`, "4:00 PM")}>
         Jump past 4 PM &mdash; lock unpaid drivers
       </button>
 

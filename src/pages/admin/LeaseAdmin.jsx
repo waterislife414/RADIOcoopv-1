@@ -96,9 +96,9 @@ function AdjustForm({ driver, onDone }) {
     <div className="bg-slate-50 rounded-xl p-3 space-y-2">
       <div className="flex gap-2 flex-wrap">
         {[
-          ["credit", "Lease credit"],
+          ["credit", "Lick credit"],
           ["owe", "Amount owed"],
-          ["waive", "No lease today"],
+          ["waive", "No lick today"],
         ].map(([k, label]) => (
           <button key={k} onClick={() => setKind(k)} className={`px-3 py-1.5 rounded-lg text-sm font-semibold ${kind === k ? "bg-navy-950 text-white" : "bg-white border"}`}>
             {label}
@@ -132,7 +132,7 @@ function History({ uid }) {
     );
   }, [uid]);
   if (!days) return <p className="text-sm text-slate-400">Loading&hellip;</p>;
-  if (!days.length) return <p className="text-sm text-slate-400">No lease days yet.</p>;
+  if (!days.length) return <p className="text-sm text-slate-400">No lick days yet.</p>;
   return (
     <table className="w-full text-sm">
       <thead className="text-slate-400 text-left">
@@ -140,7 +140,7 @@ function History({ uid }) {
           <th className="py-1">Due</th>
           <th>Card</th>
           <th>Credit in</th>
-          <th>Lease</th>
+          <th>Lick</th>
           <th>Envelope</th>
           <th>Credit out</th>
         </tr>
@@ -199,7 +199,7 @@ function DriverRow({ driver, periodKey, now, repairs = 0 }) {
   );
 }
 
-// Malcolm's lease desk: count envelopes, see who owes, adjust, history.
+// Malcolm's lick desk: count envelopes, see who owes, adjust, history.
 export default function LeaseAdmin() {
   const [drivers, setDrivers] = useState([]);
   const [dropped, setDropped] = useState([]);
@@ -252,7 +252,7 @@ export default function LeaseAdmin() {
         <Link to="/admin/dashboard" className="text-slate-300 hover:text-white font-semibold">
           &larr; Dispatch
         </Link>
-        <h1 className="font-display font-bold text-2xl">Lease</h1>
+        <h1 className="font-display font-bold text-2xl">Lick</h1>
         <p className="text-sm text-slate-300 ml-auto">
           {money(LEASE_CFG.lease.dailyCents)}/day &middot; due {DUE_TEXT} &middot;{" "}
           {windowState === "in_window" ? "due now" : windowState === "after_window" ? "past due time" : "not due yet"}
@@ -283,7 +283,7 @@ export default function LeaseAdmin() {
         <section className="bg-white rounded-2xl border border-slate-200 p-4">
           <h2 className="font-bold text-lg mb-1">Drivers</h2>
           <p className="text-sm text-slate-400 mb-2">
-            Lease day ending {periodKey} at {clock(LEASE_CFG.lease.dueStart)}. Card fares and tips go toward the lease; extra rolls forward as credit.
+            Lick day ending {periodKey} at {clock(LEASE_CFG.lease.dueStart)}. Card fares and tips go toward the lick; extra rolls forward as credit.
           </p>
           {drivers.map((d) => (
             <DriverRow key={d.id} driver={d} periodKey={periodKey} now={now} repairs={repairCounts[String(d.carNumber)] || 0} />
