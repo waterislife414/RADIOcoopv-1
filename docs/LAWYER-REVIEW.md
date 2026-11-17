@@ -56,3 +56,9 @@ today and where to change it. Text lives in `src/legal/documents.js`; numbers li
 ## Insurance
 - [ ] Confirm the company's commercial auto policy, the city-required limits, and that the Terms and
   Driver Agreement match what the policy actually covers.
+
+## Added 2026-11-16 (Jared request, wording written by the build team, NOT reviewed)
+- Booking small print (TripDetails, data-testid address-disclaimer): "Check your addresses before you book. You are responsible for the pickup and drop-off information you enter. If it is wrong, the company is not responsible, and the normal cancellation fee still applies. Anything about the trip is between you and your driver." Counsel: enforceability of the wrong-address fee and the broad no-responsibility wording; whether it belongs in Terms with acceptance.
+- Compare page: "Up to X% less" wording plus an estimates footnote (T22). Counsel: substantiation of Uber and Lyft figures.
+- Driver incentives (points, free lick days tied to ratings, planned): note for the worker-classification review that rewards tied to ratings and rides are a control factor.
+- Default-checked text and promo boxes at sign-up (T14): counsel to review TCPA consent (pre-checked boxes are often not valid consent for marketing texts).
