@@ -4,8 +4,18 @@ const TAG_STYLES = {
   transfer: "bg-emerald-600 text-white",
 };
 
+function getWhyDispatcher(ride) {
+  if (!ride) return null;
+  if (!ride.pickupLat && !ride.lat && !ride.pickupCoords) return "No location shared";
+  if (ride.paymentMethod === "cash" || ride.paymentMethod === "phone" || ride.callIn) return "Cash call";
+  if (ride.idVerified === false) return "No verified ID";
+  if (ride.customerId === "guest" || !ride.customerId) return "Guest ride";
+  return null;
+}
+
 export default function RideRequestCard({ ride, onAccept, onDecline, onFlag }) {
   const isAsap = ride.scheduleType !== "later";
+  const why = getWhyDispatcher(ride);
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
@@ -52,6 +62,12 @@ export default function RideRequestCard({ ride, onAccept, onDecline, onFlag }) {
         {ride.stops?.length > 0 && <span>{ride.stops.length} stop(s)</span>}
         <span>{ride.estMiles} mi est.</span>
       </div>
+
+      {why && (
+        <p data-testid="why-dispatcher" className="text-xs font-medium text-amber-600">
+          {why}
+        </p>
+      )}
 
       {ride.phone && (
         <a href={`tel:${ride.phone}`} className="text-blue-600 text-sm font-medium">
