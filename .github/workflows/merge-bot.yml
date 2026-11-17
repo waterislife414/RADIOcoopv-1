@@ -1,0 +1,39 @@
+name: merge-bot
+# Dispatch with tasks="T18 T19" (or push a worker result branch ai/T<n>). Runs one at a time. Result: branch merge-bot/result, file docs/ai/merge-result.txt.
+on:
+  push:
+    branches: ['ai/T*']
+  workflow_dispatch:
+    inputs:
+      tasks:
+        description: 'Space separated task ids, e.g. T18 T19'
+        required: true
+permissions:
+  contents: write
+concurrency:
+  group: merge-bot
+  cancel-in-progress: false
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: step1-wip, fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: npm ci
+      - run: pip install playwright && python -m playwright install --with-deps chromium
+      - name: Merge
+        run: |
+          TASKS="${{ github.event.inputs.tasks }}"
+          [ -n "$TASKS" ] || TASKS="${GITHUB_REF_NAME#ai/}"
+          bash scripts/merge-bot.sh $TASKS || true
+      - name: Publish result
+        if: always()
+        run: |
+          mkdir -p docs/ai; cp /tmp/merge-bot.log docs/ai/merge-result.txt 2>/dev/null || echo "no log" > docs/ai/merge-result.txt
+          git checkout -q -B merge-bot/result
+          git add -f docs/ai/merge-result.txt; git commit -qm "merge-bot result" ; git push -q -f origin merge-bot/result
