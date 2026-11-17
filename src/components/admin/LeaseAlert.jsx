@@ -25,8 +25,8 @@ export default function LeaseAlert() {
   if (!locked.length) return null;
   return (
     <Link to="/admin/lease" className="block bg-red-50 border-2 border-red-300 rounded-2xl p-4 text-red-900">
-      <span className="font-bold">Lease not paid:</span>{" "}
-      {locked.map((d) => `Car ${d.carNumber} (${money(d.leaseOwedCents)})`).join(", ")} &mdash; locked off the board. Open Lease &rarr;
+      <span className="font-bold">Lick not paid:</span>{" "}
+      {locked.map((d) => `Car ${d.carNumber} (${money(d.leaseOwedCents)})`).join(", ")} &mdash; locked off the board. Open Lick &rarr;
     </Link>
   );
 }
