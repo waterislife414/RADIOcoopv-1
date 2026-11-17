@@ -56,25 +56,6 @@ export default function Profile() {
       setIdUploading(false);
     }
   }
-
-  async function handleFaceUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    setFaceUploading(true);
-    setFaceUploadError("");
-    try {
-      const faceRef = ref(storage, `id_verification/${currentUser.uid}/face-${Date.now()}`);
-      await uploadBytes(faceRef, file);
-      const faceImageUrl = await getDownloadURL(faceRef);
-      await updateDoc(doc(db, "users", currentUser.uid), {
-        faceImageUrl,
-      });
-    } catch (err) {
-      setFaceUploadError("Could not upload. Please try again.");
-    } finally {
-      setFaceUploading(false);
-    }
-  }
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -273,7 +254,7 @@ export default function Profile() {
                 &#10003; ID verified. Your card rides go straight to a driver in the app, and you get a $5 credit on your
                 birthday every year.
               </p>
-            ) : userProfile.idImageUrl ? (
+            ) : userProfile.idImageUrl || userProfile.faceImageUrl ? (
               <p className="text-base text-amber-600 font-semibold">
                 Pending review
               </p>
@@ -297,6 +278,9 @@ export default function Profile() {
                   )}
                   {idUploading && (
                     <p className="text-sm text-slate-500 mt-1">Uploading ID&hellip;</p>
+                  )}
+                  {userProfile.idImageUrl && (
+                    <p className="text-sm text-emerald-600 mt-1">&#10003; ID photo uploaded</p>
                   )}
                 </div>
                 <div>
