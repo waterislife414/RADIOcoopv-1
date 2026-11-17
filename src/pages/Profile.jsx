@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import ProfilePhoto from "../components/ProfilePhoto";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { doc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../config/firebase";
@@ -54,6 +54,25 @@ export default function Profile() {
       setIdUploadError("Could not upload. Please try again.");
     } finally {
       setIdUploading(false);
+    }
+  }
+
+  async function handleFaceUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setFaceUploading(true);
+    setFaceUploadError("");
+    try {
+      const faceRef = ref(storage, `id_verification/${currentUser.uid}/face-${Date.now()}`);
+      await uploadBytes(faceRef, file);
+      const faceImageUrl = await getDownloadURL(faceRef);
+      await updateDoc(doc(db, "users", currentUser.uid), {
+        faceImageUrl,
+      });
+    } catch (err) {
+      setFaceUploadError("Could not upload. Please try again.");
+    } finally {
+      setFaceUploading(false);
     }
   }
   const [status, setStatus] = useState("");
