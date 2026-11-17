@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import ProfilePhoto from "../components/ProfilePhoto";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { doc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../config/firebase";
@@ -28,6 +28,8 @@ export default function Profile() {
   const [showDeactivate, setShowDeactivate] = useState(false);
   const [idUploading, setIdUploading] = useState(false);
   const [idUploadError, setIdUploadError] = useState("");
+  const [faceUploading, setFaceUploading] = useState(false);
+  const [faceUploadError, setFaceUploadError] = useState("");
   const [openPerks, setOpenPerks] = useState({});
 
   function togglePerks(tier) {
@@ -52,6 +54,25 @@ export default function Profile() {
       setIdUploadError("Could not upload. Please try again.");
     } finally {
       setIdUploading(false);
+    }
+  }
+
+  async function handleFaceUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setFaceUploading(true);
+    setFaceUploadError("");
+    try {
+      const faceRef = ref(storage, `id_verification/${currentUser.uid}/face-${Date.now()}`);
+      await uploadBytes(faceRef, file);
+      const faceImageUrl = await getDownloadURL(faceRef);
+      await updateDoc(doc(db, "users", currentUser.uid), {
+        faceImageUrl,
+      });
+    } catch (err) {
+      setFaceUploadError("Could not upload. Please try again.");
+    } finally {
+      setFaceUploading(false);
     }
   }
   const [status, setStatus] = useState("");
@@ -252,31 +273,60 @@ export default function Profile() {
                 &#10003; ID verified. Your card rides go straight to a driver in the app, and you get a $5 credit on your
                 birthday every year.
               </p>
-            ) : userProfile.idImageUrl ? (
+            ) : userProfile.idImageUrl || userProfile.faceImageUrl ? (
               <p className="text-base text-amber-600 font-semibold">
-                ID sent. Our office will check it soon. Until then, our dispatcher sends your rides.
+                Pending review
               </p>
             ) : (
-              <>
-                <p className="text-base text-slate-600 mb-3">
-                  Send a photo of your driver&rsquo;s license or state ID. Once our office checks it, your card rides go
-                  straight to a driver in the app (faster, with live updates), and you get a $5 credit on your birthday.
-                  Until then, our dispatcher sends your rides.
+              <div className="space-y-4">
+                <p className="text-base text-slate-600">
+                  Send a photo of your driver&rsquo;s license or state ID and a face photo. Once our office checks it, your card rides go
+                  straight to a driver in the app, and you get a $5 credit on your birthday.
                 </p>
-                <input
-                  type="file"
-                  accept=".jpg,.jpeg,.png" aria-label="Upload ID photo"
-                  onChange={handleIdUpload}
-                  disabled={idUploading}
-                  className="w-full text-base"
-                />
-                {idUploadError && (
-                  <p className="text-sm text-red-600 mt-2">{idUploadError}</p>
-                )}
-                {idUploading && (
-                  <p className="text-sm text-slate-500 mt-2">Uploading&hellip;</p>
-                )}
-              </>
+                <div>
+                  <p className="text-sm font-semibold text-slate-700 mb-1">1. ID photo</p>
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png" aria-label="Upload ID photo"
+                    onChange={handleIdUpload}
+                    disabled={idUploading}
+                    className="w-full text-base"
+                  />
+                  {idUploadError && (
+                    <p className="text-sm text-red-600 mt-1">{idUploadError}</p>
+                  )}
+                  {idUploading && (
+                    <p className="text-sm text-slate-500 mt-1">Uploading ID&hellip;</p>
+                  )}
+                  {userProfile.idImageUrl && (
+                    <p className="text-sm text-emerald-600 mt-1">&#10003; ID photo uploaded</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-700 mb-1">2. Face photo</p>
+                  <label className="inline-block cursor-pointer bg-blue-600 text-white font-semibold px-4 py-2 rounded-xl text-sm">
+                    Take a face photo
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="user"
+                      hidden
+                      data-testid="face-upload"
+                      onChange={handleFaceUpload}
+                      disabled={faceUploading}
+                    />
+                  </label>
+                  {faceUploadError && (
+                    <p className="text-sm text-red-600 mt-1">{faceUploadError}</p>
+                  )}
+                  {faceUploading && (
+                    <p className="text-sm text-slate-500 mt-1">Uploading face photo&hellip;</p>
+                  )}
+                  {userProfile.faceImageUrl && (
+                    <p className="text-sm text-emerald-600 mt-1">&#10003; Face photo uploaded</p>
+                  )}
+                </div>
+              </div>
             )}
           </div>
 
