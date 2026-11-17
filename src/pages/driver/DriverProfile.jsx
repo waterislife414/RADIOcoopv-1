@@ -150,7 +150,7 @@ function CardMoney({ uid }) {
             <p className="font-semibold">{d.periodKey}</p>
             <p className="text-xs text-slate-500">
               {d.cardRides || 0} card ride{d.cardRides === 1 ? "" : "s"}
-              {d.settledAt ? (d.envelopeDueCents ? ` · envelope ${money(d.envelopeDueCents)}` : " · lease paid by card") : " · today, still open"}
+              {d.settledAt ? (d.envelopeDueCents ? ` · envelope ${money(d.envelopeDueCents)}` : " · lick paid by card") : " · today, still open"}
               {d.heldCreditCents ? " · credit held" : ""}
             </p>
           </div>
@@ -182,10 +182,10 @@ function Credit({ driver, now }) {
   return (
     <section className={card}>
       <div className="flex items-baseline justify-between">
-        <p className={label}>Lease credit</p>
+        <p className={label}>Lick credit</p>
         <p className="text-2xl font-bold tabular-nums">{money(driver.leaseCreditCents)}</p>
       </div>
-      <p className="text-sm text-slate-500">Card money above the {money(LEASE_CFG.lease.dailyCents)} lease builds up here and pays future lease days.</p>
+      <p className="text-sm text-slate-500">Card money above the {money(LEASE_CFG.lease.dailyCents)} lick builds up here and pays future lick days.</p>
       {can.ok ? (
         <>
           <div className="flex gap-2">
@@ -197,7 +197,7 @@ function Credit({ driver, now }) {
             </button>
           </div>
           <p className="text-sm text-slate-500">
-            {holding ? "Held: today's lease comes from today's card fares and your envelope. Your credit stays put. It goes back to normal tomorrow." : "Your credit goes toward today's lease first."}
+            {holding ? "Held: today's lick comes from today's card fares and your envelope. Your credit stays put. It goes back to normal tomorrow." : "Your credit goes toward today's lick first."}
           </p>
         </>
       ) : (
@@ -212,7 +212,7 @@ function Credit({ driver, now }) {
   );
 }
 
-/** A driver's own profile: contact info, score, record, card money, lease credit. */
+/** A driver's own profile: contact info, score, record, card money, lick credit. */
 export default function DriverProfile() {
   const { currentUser, isDriver, loading } = useAuth();
   const [driver, setDriver] = useState(null);

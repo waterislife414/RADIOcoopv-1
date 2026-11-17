@@ -57,7 +57,7 @@ export default function DriverRecord({ driver }) {
           </p>
         ) : (
           <p className="text-emerald-200">
-            Stay clean through {shortDate(dayBefore(period.endKey))} and work {INC.bonusMinDays}+ days: {money(INC.bonusCents)} off your lease.
+            Stay clean through {shortDate(dayBefore(period.endKey))} and work {INC.bonusMinDays}+ days: {money(INC.bonusCents)} off your lick.
             {strikes > 0 && ` ${INC.strikesToForfeit - strikes} more missed call${INC.strikesToForfeit - strikes === 1 ? "" : "s"} and it's gone.`}
           </p>
         )}
@@ -65,7 +65,7 @@ export default function DriverRecord({ driver }) {
       {last && (
         <p className="text-sm text-slate-500">
           Last period ({shortDate(last.periodStartKey)}):{" "}
-          {last.award ? `+${money(last.cents)} added to your lease credit` : last.reason === "strikes" ? "no bonus (missed calls)" : `no bonus (under ${INC.bonusMinDays} days worked)`}
+          {last.award ? `+${money(last.cents)} added to your lick credit` : last.reason === "strikes" ? "no bonus (missed calls)" : `no bonus (under ${INC.bonusMinDays} days worked)`}
         </p>
       )}
       <p className="text-xs text-slate-500">Turning down or missing a call when you&apos;re next up costs a warning and {INC.scoreStrikePoints} points. Requested calls never count.</p>
