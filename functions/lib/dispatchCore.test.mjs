@@ -33,7 +33,7 @@ test('board: own dot blue ring / filled; Moving row; Fort Benning hidden without
   const onCall = c.buildBoard({ drivers: [d('me', 'on_call', 'baker', 1)], zones, viewerId: 'me', viewer });
   assert.equal(onCall.rows[0].line[0].dot, 'blue-filled');
   const certified = { id: 'me', certs: { base: { status: 'approved' } } };
-  assert.equal(c.buildBoard({ drivers, zones, viewerId: 'me', viewer: certified }).rows.length, 2);
+  assert.equal(c.buildBoard, drivers, zones, viewerId: 'me', viewer: certified).rows.length, 2);
 });
 
 test('eligibility: base cert, expiry, wheelchair needs cert AND van', () => {
@@ -318,4 +318,10 @@ test('standing: 60-day window, office penalties, active warnings, low-score hold
   assert.deepEqual(c.canHoldCredit({ approvedAt: now - 10 * DAY }, now), { ok: false, reason: 'too_new' });
   assert.deepEqual(c.canHoldCredit({ approvedAt: now - 90 * DAY, recentStrikes: [now - DAY] }, now), { ok: false, reason: 'record' });
   assert.deepEqual(c.canHoldCredit({ approvedAt: { toMillis: () => now - 90 * DAY } }, now), { ok: true });
+});
+
+test('car with no lineKey goes to the back, picking A over missing lineKey', () => {
+  const drivers = [d('B', 'ready', 'baker', undefined), d('A', 'ready', 'baker', 100)];
+  const line = c.zoneLine(drivers, 'baker');
+  assert.equal(line[0].id, 'A');
 });

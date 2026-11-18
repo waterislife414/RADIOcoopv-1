@@ -203,7 +203,7 @@ export default function Pegboard({ rides, drivers, zones, onCarClick, onNewCall,
   const ready = (zid) =>
     drivers
       .filter((d) => d.status === "ready" && d.zoneId === zid)
-      .sort((a, b) => (a.lineKey ?? 0) - (b.lineKey ?? 0));
+      .sort((a, b) => (a.lineKey ?? Number.MAX_SAFE_INTEGER) - (b.lineKey ?? Number.MAX_SAFE_INTEGER));
   const onCallForZone = (zid) =>
     drivers.filter((d) => d.status === "on_call" && (d.zoneId === zid || driverActiveRide[d.id]?.zoneId === zid));
 
