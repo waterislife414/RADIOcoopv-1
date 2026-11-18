@@ -4,6 +4,7 @@ import { collection, getDocs, limit, orderBy, query, where } from "firebase/fire
 import { db } from "../config/firebase";
 import { useAuth } from "../context/AuthContext";
 import ConsentModal from "../components/legal/ConsentModal";
+import PinPicker from "../components/PinPicker";
 import { readLocationOnce } from "../utils/rideLive";
 import { BRAND, COMPANY_EMAIL, COMPANY_PHONE_DISPLAY } from "../config/constants";
 
@@ -70,6 +71,7 @@ export default function TripDetails() {
   const [error, setError] = useState("");
   const [locating, setLocating] = useState(false);
   const [locateError, setLocateError] = useState("");
+  const [pickerTarget, setPickerTarget] = useState(null); // 'pickup' | 'dropoff' | null
 
   // Optional: attaches the rider's GPS pin so the ride lands in the right
   // zone and the driver can navigate straight to them.
@@ -121,8 +123,13 @@ export default function TripDetails() {
       return;
     }
     const hasGpsPickup = typeof ride.pickupLat === "number" && typeof ride.pickupLng === "number";
-    if ((!hasGpsPickup && !looksLikeStreetAddress(ride.pickup)) || !looksLikeStreetAddress(ride.dropoff)) {
-      setError("Please enter a full street address, like 123 Broad St. Not sure? Tap Use my location or Find it on Google Maps.");
+    const hasGpsDropoff = typeof ride.dropoffLat === "number" && typeof ride.dropoffLng === "number";
+
+    const pickupValid = hasGpsPickup || looksLikeStreetAddress(ride.pickup);
+    const dropoffValid = hasGpsDropoff || looksLikeStreetAddress(ride.dropoff);
+
+    if (!pickupValid || !dropoffValid) {
+      setError("Please enter a full street address or drop a pin. Not sure? Tap Use my location or Find it on Google Maps.");
       return;
     }
     if (ride.outOfArea && !ride.outOfAreaCity) {
@@ -249,6 +256,14 @@ export default function TripDetails() {
                 >
                   Find it on Google Maps
                 </a>
+                <button
+                  type="button"
+                  data-testid="pin-pickup"
+                  onClick={() => setPickerTarget("pickup")}
+                  className="text-blue-600 font-semibold hover:underline"
+                >
+                  Drop a pin {typeof ride.pickupLat === "number" && <span className="text-emerald-600">✓ Pin set</span>}
+                </button>
               </div>
               <RecentChips places={recent} current={ride.pickup} label="Recent places" onPick={(p) => updateRide({ pickup: p })} />
               <button
@@ -292,6 +307,14 @@ export default function TripDetails() {
                 >
                   Find it on Google Maps
                 </a>
+                <button
+                  type="button"
+                  data-testid="pin-dropoff"
+                  onClick={() => setPickerTarget("dropoff")}
+                  className="text-blue-600 font-semibold hover:underline"
+                >
+                  Drop a pin {typeof ride.dropoffLat === "number" && <span className="text-emerald-600">✓ Pin set</span>}
+                </button>
               </div>
               <RecentChips places={recent} current={ride.dropoff} label="Recent places" onPick={(p) => updateRide({ dropoff: p })} />
             </div>
@@ -636,6 +659,31 @@ export default function TripDetails() {
               </div>
             </div>
           )}
+
+          {pickerTarget && (
+            <PinPicker
+              title={pickerTarget === "pickup" ? "Pin Pickup Location" : "Pin Drop-off Location"}
+              initialLat={pickerTarget === "pickup" ? ride.pickupLat : ride.dropoffLat}
+              initialLng={pickerTarget === "pickup" ? ride.pickupLng : ride.dropoffLng}
+              onClose={() => setPickerTarget(null)}
+              onPick={({ lat, lng }) => {
+                if (pickerTarget === "pickup") {
+                  updateRide({
+                    pickupLat: lat,
+                    pickupLng: lng,
+                    pickup: !ride.pickup || !looksLikeStreetAddress(ride.pickup) ? "Pin dropped" : ride.pickup,
+                  });
+                } else {
+                  updateRide({
+                    dropoffLat: lat,
+                    dropoffLng: lng,
+                    dropoff: !ride.dropoff || !looksLikeStreetAddress(ride.dropoff) ? "Pin dropped" : ride.dropoff,
+                  });
+                }
+              }}
+            />
+          )}
+
           <ConsentModal
             open={askConsent}
             docIds={RIDER_DOCS}
