@@ -13,15 +13,20 @@ on:
         required: true
 permissions:
   contents: write
-concurrency:
-  group: merge-bot
-  cancel-in-progress: false
+  actions: read
 jobs:
   merge:
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
+      - name: Wait for older merge-bot runs (one at a time, none dropped)
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          for i in $(seq 1 160); do
+            n=$(gh run list -R "$GITHUB_REPOSITORY" -w merge-bot.yml -L 30 --json databaseId,status -q "[.[]|select(.status!=\"completed\" and .databaseId < $GITHUB_RUN_ID)]|length")
+            [ "$n" = "0" ] && break; sleep 30
+          done
       - uses: actions/checkout@v4
         with: { ref: step1-wip, fetch-depth: 0 }
       - uses: actions/setup-node@v4
