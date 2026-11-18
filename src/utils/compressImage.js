@@ -6,6 +6,7 @@ const QUALITY = DEMO ? 0.6 : 0.8;
 
 export async function compressImage(file) {
   if (!file || !file.type?.startsWith("image/")) return file;
+  if (file.size < 600000) return file;
   try {
     const bitmap = await createImageBitmap(file);
     const scale = Math.min(1, MAX / Math.max(bitmap.width, bitmap.height));
@@ -13,6 +14,7 @@ export async function compressImage(file) {
     canvas.width = Math.round(bitmap.width * scale);
     canvas.height = Math.round(bitmap.height * scale);
     canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    if (typeof bitmap.close === "function") bitmap.close();
     const blob = await new Promise((res) => canvas.toBlob(res, "image/jpeg", QUALITY));
     return blob ? new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" }) : file;
   } catch {
