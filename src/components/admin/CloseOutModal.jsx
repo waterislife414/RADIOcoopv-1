@@ -20,10 +20,10 @@ export function CloseOutLines({ m }) {
   );
   return (
     <div className="space-y-1 text-slate-800">
-      <Row label="Lease credit (card money held)" value={m.creditCents} />
-      {m.cardTodayCents > 0 && <Row label="Card fares this lease day" value={m.cardTodayCents} />}
-      {m.unpaidCents > 0 && <Row label="Unpaid lease (envelopes)" value={m.unpaidCents} minus />}
-      <Row label="Final day lease" value={m.finalLeaseCents} minus />
+      <Row label="Lick credit (card money held)" value={m.creditCents} />
+      {m.cardTodayCents > 0 && <Row label="Card fares this lick day" value={m.cardTodayCents} />}
+      {m.unpaidCents > 0 && <Row label="Unpaid lick (envelopes)" value={m.unpaidCents} minus />}
+      <Row label="Final day lick" value={m.finalLeaseCents} minus />
       <div className="border-t my-1" />
       <Row label="Left after final day" value={Math.max(0, base - m.finalLeaseCents)} bold />
       {m.payoutCents > 0 ? (
@@ -83,7 +83,7 @@ export default function CloseOutModal({ driver, onClose }) {
           <>
             <CloseOutLines m={m} />
             {m.olderDaysSettled > 0 && (
-              <p className="text-xs text-slate-500">Includes {m.olderDaysSettled} earlier lease day(s) that hadn&apos;t settled yet.</p>
+              <p className="text-xs text-slate-500">Includes {m.olderDaysSettled} earlier lick day(s) that hadn&apos;t settled yet.</p>
             )}
             <div className="flex gap-2">
               {[

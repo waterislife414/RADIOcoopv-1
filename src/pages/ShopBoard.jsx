@@ -262,7 +262,7 @@ export default function ShopBoard() {
             <p className="text-xs font-bold tracking-widest text-slate-600 uppercase">Repairs reported by drivers</p>
             <h1 className="font-display text-3xl font-bold text-slate-900">&#128295; Shop Board</h1>
           </div>
-          {isAdmin && <Link to="/admin/lease" className="font-bold text-blue-700 underline">Lease desk &rarr;</Link>}
+          {isAdmin && <Link to="/admin/lease" className="font-bold text-blue-700 underline">Lick desk &rarr;</Link>}
         </div>
 
         <div className="flex gap-2 flex-wrap">
