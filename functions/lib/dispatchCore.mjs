@@ -33,7 +33,7 @@ export const STATUS = Object.freeze({
 const WAITING = new Set([STATUS.READY, STATUS.OFFERED]);
 const AVAILABLE = new Set([STATUS.READY, STATUS.MOVING]);
 
-const byLineKey = (a, b) => (a.lineKey ?? 0) - (b.lineKey ?? 0);
+const byLineKey = (a, b) => (a.lineKey ?? Number.MAX_SAFE_INTEGER) - (b.lineKey ?? Number.MAX_SAFE_INTEGER);
 
 // ---------------------------------------------------------------------------
 // Zone line + board

@@ -319,3 +319,9 @@ test('standing: 60-day window, office penalties, active warnings, low-score hold
   assert.deepEqual(c.canHoldCredit({ approvedAt: now - 90 * DAY, recentStrikes: [now - DAY] }, now), { ok: false, reason: 'record' });
   assert.deepEqual(c.canHoldCredit({ approvedAt: { toMillis: () => now - 90 * DAY } }, now), { ok: true });
 });
+
+test('car with no lineKey goes to the back, picking A over missing lineKey', () => {
+  const drivers = [d('B', 'ready', 'baker', undefined), d('A', 'ready', 'baker', 100)];
+  const line = c.zoneLine(drivers, 'baker');
+  assert.equal(line[0].id, 'A');
+});
