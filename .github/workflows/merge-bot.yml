@@ -41,6 +41,7 @@ jobs:
           B="${{ github.event.workflow_run.head_branch }}"; [ -n "$TASKS" ] || [ -z "$B" ] || TASKS="${B#ai-go/}"
           [ -n "$TASKS" ] || TASKS="${GITHUB_REF_NAME#ai/}"
           bash scripts/merge-bot.sh $TASKS || true
+          cat /tmp/merge-bot.log || true
       - name: Publish result
         if: always()
         run: |
