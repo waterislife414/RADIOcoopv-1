@@ -1,8 +1,11 @@
 name: merge-bot
-# Dispatch with tasks="T18 T19" (or push a worker result branch ai/T<n>). Runs one at a time. Result: branch merge-bot/result, file docs/ai/merge-result.txt.
+# Dispatch with tasks="T18 T19" (also starts by itself when an ai-task worker finishes). Runs one at a time. Result: branch merge-bot/result, file docs/ai/merge-result.txt.
 on:
   push:
     branches: ['ai/T*']
+  workflow_run:
+    workflows: [ai-task]
+    types: [completed]
   workflow_dispatch:
     inputs:
       tasks:
@@ -15,6 +18,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   merge:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -29,6 +33,7 @@ jobs:
       - name: Merge
         run: |
           TASKS="${{ github.event.inputs.tasks }}"
+          B="${{ github.event.workflow_run.head_branch }}"; [ -n "$TASKS" ] || [ -z "$B" ] || TASKS="${B#ai-go/}"
           [ -n "$TASKS" ] || TASKS="${GITHUB_REF_NAME#ai/}"
           bash scripts/merge-bot.sh $TASKS || true
       - name: Publish result
