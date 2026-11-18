@@ -30,6 +30,7 @@ import CarActionsModal from "../../components/admin/CarActionsModal";
 import LeaseAlert from "../../components/admin/LeaseAlert";
 import QuickEntry from "../../components/admin/QuickEntry";
 import Pegboard from "../../components/admin/Pegboard";
+import IdReviewList from "../../components/admin/IdReviewList";
 import { useLiveBoard } from "../../hooks/useLiveBoard";
 import { OFFICE_ADDRESS, COMPANY_PHONE_DISPLAY, COPY } from "../../config/constants";
 
@@ -443,35 +444,7 @@ export default function DispatcherDashboard() {
             <h2 className="font-bold text-lg text-amber-800 mb-3">
               Pending ID Verifications ({pendingIdVerifications.length})
             </h2>
-            <div className="space-y-3">
-              {pendingIdVerifications.map((u) => (
-                <div
-                  key={u.id}
-                  className="bg-white rounded-xl p-4 flex items-center justify-between gap-3"
-                >
-                  <div>
-                    <p className="font-bold text-slate-800">
-                      {u.firstName} {u.lastName}
-                    </p>
-                    <p className="text-sm text-slate-500">DOB on file: {u.dob}</p>
-                    <a
-                      href={u.idImageUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-blue-600 font-semibold underline"
-                    >
-                      View uploaded ID photo
-                    </a>
-                  </div>
-                  <button
-                    onClick={() => approveIdVerification(u.id)}
-                    className="bg-emerald-600 text-white font-bold text-sm px-4 py-2.5 rounded-xl whitespace-nowrap"
-                  >
-                    Verified
-                  </button>
-                </div>
-              ))}
-            </div>
+            <IdReviewList users={pendingIdVerifications} />
           </div>
         </div>
       )}
