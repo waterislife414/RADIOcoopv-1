@@ -85,14 +85,14 @@ export default function PayoutStatement() {
         )}
 
         <div>
-          <h2 className="font-bold mb-1">Lease history (last {days.length} days)</h2>
+          <h2 className="font-bold mb-1">Lick history (last {days.length} days)</h2>
           <table className="w-full text-sm">
             <thead className="text-left text-slate-500">
               <tr>
                 <th className="py-1">Due</th>
                 <th>Card</th>
                 <th>Credit in</th>
-                <th>Lease</th>
+                <th>Lick</th>
                 <th>Envelope</th>
                 <th>Credit out</th>
               </tr>

@@ -252,7 +252,7 @@ export default function DispatcherDashboard() {
             Live Map
           </Link>
           <Link to="/admin/lease" className="text-base font-semibold text-gold-300 hover:text-gold-200">
-            Lease
+            Lick
           </Link>
           <Link to="/shop" className="text-base font-semibold text-gold-300 hover:text-gold-200">
             Shop
