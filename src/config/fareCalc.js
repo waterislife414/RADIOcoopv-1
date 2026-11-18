@@ -78,11 +78,11 @@ export const RIDESHARE_MEDIAN = {
   minimum: pick("minimum"),
 };
 
+export const RIDESHARE_RATE = { perMile: 2.10, booking: 4.50, asOf: "Aug 5, 2026" };
+
 /** Median national rideshare fare for a trip, at normal (non-surge) rates. */
 export function calcRideshareEstimate(miles, surge = 1) {
-  const m = RIDESHARE_MEDIAN;
-  const fare = m.base + miles * m.perMile + miles * MINUTES_PER_MILE * m.perMin + m.booking;
-  return Math.max(m.minimum, fare) * surge;
+  return (miles * RIDESHARE_RATE.perMile + RIDESHARE_RATE.booking) * surge;
 }
 
 export function calcSavings(miles, passengers = 1) {

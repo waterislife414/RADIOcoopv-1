@@ -1,12 +1,10 @@
 import { Link } from "react-router-dom";
 import BrandHeader from "../components/BrandHeader";
 import ContactFooter from "../components/ContactFooter";
-import { COMPANY_NAME, FARE_CONFIG } from "../config/constants";
+import { COMPANY_NAME } from "../config/constants";
 import {
-  calcSavings,
   calcMeterFareOnly,
   calcRideshareEstimate,
-  RIDESHARE_MEDIAN,
 } from "../config/fareCalc";
 
 const MILES_LIST = [2, 5, 10, 20];
@@ -62,7 +60,7 @@ export default function CompareRideshare() {
           </div>
 
           <p className="text-xs text-center text-slate-500" data-testid="compare-footnote">
-            Estimates from published Uber and Lyft rates. Real prices vary by city, time and demand.
+            Uber and Lyft estimate: $2.10 per mile plus a $4.50 booking fee (averages as of Aug 5, 2026). Real prices vary by city, time and demand.
           </p>
 
           <Link
