@@ -33,7 +33,7 @@ test('board: own dot blue ring / filled; Moving row; Fort Benning hidden without
   const onCall = c.buildBoard({ drivers: [d('me', 'on_call', 'baker', 1)], zones, viewerId: 'me', viewer });
   assert.equal(onCall.rows[0].line[0].dot, 'blue-filled');
   const certified = { id: 'me', certs: { base: { status: 'approved' } } };
-  assert.equal(c.buildBoard, drivers, zones, viewerId: 'me', viewer: certified).rows.length, 2);
+  assert.equal(c.buildBoard({ drivers, zones, viewerId: 'me', viewer: certified }).rows.length, 2);
 });
 
 test('eligibility: base cert, expiry, wheelchair needs cert AND van', () => {
