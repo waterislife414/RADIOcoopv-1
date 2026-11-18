@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { doc, onSnapshot } from "firebase/firestore";
 import { ref, uploadBytes } from "firebase/storage";
@@ -26,12 +26,37 @@ const ATTEST = {
 
 /** One photo slot: tap to open the camera. Shows a preview once taken. */
 function PhotoSlot({ label, hint, required, file, onFile }) {
-  const preview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
-  // Let go of each preview when it's replaced or the page closes (12+ photos add up on small phones).
-  useEffect(() => () => preview && URL.revokeObjectURL(preview), [preview]);
+  const [preview, setPreview] = useState(null);
+
+  useEffect(() => {
+    if (!file) {
+      setPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPreview(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [file]);
+
   return (
     <label className={`relative block rounded-2xl border-2 overflow-hidden cursor-pointer ${file ? "border-emerald-400" : required ? "border-gold-400/70" : "border-white/20"}`}>
-      <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => onFile(e.target.files[0] || null)} />
+      <input
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="sr-only"
+        onChange={async (e) => {
+          const f = e.target.files[0] || null;
+          if (f) {
+            const compressed = await compressImage(f);
+            onFile(compressed);
+          } else {
+            onFile(null);
+          }
+        }}
+      />
       {preview ? (
         <img src={preview} alt={label} className="w-full h-28 object-cover" />
       ) : (
@@ -166,15 +191,32 @@ export default function VehicleInspection() {
       const files = [...Object.values(photos).filter(Boolean), ...damages.map((d) => d.file), ...repairs.map((r) => r.file).filter(Boolean), video].filter(Boolean);
       let n = 0;
       const tick = () => setProgress(`Uploading ${++n} of ${files.length}…`);
-      for (const [k, f] of Object.entries(photos)) if (f) payload.photos[k] = (tick(), await upload(f, k));
-      for (const [i, d] of damages.entries()) payload.damages[i].photo = (tick(), await upload(d.file, `damage${i}`));
-      for (const [i, r] of repairs.entries()) if (r.file) payload.repairs[i].photo = (tick(), await upload(r.file, `problem${i}`));
+      
+      for (const [k, f] of Object.entries(photos)) {
+        if (f) {
+          tick();
+          payload.photos[k] = await upload(f, k);
+        }
+      }
+      for (const [i, d] of damages.entries()) {
+        if (d.file) {
+          tick();
+          payload.damages[i].photo = await upload(d.file, `damage${i}`);
+        }
+      }
+      for (const [i, r] of repairs.entries()) {
+        if (r.file) {
+          tick();
+          payload.repairs[i].photo = await upload(r.file, `problem${i}`);
+        }
+      }
       if (video) {
         tick();
         const path = `inspections/${currentUser.uid}/${Date.now()}_walkaround.${video.name.split(".").pop() || "mp4"}`;
         await uploadBytes(ref(storage, path), video);
         payload.video = path;
       }
+
       setProgress("Saving…");
       const { data } = await submitInspection(payload);
       setDone(data);
@@ -218,7 +260,13 @@ export default function VehicleInspection() {
         <span className="block font-bold mb-1">What does it look like?</span>
         <input value={d.description} onChange={(e) => setDamages((l) => l.map((x, j) => (j === i ? { ...x, description: e.target.value } : x)))} placeholder="Dent, scratch, crack, stain, tear…" className="w-full min-h-[48px] rounded-xl bg-white text-navy-950 px-3 text-base" />
       </label>
-      <PhotoSlot label="Photo of the damage" hint="Get close enough to see it" required file={d.file} onFile={(f) => setDamages((l) => l.map((x, j) => (j === i ? { ...x, file: f } : x)))} />
+      <PhotoSlot
+        label="Photo of the damage"
+        hint="Get close enough to see it"
+        required
+        file={d.file}
+        onFile={(f) => setDamages((l) => l.map((x, j) => (j === i ? { ...x, file: f } : x)))}
+      />
       <div>
         <p className="font-bold mb-2">Was it already there when you got this car?</p>
         <Choice
@@ -250,7 +298,12 @@ export default function VehicleInspection() {
         <p className="font-bold mb-2">How soon?</p>
         <Choice options={URGENCY} value={r.urgency} onChange={(v) => setRepairs((l) => l.map((x, j) => (j === i ? { ...x, urgency: v } : x)))} tone={{ now: "border-red-400 bg-red-500 text-white" }} />
       </div>
-      <PhotoSlot label="Photo (if it helps)" hint="Optional" file={r.file} onFile={(f) => setRepairs((l) => l.map((x, j) => (j === i ? { ...x, file: f } : x)))} />
+      <PhotoSlot
+        label="Photo (if it helps)"
+        hint="Optional"
+        file={r.file}
+        onFile={(f) => setRepairs((l) => l.map((x, j) => (j === i ? { ...x, file: f } : x)))}
+      />
       <button type="button" onClick={() => setRepairs((l) => l.filter((_, j) => j !== i))} className="text-sm font-bold text-red-300 underline">
         Remove
       </button>
@@ -281,7 +334,14 @@ export default function VehicleInspection() {
             <p className="font-bold text-gold-300">{photoCount} photo{photoCount === 1 ? "" : "s"} taken</p>
             <div className="grid grid-cols-2 gap-3">
               {slots.map((s) => (
-                <PhotoSlot key={s.id} label={s.label} hint={s.hint} required={!s.optional} file={photos[s.id]} onFile={(f) => setPhotos((p) => ({ ...p, [s.id]: f }))} />
+                <PhotoSlot
+                  key={s.id}
+                  label={s.label}
+                  hint={s.hint}
+                  required={!s.optional}
+                  file={photos[s.id]}
+                  onFile={(f) => setPhotos((p) => ({ ...p, [s.id]: f }))}
+                />
               ))}
             </div>
             <div className={CARD}>
