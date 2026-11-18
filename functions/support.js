@@ -92,7 +92,12 @@ exports.reportProblem = onCall(async (request) => {
   if (!note && !request.data?.ask) throw new HttpsError("invalid-argument", "Tell us what went wrong.");
 
   let carNumber = null;
-  if (!isAdmin) carNumber = (await driverRef(uid).get()).data()?.carNumber ?? null;
+  let driver = {};
+  if (!isAdmin) {
+    const dSnap = await driverRef(uid).get();
+    driver = dSnap.data() || {};
+    carNumber = driver.carNumber ?? null;
+  }
   const ticket = {
     uid,
     role: isAdmin ? "dispatcher" : "driver",
@@ -120,7 +125,6 @@ exports.reportProblem = onCall(async (request) => {
     const zone = zones.find((z) => z.id === ask.zoneId);
     if (!zone) throw new HttpsError("invalid-argument", "Pick the zone you're in.");
     const c = await E.core();
-    const driver = (await driverRef(uid).get()).data() || {};
     if (zone.requiresCert && !c.hasCert(driver, zone.requiresCert, Date.now())) {
       throw new HttpsError("failed-precondition", `${zone.label} is for certified drivers only.`);
     }
@@ -153,6 +157,19 @@ exports.reportProblem = onCall(async (request) => {
   const ref = await db().collection("support_tickets").add(ticket);
   const emailed = await queueEmail(ticket, ref.id);
   await ref.update({ emailed });
+
+  // Also add an alert so the dispatcher desk sees non-check_ready problems immediately.
+  await db().collection("alerts").add({
+    type: "driver_problem",
+    status: "open",
+    at: Date.now(),
+    carNumber,
+    driverName: driver.name || "",
+    driverId: uid,
+    message: note || `Driver needs help: ${area}`,
+    ticketId: ref.id,
+  });
+
   return { ticketId: ref.id, approvalId: null };
 });
 

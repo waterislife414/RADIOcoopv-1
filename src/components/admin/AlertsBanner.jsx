@@ -32,18 +32,19 @@ export default function AlertsBanner() {
     <div className="space-y-2" role="alert">
       {alerts.map((a) => {
         const sos = a.type === "emergency";
+        const isProblem = a.type === "driver_problem";
         return (
-          <div key={a.id} className={`rounded-2xl border-2 p-4 ${sos ? "border-red-500 bg-red-600 text-white animate-pulse" : "border-amber-400 bg-amber-50 text-slate-900"}`}>
+          <div key={a.id} className={`rounded-2xl border-2 p-4 ${sos ? "border-red-500 bg-red-600 text-white animate-pulse" : isProblem ? "border-amber-500 bg-amber-100 text-slate-900" : "border-amber-400 bg-amber-50 text-slate-900"}`}>
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div>
                 <p className={`font-extrabold text-lg ${sos ? "" : "text-amber-900"}`}>
-                  {sos ? "\u{1F6A8} " : "⚠️ "}
-                  {a.label}
+                  {sos ? "\u{1F6A8} " : isProblem ? "🔧 " : "⚠️ "}
+                  {a.label || (isProblem ? "Driver reported a problem" : "Alert")}
                 </p>
                 <p className="font-semibold">
                   Car {a.carNumber || "?"} &middot; {a.driverName || "driver"} &middot; {time(a.at)}
                 </p>
-                {a.note && <p className="mt-1">&ldquo;{a.note}&rdquo;</p>}
+                {(a.note || a.message) && <p className="mt-1">&ldquo;{a.note || a.message}&rdquo;</p>}
               </div>
               <div className="flex gap-2">
                 {a.lat != null && (
