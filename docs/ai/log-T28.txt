@@ -1,0 +1,40 @@
+dist-demo/assets/statusColors-B_ducE4d.js           0.54 kB │ gzip:  0.36 kB
+dist-demo/assets/alertSound-BGLjDOr6.js             0.66 kB │ gzip:  0.42 kB
+dist-demo/assets/rolldown-runtime-B0Z9INg1.js       0.90 kB │ gzip:  0.51 kB
+dist-demo/assets/dispatchCore-Cc_0RlUx.js           1.31 kB │ gzip:  0.70 kB
+dist-demo/assets/BrandHeader-CaNNktK4.js            1.41 kB │ gzip:  0.67 kB
+dist-demo/assets/callIssues-C6ZwOdVp.js             1.45 kB │ gzip:  0.69 kB
+dist-demo/assets/ConfirmModal-Ckc7qx6b.js           1.96 kB │ gzip:  1.00 kB
+dist-demo/assets/AuthContext-jJCsV6x5.js            2.59 kB │ gzip:  1.20 kB
+dist-demo/assets/AdminLogin-BxWDgdIT.js             2.70 kB │ gzip:  1.18 kB
+dist-demo/assets/DriverSignIn-SA9uEcY8.js           3.11 kB │ gzip:  1.41 kB
+dist-demo/assets/ConsentModal-Cq2VfCDR.js           3.66 kB │ gzip:  1.66 kB
+dist-demo/assets/CloseOutModal-Bv_36ovC.js          3.80 kB │ gzip:  1.62 kB
+dist-demo/assets/rideTiming-BzZQLgPW.js             3.89 kB │ gzip:  1.85 kB
+dist-demo/assets/PayoutStatement-CL0PVaCq.js        4.45 kB │ gzip:  1.73 kB
+dist-demo/assets/LiveMap-m-FgzdE4.js                4.72 kB │ gzip:  2.02 kB
+dist-demo/assets/useLiveBoard-CD63QyaM.js           5.22 kB │ gzip:  1.74 kB
+dist-demo/assets/ZoneEditor-CrEuHWUT.js             6.42 kB │ gzip:  2.50 kB
+dist-demo/assets/inspectionCore-B1INk_0g.js         6.47 kB │ gzip:  2.56 kB
+dist-demo/assets/index-B0X3mqFS.js                  8.20 kB │ gzip:  3.53 kB
+dist-demo/assets/DriverProfile-C31h4Ke6.js          9.65 kB │ gzip:  3.41 kB
+dist-demo/assets/LeaseAdmin-CqClwr4-.js             9.97 kB │ gzip:  3.26 kB
+dist-demo/assets/deviceInfo-D9RwQHkJ.js            10.24 kB │ gzip:  4.07 kB
+dist-demo/assets/dispatchCore-BreLEbUx.js          10.76 kB │ gzip:  4.40 kB
+dist-demo/assets/ShopBoard-B3zUv0gs.js             11.75 kB │ gzip:  3.84 kB
+dist-demo/assets/DriversAdmin-0IlN6Itl.js          13.22 kB │ gzip:  3.91 kB
+dist-demo/assets/VehicleInspection-CuQG3vDY.js     16.38 kB │ gzip:  5.30 kB
+dist-demo/assets/LegalText-CQm4JYin.js             20.13 kB │ gzip:  7.76 kB
+dist-demo/assets/firebase-X1xlDkX2.js              43.25 kB │ gzip: 15.83 kB
+dist-demo/assets/index.esm-DpJ4Po7z.js             48.61 kB │ gzip: 14.91 kB
+dist-demo/assets/DriverHome-DoSUAxAz.js            57.88 kB │ gzip: 17.12 kB
+dist-demo/assets/DispatcherDashboard-sH0dUQcV.js   64.82 kB │ gzip: 17.49 kB
+dist-demo/assets/leaflet-DBG-6Nik.js              148.80 kB │ gzip: 43.39 kB
+dist-demo/assets/jsx-runtime-6E2q0bvr.js          149.20 kB │ gzip: 48.52 kB
+dist-demo/assets/main-CXPIV_EX.js                 164.14 kB │ gzip: 43.73 kB
+dist-demo/assets/client-k_QFVmfI.js               181.71 kB │ gzip: 57.16 kB
+
+[32m✓ built in 786ms[39m
+Summarization failed for model gemini/gemini-3.5-flash-lite: cannot schedule new futures after shutdown
+Summarization failed for model gemini/gemini-3.5-flash-lite: cannot schedule new futures after shutdown
+summarizer unexpectedly failed for all models
