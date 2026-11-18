@@ -8,3 +8,9 @@ Test ids you can rely on: pegboard, pegboard-map, status-key, new-call, working,
 Demo: `npm run build:demo` -> dist-demo; sessions via ?as=guest|demo-rider|demo-driver-44|demo-driver-12|demo-admin|demo-mechanic. QA scripts in tests/qa (Playwright, QA_BASE env).
 Routes: /driver-agreement exists. Config values go in branding.config.json; no hard-coded names, phones, prices, colours.
 QA: tests/qa/step1.py (193 lines, full step 1 click-through) and tests/qa/common.py (helpers: BASE, check, report, watch, db, accept_gate) already exist; serve with `node tests/qa/serve.cjs dist-demo 8790`. The qa workflow runs it (push branch qa-run/x).
+
+## Lessons from rejected work (read every time)
+- T26 was rejected: you rewrote all of DispatcherDashboard.jsx and deleted 393 lines. Never rewrite a file. Use small SEARCH/REPLACE edits on only the lines the task names.
+- T28 was rejected: while renaming words you deleted the Ask dispatch popup and the alerts button in DriverStatusPanel.jsx. Never delete or restyle code the task did not name.
+- Never create junk files (names like "when", "run", or names ending in "." or ","). Touch only the files the task lists.
+- Before finishing, check your diff against the task. Undo any line the task did not ask for. If unsure, make the smaller change.
