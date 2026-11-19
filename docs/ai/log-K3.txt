@@ -1,0 +1,41 @@
+trying gemini/gemini-3.5-flash-lite
+✓ Generating static pages using 3 workers (15/15) in 360ms
+  Finalizing page optimization ...
+
+Route (app)                   Revalidate  Expire
+┌ ○ /                                 5m      1y
+├ ○ /_not-found
+├ ƒ /admin
+├ ƒ /admin/invoices
+├ ƒ /admin/invoices/[id]
+├ ƒ /admin/invoices/new
+├ ƒ /admin/jobs/[id]
+├ ƒ /admin/login
+├ ƒ /admin/memberships
+├ ƒ /admin/qr
+├ ƒ /admin/settings
+├ ƒ /api/availability
+├ ƒ /api/billing-portal
+├ ƒ /api/bookings
+├ ƒ /api/bookings/[ref]/ics
+├ ƒ /api/checkout/deposit
+├ ƒ /api/checkout/invoice
+├ ƒ /api/checkout/membership
+├ ƒ /api/promos/validate
+├ ƒ /api/stripe/webhook
+├ ƒ /api/uploads
+├ ƒ /book
+├ ƒ /book/confirmation/[ref]
+├ ƒ /invoice/[token]
+├ ƒ /invoice/[token]/receipt
+├ ƒ /memberships
+├ ○ /opengraph-image
+├ ○ /robots.txt
+└ ○ /sitemap.xml
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
