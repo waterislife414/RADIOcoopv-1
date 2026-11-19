@@ -125,7 +125,7 @@ def body(browser):
         expect(pg.get_by_text(re.compile("12-month / 12,000-mile warranty"))).to_be_visible()
     check("home: FAQ opens", faq_opens)
 
-    sp = new_page(browser)
+    sp = new_page(browser, mobile=True)
     def shop_key_drop_flow():
         sp.goto(BASE + "/book?mode=shop")
         sp.get_by_text("After-hours key drop", exact=True).click()
