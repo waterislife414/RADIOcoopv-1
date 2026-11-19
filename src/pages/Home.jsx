@@ -86,8 +86,8 @@ export default function Home() {
       )}
       {/* 1. Who we are */}
       <div className="relative overflow-hidden">
-        <img src="/images/hero-fleet.jpg" alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover object-[center_35%]" />
-        <div className="absolute inset-0 bg-gradient-to-b from-navy-950/95 via-navy-950/85 to-navy-950" />
+        <img src="/images/hero-fleet.jpg" alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover object-[80%_30%]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-navy-950/40 via-navy-950/10 to-navy-950" />
         <div className="relative px-6 pt-8 pb-4 max-w-md mx-auto text-center">
           <div className="flex justify-between items-center pr-12 animate-fade-up">
             <AvailableBadge />
@@ -97,20 +97,14 @@ export default function Home() {
               </Link>
             )}
           </div>
-          <h1 className="mt-6 font-display font-bold text-5xl sm:text-6xl tracking-tight text-chrome-gold leading-[0.95] animate-fade-up">
+          <h1 className="mt-6 font-display font-bold text-5xl sm:text-6xl tracking-tight text-chrome-gold leading-[0.95] animate-fade-up drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
             {COMPANY_WORDMARK}
           </h1>
-          <p className="mt-2 text-sm font-bold tracking-[0.4em] text-white/75 uppercase">Taxi Service</p>
-          <p className="mt-5 font-display italic font-bold text-3xl text-white leading-tight" data-testid="motto">
+          <p className="mt-2 text-sm font-bold tracking-[0.4em] text-white/75 uppercase drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">Taxi Service</p>
+          <p className="mt-5 font-display italic font-bold text-3xl text-white leading-tight drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]" data-testid="motto">
             {COPY.motto.split("?")[0]}?{" "}
             <span className="not-italic font-extrabold text-chrome-gold whitespace-nowrap">{COPY.motto.split("?").slice(1).join("?").trim()}</span>
           </p>
-          <img
-            src="/images/hero-fleet.jpg"
-            alt="Your driver welcomes you in"
-            data-testid="hero-welcome"
-            className="mt-6 w-full aspect-[4/3] rounded-2xl object-cover object-[82%_center] ring-1 ring-gold-400/40 shadow-xl"
-          />
         </div>
       </div>
 
