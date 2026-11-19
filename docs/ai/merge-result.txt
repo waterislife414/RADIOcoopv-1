@@ -1,0 +1,6 @@
+== T52
+Applied patch to 'src/components/AddressSearch.jsx' cleanly.
+Applied patch to 'src/pages/TripDetails.jsx' cleanly.
+error: cannot pull with rebase: You have unstaged changes.
+error: Please commit or stash them.
+T52: MERGED (== Step 1: 8/8 passed)
