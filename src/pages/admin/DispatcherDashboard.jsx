@@ -71,6 +71,7 @@ export default function DispatcherDashboard() {
   );
   const carFor = (uid) => liveBoard.drivers.find((d) => d.id === uid)?.carNumber;
   const boardCounts = liveBoard.drivers.reduce((m, d) => ({ ...m, [d.status]: (m[d.status] || 0) + 1 }), {});
+  // State for pendingIdVerifications is still needed for the IdReviewList in Owner Tools
   const [pendingIdVerifications, setPendingIdVerifications] = useState([]);
 
   useEffect(() => {
@@ -307,7 +308,7 @@ export default function DispatcherDashboard() {
 
       {/* The calls that need him come first: phone calls, cash, guests, no GPS, ID not checked, nobody took it. */}
       <section className="px-6 pt-6 max-w-6xl mx-auto" data-testid="send-by-radio">
-          <div>
+        <div>
           <h2 className="font-bold text-xl text-slate-700">
             Needs you
           </h2>
@@ -334,7 +335,7 @@ export default function DispatcherDashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 max-w-6xl mx-auto">
         <section className="space-y-6">
-          <details>
+          <details close>
             <summary className="font-bold text-xl text-slate-700 cursor-pointer mb-3">
               {"\u{1F4F1}"} App rides ({appRides.length})
             </summary>
@@ -359,7 +360,7 @@ export default function DispatcherDashboard() {
         </section>
 
         <section>
-          <details>
+          <details close>
             <summary className="font-bold text-xl text-slate-700 cursor-pointer mb-3">
               Active Rides ({active.length})
             </summary>
@@ -427,7 +428,7 @@ export default function DispatcherDashboard() {
       )}
       {/* Less frequent: dispatch mode, new driver applications and ID checks. */}
       <div className="px-6 pb-6 max-w-6xl mx-auto">
-        <details className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+        <details className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200" close>
           <summary className="cursor-pointer font-bold text-slate-800 text-lg">Owner tools</summary>
           <div className="space-y-6 pt-4">
             <LeaseAlert />
