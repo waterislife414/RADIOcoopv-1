@@ -52,7 +52,7 @@ export default function Promotions() {
           </Promo>
 
           <Promo eyebrow="In a hurry?" title="Priority Day Pass, $5" to="/trip-details" cta="Book with the Day Pass">
-            <p>Skip ahead in line all day, watch your driver on the map and call them directly. Good until midnight.</p>
+            <p>Skip the line all day, live driver updates and access to call your driver. Good until midnight.</p>
           </Promo>
 
           <div className="rounded-2xl bg-slate-50 p-5 text-center">

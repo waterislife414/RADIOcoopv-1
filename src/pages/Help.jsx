@@ -105,7 +105,7 @@ const QA = [
     a: (
       <p>
         For {PASS.price} you move up the line on every ride until midnight, watch your driver on the map and call them directly (private, no
-        numbers shared). Premium members still dispatch first. Choose it when you book, or tap &ldquo;Skip ahead&rdquo; while you wait.
+        numbers shared). Choose it when you book, or tap &ldquo;Skip ahead&rdquo; while you wait.
       </p>
     ),
   },

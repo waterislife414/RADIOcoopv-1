@@ -509,31 +509,31 @@ export default function TripDetails() {
             </div>
 
 {!premium && (
-              <>
-            <div className="flex items-center justify-between border-2 border-gold-400/50 bg-amber-50 rounded-xl px-4 py-3.5">
-              <span className="text-base font-semibold text-slate-700">
-                &#9733; {BRAND.copy.dayPass.title} &mdash; {dayPass ? "active until midnight" : BRAND.copy.dayPass.price}
-              </span>
-              <button role="switch" aria-checked={!!(dayPass || ride.wantsPriorityPass)} aria-label={BRAND.copy.dayPass.title}
-                type="button"
-                disabled={!!dayPass}
-                onClick={() => updateRide({ wantsPriorityPass: !ride.wantsPriorityPass })}
-                className={`w-12 h-7 rounded-full transition after:absolute after:-inset-2.5 after:content-[''] shrink-0 ${
-                  dayPass || ride.wantsPriorityPass ? "bg-gold-500" : "bg-slate-300"
-                } relative`}
-              >
-                <span
-                  className={`absolute top-1 w-5 h-5 bg-white rounded-full transition ${
-                    dayPass || ride.wantsPriorityPass ? "left-6" : "left-1"
-                  }`}
-                />
-              </button>
-            </div>
-            <p className="text-xs text-slate-500 -mt-2">
-              Skip ahead in line all day, watch your driver on the map and call them directly. Paid on its own
-              before checkout. (Premium members still dispatch first.)
-            </p>
-              </>
+              <div className="flex flex-col gap-2 border-2 border-gold-400/50 bg-amber-50 rounded-xl px-4 py-5">
+                <div className="flex items-center justify-between w-full">
+                  <span className="text-base font-semibold text-slate-700">
+                    &#9733; {BRAND.copy.dayPass.title} &mdash; {dayPass ? "active until midnight" : BRAND.copy.dayPass.price}
+                  </span>
+                  <button role="switch" aria-checked={!!(dayPass || ride.wantsPriorityPass)} aria-label={BRAND.copy.dayPass.title}
+                    type="button"
+                    disabled={!!dayPass}
+                    onClick={() => updateRide({ wantsPriorityPass: !ride.wantsPriorityPass })}
+                    className={`w-12 h-7 rounded-full transition after:absolute after:-inset-2.5 after:content-[''] shrink-0 ${
+                      dayPass || ride.wantsPriorityPass ? "bg-gold-500" : "bg-slate-300"
+                    } relative`}
+                  >
+                    <span
+                      className={`absolute top-1 w-5 h-5 bg-white rounded-full transition ${
+                        dayPass || ride.wantsPriorityPass ? "left-6" : "left-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+                <p className="text-2xl font-extrabold text-navy-950">Skip the line all day</p>
+                <p className="text-base text-slate-700">Live driver updates</p>
+                <p className="text-base text-slate-700">Access to call your driver</p>
+                <p className="text-xs text-slate-500">Paid at checkout.</p>
+              </div>
             )}
 
             <div className="flex items-center justify-between border-2 border-slate-200 rounded-xl px-4 py-3.5">
