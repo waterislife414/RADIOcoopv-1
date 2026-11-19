@@ -85,7 +85,13 @@ export default function AddressSearch({
               data-testid={`${testid}-option`}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => {
-                onPick(showRecents ? { text: r.address } : r);
+                if (showRecents) {
+                  // For recents, call onChange with the plain text address
+                  onChange(r.address);
+                } else {
+                  // For search results, call onPick with the result object
+                  onPick(r);
+                }
                 setOpen(false);
                 setResults([]);
               }}
