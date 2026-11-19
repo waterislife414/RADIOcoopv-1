@@ -400,17 +400,25 @@ export default function TripDetails() {
             {showStops && (
               <div className="pl-2 space-y-2">
                 <div className="flex gap-2">
-                  <input
-                    type="text"
-                    className="flex-1 border-2 border-slate-300 rounded-xl px-4 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    placeholder="Suggested stop address"
-                    value={stopInput}
-                    onChange={(e) => setStopInput(e.target.value)}
-                  />
+                  <div className="flex-1">
+                    <AddressSearch
+                      id="stop"
+                      testid="stop-search"
+                      className="w-full border-2 border-slate-300 rounded-xl px-4 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600"
+                      value={stopInput}
+                      onChange={(t) => setStopInput(t)}
+                      onPick={(r) => {
+                        updateRide({ stops: [...ride.stops, r.text] });
+                        setStopInput("");
+                      }}
+                      placeholder="Add a stop address"
+                      recents={recentList}
+                    />
+                  </div>
                   <button
                     type="button"
                     onClick={handleAddStop}
-                    className="bg-slate-300 hover:bg-slate-400 px-4 rounded-xl text-slate-800 font-semibold"
+                    className="bg-slate-300 hover:bg-slate-400 px-4 rounded-xl text-slate-800 font-semibold h-[48px]"
                   >
                     Add
                   </button>
