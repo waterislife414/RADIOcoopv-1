@@ -189,8 +189,22 @@ async function tick() {
     ticking = false;
   }
 }
+
+let car44Step = 0;
+async function runCar44Movement() {
+  const loc = core.readDoc("driverLocations/demo-driver-44");
+  if (!loc) return;
+  const base = zoneCenter("downtown") || { lat: 32.466, lng: -84.987 };
+  car44Step = (car44Step + 1) % 20;
+  const angle = (car44Step / 20) * 2 * Math.PI;
+  const lat = base.lat + Math.sin(angle) * 0.002;
+  const lng = base.lng + Math.cos(angle) * 0.002;
+  await core.commit([{ type: "set", path: "driverLocations/demo-driver-44", merge: true, data: { lat, lng, zoneId: "downtown", at: Date.now(), live: true, outOfZoneSince: null } }]);
+}
+
 export function startEngine() {
   setInterval(tick, 1500);
+  setInterval(runCar44Movement, 4000);
 }
 
 // ------------------------------------------------------------ demo controls

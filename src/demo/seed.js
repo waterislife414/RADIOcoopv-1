@@ -67,8 +67,9 @@ export function buildSeed(now = Date.now()) {
   // car 12 has never been inspected, so it walks through the full first inspection.
   driver("demo-driver-44", "44", "Jordan Example", {
     leaseCreditCents: 1500,
-    inspection: { carNumber: "44", initialAt: now - 30 * DAY, lastFullAt: now - 2 * DAY, shiftCheckAt: now - 2 * DAY, lastAt: now - 2 * DAY, lastType: "weekly" },
+    inspection: { carNumber: "44", initialAt: now - 30 * DAY, lastFullAt: now, shiftCheckAt: now, lastAt: now, lastType: "weekly" },
   });
+  d["driverLocations/demo-driver-44"] = { ...center("downtown"), zoneId: "downtown", at: now, live: true, outOfZoneSince: null };
   driver("demo-driver-12", "12", "Sam Example", { van: true, certs: { base: approved, wheelchair: approved }, leaseCreditCents: 3500 });
 
   // Example cars already working, so the board has life and calls get answered.
