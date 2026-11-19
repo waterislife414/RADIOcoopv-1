@@ -97,6 +97,22 @@ async function runMinuteJobs(now) {
   }
 }
 
+let bot7Angle = 0;
+async function runBot7Mover() {
+  const botId = "bot-7";
+  const bot = core.readDoc(`demoBots/${botId}`) || { lat: 32.44, lng: -84.96 };
+  bot7Angle += 0.5;
+  const lat = (bot.lat || 32.44) + Math.sin(bot7Angle) * 0.002;
+  const lng = (bot.lng || -84.96) + Math.cos(bot7Angle) * 0.002;
+  const board = core.readDoc(`board/${botId}`) || {};
+  await core.commit([{
+    type: "set",
+    path: `driverLocations/${botId}`,
+    merge: true,
+    data: { lat, lng, zoneId: board.zoneId || "downtown", at: Date.now(), live: true, outOfZoneSince: null }
+  }]);
+}
+
 const lerp = (a, b, t) => ({ lat: a.lat + (b.lat - a.lat) * t, lng: a.lng + (b.lng - a.lng) * t });
 const pickupOf = (ride, board) =>
   ride?.pickupLat != null ? { lat: ride.pickupLat, lng: ride.pickupLng } : zoneCenter(ride?.zoneId) || zoneCenter(board?.zoneId);
@@ -191,6 +207,7 @@ async function tick() {
 }
 export function startEngine() {
   setInterval(tick, 1500);
+  setInterval(runBot7Mover, 4000);
 }
 
 // ------------------------------------------------------------ demo controls
