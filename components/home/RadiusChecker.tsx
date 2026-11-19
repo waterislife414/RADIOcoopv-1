@@ -7,6 +7,8 @@ import { BUSINESS, telHref } from '@/config/business';
 import { MOBILE_ZIPS, SERVICE_AREA, checkCoverage, type CoverageResult } from '@/config/serviceArea';
 import { formatCentsShort } from '@/lib/money';
 import { buttonClasses } from '@/components/ui/Button';
+import { PhotoSlot } from '@/components/ui/PhotoSlot';
+import { PHOTOS } from '@/config/media';
 
 export function RadiusChecker({ calloutFeeCents }: { calloutFeeCents: number }) {
   const [zip, setZip] = useState('');
@@ -89,7 +91,9 @@ export function RadiusChecker({ calloutFeeCents }: { calloutFeeCents: number }) 
             </div>
           </div>
 
-          <div className="rounded-2xl bg-slate-900 p-6 text-white">
+          <div className="overflow-hidden rounded-2xl bg-slate-900 text-white">
+            <PhotoSlot slot={PHOTOS.heroRig} dark className="rounded-none" sizes="(max-width: 768px) 100vw, 50vw" />
+            <div className="p-6">
             <p className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-amber-400">
               <MapPin className="h-4 w-4" aria-hidden /> Mobile coverage
             </p>
@@ -101,6 +105,7 @@ export function RadiusChecker({ calloutFeeCents }: { calloutFeeCents: number }) 
             <p className="mt-4 text-xs text-slate-400">
               Outside the circle? {BUSINESS.shortName}’s shop bay is in {BUSINESS.address.city}, {BUSINESS.address.region} {BUSINESS.address.postalCode}, with after-hours key drop.
             </p>
+            </div>
           </div>
         </div>
       </div>

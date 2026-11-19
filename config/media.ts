@@ -18,16 +18,24 @@ export type PhotoSlot = {
 export const PHOTOS = {
   heroRig: {
     id: 'hero-rig',
-    src: null,
-    alt: 'Dubois Automotive Rescue truck parked in a Phenix City driveway with tools out',
+    src: '/media/hero-driveway.webp',
+    alt: 'Mobile mechanic working under the hood of a car in a residential driveway, service truck with toolboxes open',
     aspect: '4 / 3',
     guidance:
       '4:3, min 1600×1200. The actual mobile rig in a real customer driveway, tailgate/side boxes open, Kyle working. Shoot early morning or golden hour, phone held landscape. No stock photos, no AI images.',
   },
+  heroRescue: {
+    id: 'hero-rescue',
+    src: '/media/hero-roadside-night.webp',
+    alt: 'Mechanic with a work light checking a broken-down car on a dark roadside, service truck with amber beacons behind',
+    aspect: '4 / 3',
+    guidance:
+      '4:3, min 2000×1500, dark/night. Full-bleed hero background: keep the subject on the right half so the headline can sit over the left. Real roadside job photo preferred once available.',
+  },
   shopBay: {
     id: 'shop-bay',
-    src: null,
-    alt: "Inside Kyle's shop bay with a vehicle on the lift",
+    src: '/media/shop-bay.webp',
+    alt: 'Pickup truck on a two-post lift in a repair bay with tools on the wall',
     aspect: '16 / 9',
     guidance:
       '16:9, min 1920×1080. Real bay with a customer car on the lift, clean floor, lights on. Avoid showing the street address or house numbers.',
