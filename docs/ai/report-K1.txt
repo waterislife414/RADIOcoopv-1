@@ -1,0 +1,7 @@
+task K1
+code_files_changed 2
+lint pass
+typecheck pass
+unit pass
+build pass
+qa == step1 score 14/14
