@@ -331,7 +331,7 @@
     "appHandles": {
       "_note": "Rides the app runs on its own (driver and rider work it out). Everything else goes to the dispatcher to send by radio: phone calls, guests, cash, no GPS, ID not verified yet.",
       "requireAccount": true,
-      "requireVerifiedId": true,
+      "requireVerifiedId": false,
       "requireLocation": true,
       "requireCardOrWallet": true
     }
