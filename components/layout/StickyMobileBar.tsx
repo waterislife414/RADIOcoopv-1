@@ -11,7 +11,7 @@ export function StickyMobileBar() {
   if (pathname.startsWith('/book')) return null;
   return (
     <div
-      className="no-print fixed inset-x-0 bottom-0 z-50 grid grid-cols-2 gap-2 border-t border-white/10 bg-slate-900/95 p-2 backdrop-blur md:hidden"
+      className="bottom-bar no-print fixed inset-x-0 bottom-0 z-50 grid grid-cols-2 gap-2 border-t border-white/10 bg-slate-900/95 p-2 backdrop-blur md:hidden"
       style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
     >
       <a

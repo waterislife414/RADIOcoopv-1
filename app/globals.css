@@ -45,6 +45,12 @@
   }
 }
 
+/* Free Netlify hosting injects a "Powered by Netlify" badge iframe in the bottom-right corner.
+   Keep our fixed bottom bars above it so it never covers the Book / Continue buttons. */
+body:has(#nl-badge-frame) .bottom-bar {
+  bottom: 68px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
