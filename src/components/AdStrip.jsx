@@ -18,12 +18,13 @@ export default function AdStrip({ position = "top" }) {
       <span className="font-mono font-bold text-white">{COMPANY_PHONE_DISPLAY}</span>
     </span>
   );
+  const positionClasses = position === "bottom" ? "fixed bottom-0 inset-x-0 z-40" : "sticky top-0 z-40";
   return (
     <a
       href={`tel:${COMPANY_PHONE_TEL}`}
       data-testid={`ad-strip-${position}`}
       aria-label={`${COPY.adStripText} ${COMPANY_PHONE_DISPLAY}`}
-      className={`block overflow-hidden bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 text-navy-950 text-sm font-bold h-8 leading-8 ${position === "top" ? "border-b" : "border-t"} border-navy-950/20`}
+      className={`block overflow-hidden bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 text-navy-950 text-sm font-bold h-8 leading-8 ${position === "top" ? "border-b" : "border-t"} border-navy-950/20 ${positionClasses}`}
     >
       <div className="ad-marquee inline-flex" aria-hidden="true">
         {item}{item}{item}{item}
