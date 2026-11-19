@@ -9,14 +9,20 @@ export default function AddressSearch({
   placeholder,
   className,
   testid,
+  onPin,
+  recents = [],
 }) {
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState([]);
   const [searched, setSearched] = useState(false);
   const blurTimer = useRef(null);
 
+  const trimmed = String(value || "").trim();
+  const showRecents = open && trimmed.length < 3 && recents.length > 0;
+  const activeResults = showRecents ? recents.map((p) => ({ address: p })) : results;
+
   useEffect(() => {
-    const query = String(value || "").trim();
+    const query = trimmed;
     if (query.length < 3) {
       setResults([]);
       setSearched(false);
@@ -38,7 +44,7 @@ export default function AddressSearch({
       clearTimeout(t);
       controller.abort();
     };
-  }, [value]);
+  }, [trimmed]);
 
   function handleBlur() {
     blurTimer.current = setTimeout(() => {
@@ -48,10 +54,10 @@ export default function AddressSearch({
 
   function handleFocus() {
     if (blurTimer.current) clearTimeout(blurTimer.current);
-    if (results.length > 0) setOpen(true);
+    setOpen(true);
   }
 
-  const showNotFound = searched && results.length === 0 && String(value || "").trim().length >= 6;
+  const showNotFound = searched && results.length === 0 && trimmed.length >= 6;
 
   return (
     <div className="relative">
@@ -69,16 +75,17 @@ export default function AddressSearch({
         onFocus={handleFocus}
         onBlur={handleBlur}
       />
-      {open && results.length > 0 && (
+      {open && activeResults.length > 0 && (
         <div className="absolute left-0 right-0 z-30 mt-1 bg-white border-2 border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-          {results.map((r, i) => (
+          {showRecents && <p className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">Recent places</p>}
+          {activeResults.map((r, i) => (
             <button
               key={i}
               type="button"
               data-testid={`${testid}-option`}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => {
-                onPick(r);
+                onPick(showRecents ? { text: r.address } : r);
                 setOpen(false);
                 setResults([]);
               }}
@@ -90,19 +97,20 @@ export default function AddressSearch({
           ))}
         </div>
       )}
-      {showNotFound && open && (
-        <p className="text-xs text-slate-500 mt-1.5">
-          Can't find it? Type the full address, drop a pin, or{" "}
-          <a
-            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-              String(value || "").trim() + " Columbus GA"
-            )}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 font-semibold underline"
-          >
-            search Google Maps
-          </a>
+      {(showNotFound || (onPin && trimmed.length < 3)) && open && (
+        <p className="text-xs text-slate-500 mt-1.5 flex items-center justify-between">
+          <span>
+            {showNotFound ? "Can't find it? Type full address or" : "Type address or"}
+          </span>
+          {onPin && (
+            <button
+              type="button"
+              onClick={onPin}
+              className="text-blue-600 font-semibold underline"
+            >
+              drop a pin
+            </button>
+          )}
         </p>
       )}
     </div>
