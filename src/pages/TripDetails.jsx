@@ -5,6 +5,7 @@ import { db } from "../config/firebase";
 import { useAuth } from "../context/AuthContext";
 import ConsentModal from "../components/legal/ConsentModal";
 import PinPicker from "../components/PinPicker";
+import AddressSearch from "../components/AddressSearch";
 import { readLocationOnce } from "../utils/rideLive";
 import { BRAND, COMPANY_EMAIL, COMPANY_PHONE_DISPLAY } from "../config/constants";
 
@@ -242,12 +243,13 @@ export default function TripDetails() {
               <label htmlFor="pickup" className="block text-base font-semibold text-slate-700 mb-1.5">
                 Pickup Location
               </label>
-              <input
+              <AddressSearch
                 id="pickup"
-                type="text"
+                testid="pickup-search"
                 className="w-full border-2 border-slate-300 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
                 value={ride.pickup}
-                onChange={(e) => updateRide({ pickup: e.target.value })}
+                onChange={(t) => updateRide({ pickup: t })}
+                onPick={(r) => updateRide({ pickup: r.text, pickupLat: r.lat, pickupLng: r.lng })}
                 placeholder={COPY.pickupPlaceholder}
               />
               <div className="mt-1 flex justify-between items-center text-sm">
@@ -293,12 +295,13 @@ export default function TripDetails() {
               <label htmlFor="dropoff" className="block text-base font-semibold text-slate-700 mb-1.5">
                 Drop-off Location
               </label>
-              <input
+              <AddressSearch
                 id="dropoff"
-                type="text"
+                testid="dropoff-search"
                 className="w-full border-2 border-slate-300 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
                 value={ride.dropoff}
-                onChange={(e) => updateRide({ dropoff: e.target.value })}
+                onChange={(t) => updateRide({ dropoff: t })}
+                onPick={(r) => updateRide({ dropoff: r.text, dropoffLat: r.lat, dropoffLng: r.lng })}
                 placeholder={COPY.dropoffPlaceholder}
               />
               <div className="mt-1 flex justify-between items-center text-sm">
