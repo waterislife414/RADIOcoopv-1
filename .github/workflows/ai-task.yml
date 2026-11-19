@@ -1,0 +1,74 @@
+name: ai-task
+# KYLE'S SITE ONLY (base branch kyle/main, task ids K1, K2 ...). Push branch ai-go/<Kn> off kyle/main, or
+# dispatch: gh workflow run ai-task.yml --ref kyle/main -f task=K3. Aider runs that task line from AI_PROMPT.md on a
+# free-model fallback chain, then pushes the result to ai/<Kn> with docs/ai/report-<Kn>.txt. Uses repo secrets
+# GEMINI_API_KEY, OPENROUTER_API_KEY, GROQ_API_KEY. A task line containing "TEST: qa" auto-tests with the click-through.
+on:
+  push:
+    branches: ['ai-go/**']
+  workflow_dispatch:
+    inputs:
+      task: { description: 'Kyle task id, e.g. K3', required: true }
+run-name: ai ${{ inputs.task || github.ref_name }}
+permissions:
+  contents: write
+env:
+  CODE_DIRS: app components lib config tests scripts
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: kyle/main, fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install aider-chat playwright && npm ci && python -m playwright install --with-deps chromium
+      - name: Run task
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          BR: ${{ github.ref_name }}
+          INPUT_TASK: ${{ inputs.task }}
+        run: |
+          T="${INPUT_TASK:-${BR#ai-go/}}"
+          LINE="$(grep -E "^$T " AI_PROMPT.md || true)"
+          [ -n "$LINE" ] || { echo "No line for $T in AI_PROMPT.md"; exit 1; }
+          TESTCMD="npm run build:demo"; echo "$LINE" | grep -q "TEST: qa" && TESTCMD="bash tests/qa/run.sh"
+          case "$T" in K[0-9]*) ;; *) echo "$T is not a Kyle task (K-numbers only)"; exit 1 ;; esac
+          FILES=$(python3 scripts/prompt-files.py "$T" files); READS=$(python3 scripts/prompt-files.py "$T" read)
+          [ -n "$FILES" ] || { echo "$T has no FILES list"; exit 1; }
+          git config user.name "ai-bot"; git config user.email "ai-bot@users.noreply.github.com"
+          git checkout -b "ai/$T"
+          for ATTEMPT in 1 2; do
+          for M in gemini/gemini-3.5-flash-lite openrouter/cohere/north-mini-code:free openrouter/google/gemma-4-31b-it:free groq/llama-3.3-70b-versatile gemini/gemini-2.5-flash; do
+            P=$(echo "$M" | cut -d/ -f1); [ -f "docs/ai/style-$P.txt" ] || P=openrouter
+            { cat "docs/ai/style-$P.txt"; echo; echo "TASK:"; echo "$LINE"; echo "Rules: small diff; touch only the FILES; no keys, deploys, payments, auth or database-policy changes."; [ -f /tmp/nudge.txt ] && cat /tmp/nudge.txt; } > /tmp/task.txt
+            echo "trying $M" >> /tmp/models.txt
+            timeout 300 aider --yes-always --no-check-update --no-show-model-warnings --model "$M" --map-tokens 8192 \
+              --read AGENTS.md --read docs/ai/KNOWLEDGE.md --read docs/ai/lessons.md --read config/business.ts \
+              $(for r in $READS; do echo --read $r; done) \
+              --lint-cmd "npx eslint --no-warn-ignored" --auto-lint --test-cmd "$TESTCMD" --auto-test \
+              --message-file /tmp/task.txt $FILES 2>&1 | tee /tmp/aider.log || true
+            RC=${PIPESTATUS[0]}
+            [ "$RC" = "124" ] || grep -qiE "rate.?limit|NotFoundError|quota|RESOURCE_EXHAUSTED|is unavailable|overloaded|402|No endpoints" /tmp/aider.log || break
+            sleep 40
+          done
+            [ "$(git diff --name-only origin/kyle/main -- $CODE_DIRS | wc -l)" != "0" ] && [ -n "$(git log origin/kyle/main..HEAD --oneline)$(git status --porcelain -- $CODE_DIRS)" ] && break
+            echo "NUDGE: no code change after attempt $ATTEMPT" >> /tmp/models.txt
+            printf "\nYOU MADE NO CODE CHANGE LAST TIME. The task requires editing the named FILES. Read them, then make the edit now. Do not ask questions.\n" > /tmp/nudge.txt
+          done
+          mkdir -p docs/ai; { cat /tmp/models.txt; tail -40 /tmp/aider.log; } > "docs/ai/log-$T.txt"
+          npx eslint . > /tmp/lint.txt 2>&1 && L=pass || L=FAIL
+          npx tsc --noEmit > /tmp/tsc.txt 2>&1 && C=pass || C=FAIL
+          npm test > /tmp/unit.txt 2>&1 && U=pass || U=FAIL
+          npm run build > /tmp/build.txt 2>&1 && B=pass || B=FAIL
+          Q=$(bash tests/qa/run.sh 2>&1 | grep -E "^== " | head -1)
+          CH=$(git diff --name-only origin/kyle/main -- $CODE_DIRS | wc -l)
+          printf "task %s\ncode_files_changed %s\nlint %s\ntypecheck %s\nunit %s\nbuild %s\nqa %s\n" "$T" "$CH" $L $C $U $B "$Q" > "docs/ai/report-$T.txt"
+          [ $C = FAIL ] && tail -15 /tmp/tsc.txt | cut -c1-220 >> "docs/ai/report-$T.txt"
+          git add -A && git commit -qm "AI task $T (lint $L, tsc $C, unit $U, build $B)" || true
+          git push -f origin "ai/$T"

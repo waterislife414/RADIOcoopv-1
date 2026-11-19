@@ -1,0 +1,41 @@
+name: merge-bot
+# KYLE'S SITE ONLY (branch kyle/main). Dispatch: gh workflow run merge-bot.yml --ref kyle/main -f tasks="K1 K2"
+# Runs one at a time. Result: branch kyle/merge-result, file docs/ai/merge-result.txt.
+on:
+  workflow_dispatch:
+    inputs:
+      tasks:
+        description: 'Space separated Kyle task ids, e.g. K1 K2'
+        required: true
+permissions:
+  contents: write
+  actions: read
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Wait for older merge-bot runs (one at a time, none dropped)
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          for i in $(seq 1 160); do
+            n=$(gh run list -R "$GITHUB_REPOSITORY" -w merge-bot.yml -L 30 --json databaseId,status -q "[.[]|select(.status!=\"completed\" and .databaseId < $GITHUB_RUN_ID)]|length")
+            [ "$n" = "0" ] && break; sleep 30
+          done
+      - uses: actions/checkout@v4
+        with: { ref: kyle/main, fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: npm ci && pip install playwright && python -m playwright install --with-deps chromium
+      - name: Merge
+        run: |
+          bash scripts/merge-bot.sh ${{ github.event.inputs.tasks }} || true
+          cat /tmp/merge-bot.log || true
+      - name: Publish result
+        if: always()
+        run: |
+          mkdir -p docs/ai; cp /tmp/merge-bot.log docs/ai/merge-result.txt 2>/dev/null || echo "no log" > docs/ai/merge-result.txt
+          git checkout -q -B kyle/merge-result
+          git add -f docs/ai/merge-result.txt; git commit -qm "kyle merge-bot result"; git push -q -f origin kyle/merge-result

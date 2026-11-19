@@ -1,0 +1,76 @@
+@import 'tailwindcss';
+
+/* Brand tokens — slate/charcoal + safety amber + verified emerald. Tailwind's slate-900/800,
+   amber-500 and emerald-500 already match #0F172A / #1E293B / #F59E0B / #10B981 exactly. */
+@theme {
+  --font-sans: 'Archivo Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --color-ink: #0f172a;
+  --color-steel: #1e293b;
+  --color-brand: #f59e0b;
+  --color-brand-dark: #d97706;
+  --color-ok: #10b981;
+}
+
+@utility font-display {
+  font-stretch: 118%;
+  font-weight: 850;
+  letter-spacing: -0.015em;
+  line-height: 1.02;
+}
+
+@utility hazard {
+  background-image: repeating-linear-gradient(-45deg, var(--color-brand) 0 12px, var(--color-ink) 12px 24px);
+}
+
+@utility grid-plate {
+  background-image:
+    linear-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-white text-slate-900 antialiased;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-amber-500;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+    padding: 0 !important;
+  }
+  @page {
+    size: letter;
+    margin: 0.5in;
+  }
+  .print-card {
+    box-shadow: none !important;
+    border: none !important;
+  }
+}

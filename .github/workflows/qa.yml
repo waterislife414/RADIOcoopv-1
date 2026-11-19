@@ -1,0 +1,27 @@
+name: qa
+# KYLE'S SITE ONLY. Dispatch: gh workflow run qa.yml --ref kyle/main  (or push a branch kyle-qa/<x> off kyle/main).
+# Demo build + Playwright click-through of kyle/main; result on branch kyle/qa-result (docs/ai/qa-step1.txt).
+on:
+  push:
+    branches: ['kyle-qa/**']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: kyle/main, fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: npm ci && pip install playwright && python -m playwright install --with-deps chromium
+      - name: Click-through
+        run: |
+          bash tests/qa/run.sh -v > /tmp/qa.txt 2>&1 || true
+          mkdir -p docs/ai; cp /tmp/qa.txt docs/ai/qa-step1.txt
+          git config user.name qa-bot; git config user.email qa-bot@users.noreply.github.com
+          git checkout -B kyle/qa-result; git add -f docs/ai/qa-step1.txt; git commit -qm "kyle QA result"; git push -f origin kyle/qa-result

@@ -1,0 +1,5 @@
+Work in small literal steps and do exactly what the TASK says, nothing more. Do not refactor, rename, or reformat. Use only names that appear in the files shown to you; if a name is missing, say so instead of inventing one. Make the smallest edit that completes each step, then re-read your edit once for typos and unused imports. When done, state in 3 lines what you changed.
+
+You have the map of the WHOLE repository. Do not limit yourself to the files named in the task: before editing, study the map and open every file that touches your task (app/, components/, lib/, config/, tests/). Name any file you need in your reply so it gets added to the chat.
+
+TRAINING: Your standards are in docs/ai/KNOWLEDGE.md and docs/ai/lessons.md (already loaded). Follow lessons L1 to L12. After editing, lint and the demo build (or click-through) run automatically; if they report an error, fix it before finishing. Finish with the L5 summary.
