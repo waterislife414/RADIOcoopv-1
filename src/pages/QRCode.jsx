@@ -9,6 +9,8 @@ import {
 } from "../config/constants";
 
 export default function QRCode() {
+  const QR_TARGET = import.meta.env.MODE === "demo" ? window.location.origin + "/" : APP_URL;
+
   return (
     <div className="min-h-screen bg-navy-950 bg-grain px-6 py-12 flex flex-col items-center print:bg-white print:py-0 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-navy-900/50 via-transparent to-navy-950 print:hidden" />
@@ -36,7 +38,7 @@ export default function QRCode() {
         <div className="flex justify-center my-6">
           <div className="p-4 rounded-2xl border-2 border-gold-400">
             <QRCodeSVG title="QR code that opens the booking page" role="img" aria-label="QR code that opens the booking page"
-              value={APP_URL}
+              value={QR_TARGET}
               size={200}
               fgColor="#0A1420"
               bgColor="#FFFFFF"
