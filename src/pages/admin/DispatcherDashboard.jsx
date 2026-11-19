@@ -29,7 +29,7 @@ import AssignCarModal from "../../components/admin/AssignCarModal";
 import CarActionsModal from "../../components/admin/CarActionsModal";
 import LeaseAlert from "../../components/admin/LeaseAlert";
 import QuickEntry from "../../components/admin/QuickEntry";
-import Pegboard from "../../components/board/Pegboard";
+import Pegboard from "../../components/admin/Pegboard";
 import IdReviewList from "../../components/admin/IdReviewList";
 import { useLiveBoard } from "../../hooks/useLiveBoard";
 import { OFFICE_ADDRESS, COMPANY_PHONE_DISPLAY, COPY } from "../../config/constants";
