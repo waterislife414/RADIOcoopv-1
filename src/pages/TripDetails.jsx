@@ -75,24 +75,28 @@ export default function TripDetails() {
 
   // Optional: attaches the rider's GPS pin so the ride lands in the right
   // zone and the driver can navigate straight to them.
-  function shareLocation() {
+  async function shareLocation() {
     if (!navigator.geolocation) {
       setLocateError("Your phone can't share location here. Type your address instead.");
       return;
     }
     setLocating(true);
     setLocateError("");
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        updateRide({ pickupLat: pos.coords.latitude, pickupLng: pos.coords.longitude });
-        setLocating(false);
-      },
-      () => {
-        setLocateError("Couldn't get your location. Type your address instead.");
-        setLocating(false);
-      },
-      { enableHighAccuracy: true, timeout: 15000 }
-    );
+    const getFix = (opts) => new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, opts));
+    try {
+      let pos;
+      try {
+        pos = await getFix({ enableHighAccuracy: false, maximumAge: 120000, timeout: 10000 });
+      } catch (err) {
+        if (err?.code === 1) throw err;
+        pos = await getFix({ enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
+      }
+      updateRide({ pickupLat: pos.coords.latitude, pickupLng: pos.coords.longitude });
+    } catch (err) {
+      setLocateError(err?.code === 1 ? "Location is blocked. Turn it on in your phone settings, or type your address." : "We couldn't find you right now. Drop a pin or type your address.");
+    } finally {
+      setLocating(false);
+    }
   }
 
   useEffect(() => {
