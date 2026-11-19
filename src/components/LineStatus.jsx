@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../config/firebase";
 import { BRAND } from "../config/constants";
@@ -81,6 +81,20 @@ export default function LineStatus({ rideId, dark = false, onDone }) {
   const next = q.position <= 1;
   return (
     <>
+      {!currentUser && (
+        <div data-testid="guest-pitch" className="rounded-2xl bg-navy-950 text-white p-5 mb-4">
+          <p className="text-xl font-extrabold text-gold-300">Sign up for exclusive offers</p>
+          <ul className="mt-2 space-y-1 text-slate-200 text-sm">
+            <li>- Live driver location</li>
+            <li>- Alerts when your driver is close</li>
+            <li>- Never miss a ride</li>
+            <li>- Earn free rides</li>
+          </ul>
+          <Link to="/sign-up" className="mt-3 block text-center bg-gold-400 text-navy-950 font-bold rounded-full py-3">
+            Sign up free
+          </Link>
+        </div>
+      )}
       <div
         data-testid="line-status"
         className={`rounded-xl px-4 py-3 font-bold text-center ${
@@ -123,7 +137,7 @@ export default function LineStatus({ rideId, dark = false, onDone }) {
             >
               Skip ahead for {PASS.price}
             </button>
-            <button type="button" onClick={dismiss} className="w-full min-h-[48px] rounded-2xl border-2 border-white/25 font-bold text-slate-200">
+            <button type="button" onclick={dismiss} className="w-full min-h-[48px] rounded-2xl border-2 border-white/25 font-bold text-slate-200">
               No thanks, I&rsquo;ll wait
             </button>
           </div>
