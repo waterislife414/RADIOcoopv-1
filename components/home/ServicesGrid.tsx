@@ -62,7 +62,9 @@ export function ServicesGrid({ diagnosticFeeCents, laborRateCents }: { diagnosti
                   <ServiceIcon name={s.icon} className="h-5 w-5" />
                 </span>
                 <div>
-                  <h3 className="font-extrabold leading-tight">{s.name}</h3>
+                  <h3 className="font-extrabold leading-tight">
+                    <Link href={`/services/${s.id}`} className="hover:underline">{s.name}</Link>
+                  </h3>
                   <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-slate-500">
                     <Clock className="h-3.5 w-3.5" aria-hidden /> {s.duration}
                   </p>
