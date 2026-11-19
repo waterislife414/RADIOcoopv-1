@@ -11,3 +11,4 @@ dist-demo/
 .env.mobile
 __pycache__/
 *.pyc
+.aider*
