@@ -71,6 +71,7 @@ export default function DispatcherDashboard() {
   );
   const carFor = (uid) => liveBoard.drivers.find((d) => d.id === uid)?.carNumber;
   const boardCounts = liveBoard.drivers.reduce((m, d) => ({ ...m, [d.status]: (m[d.status] || 0) + 1 }), {});
+  // State for pendingIdVerifications is still needed for the IdReviewList in Owner Tools
   const [pendingIdVerifications, setPendingIdVerifications] = useState([]);
 
   useEffect(() => {
@@ -246,27 +247,32 @@ export default function DispatcherDashboard() {
             </p>
             <p className="font-bold text-xl text-gold-300">${dailyGross.toFixed(2)}</p>
           </div>
-          <Link to="/admin/drivers" className="text-base font-semibold text-gold-300 hover:text-gold-200">
-            Drivers &amp; Fleet
-          </Link>
-          <Link to="/admin/map" className="text-base font-semibold text-gold-300 hover:text-gold-200">
-            Live Map
-          </Link>
-          <Link to="/admin/lease" className="text-base font-semibold text-gold-300 hover:text-gold-200">
-            Lick
-          </Link>
-          <Link to="/shop" className="text-base font-semibold text-gold-300 hover:text-gold-200">
-            Shop
-          </Link>
-          <Link to="/admin/zones" className="text-base font-semibold text-gold-300 hover:text-gold-200">
-            Zones
-          </Link>
-          <button
-            onClick={() => setShowAccountSettings(true)}
-            className="text-base text-slate-300 hover:text-white"
-          >
-            Login Settings
-          </button>
+          <details className="relative">
+            <summary className="cursor-pointer text-base font-semibold text-gold-300">More ▾</summary>
+            <div className="absolute right-0 mt-2 bg-navy-900 border border-slate-700 rounded-xl shadow-xl p-3 flex flex-col gap-2 z-50 min-w-[140px]">
+              <Link to="/admin/drivers" className="text-base font-semibold text-gold-300 hover:text-gold-200">
+                Drivers &amp; Fleet
+              </Link>
+              <Link to="/admin/map" className="text-base font-semibold text-gold-300 hover:text-gold-200">
+                Live Map
+              </Link>
+              <Link to="/admin/lease" className="text-base font-semibold text-gold-300 hover:text-gold-200">
+                Lick
+              </Link>
+              <Link to="/shop" className="text-base font-semibold text-gold-300 hover:text-gold-200">
+                Shop
+              </Link>
+              <Link to="/admin/zones" className="text-base font-semibold text-gold-300 hover:text-gold-200">
+                Zones
+              </Link>
+              <button
+                onClick={() => setShowAccountSettings(true)}
+                className="text-base text-slate-300 hover:text-white text-left"
+              >
+                Login Settings
+              </button>
+            </div>
+          </details>
           <button onClick={logout} className="text-base text-slate-300 hover:text-white">
             Log Out
           </button>
@@ -279,18 +285,6 @@ export default function DispatcherDashboard() {
 
       <div className="px-6 pt-4 max-w-6xl mx-auto empty:hidden">
         <AlertsBanner />
-      </div>
-      {pendingIdVerifications.length > 0 && (
-        <div className="px-6 pt-3 max-w-6xl mx-auto">
-          <a href="#id-checks" className="block rounded-xl bg-amber-100 border-2 border-amber-300 px-4 py-2 font-semibold text-amber-900">
-            {pendingIdVerifications.length} rider{pendingIdVerifications.length === 1 ? "" : "s"} waiting for an ID check. Once checked, the app
-            handles their card rides. &darr;
-          </a>
-        </div>
-      )}
-
-      <div className="px-6 pt-6 max-w-6xl mx-auto space-y-4">
-        <LeaseAlert />
       </div>
 
       <Pegboard
@@ -314,9 +308,9 @@ export default function DispatcherDashboard() {
 
       {/* The calls that need him come first: phone calls, cash, guests, no GPS, ID not checked, nobody took it. */}
       <section className="px-6 pt-6 max-w-6xl mx-auto" data-testid="send-by-radio">
-          <div>
+        <div>
           <h2 className="font-bold text-xl text-slate-700">
-            {"\u{1F4FB}"} Send by radio ({officeRides.length})
+            Needs you
           </h2>
           <p className="text-sm text-slate-500 mb-3">Phone calls, cash, guests, no GPS, ID not checked yet, or nobody took it. These need you.</p>
           <div className="space-y-3">
@@ -341,10 +335,10 @@ export default function DispatcherDashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 max-w-6xl mx-auto">
         <section className="space-y-6">
-          <div>
-            <h2 className="font-bold text-xl text-slate-700">
+          <details close>
+            <summary className="font-bold text-xl text-slate-700 cursor-pointer mb-3">
               {"\u{1F4F1}"} App rides ({appRides.length})
-            </h2>
+            </summary>
             <p className="text-sm text-slate-500 mb-3">The app is sending these to drivers. Step in any time.</p>
             <div className="space-y-3">
               {appRides.map((ride) => (
@@ -362,33 +356,35 @@ export default function DispatcherDashboard() {
               ))}
               {appRides.length === 0 && <p className="text-base text-slate-500">No app rides waiting.</p>}
             </div>
-          </div>
+          </details>
         </section>
 
         <section>
-          <h2 className="font-bold text-xl text-slate-700 mb-3">
-            Active Rides ({active.length})
-          </h2>
-          <div className="space-y-3">
-            {active.map((ride) => (
-              <RideCard
-                key={ride.id}
-                ride={ride}
-                customerStatus={customerStatusMap[ride.customerId]}
-                carFor={carFor}
-                zones={liveBoard.zones}
-                onSetZone={handleSetZone}
-                onChangeCar={setAssignRide}
-                onDispatchAdvance={handleDispatchAdvance}
-                onCaptureFare={requestCaptureFare}
-                onChargeWallet={setWalletChargeRide}
-                onArchive={handleArchive}
-              />
-            ))}
-            {active.length === 0 && (
-              <p className="text-base text-slate-500">No active rides.</p>
-            )}
-          </div>
+          <details close>
+            <summary className="font-bold text-xl text-slate-700 cursor-pointer mb-3">
+              Active Rides ({active.length})
+            </summary>
+            <div className="space-y-3">
+              {active.map((ride) => (
+                <RideCard
+                  key={ride.id}
+                  ride={ride}
+                  customerStatus={customerStatusMap[ride.customerId]}
+                  carFor={carFor}
+                  zones={liveBoard.zones}
+                  onSetZone={handleSetZone}
+                  onChangeCar={setAssignRide}
+                  onDispatchAdvance={handleDispatchAdvance}
+                  onCaptureFare={requestCaptureFare}
+                  onChargeWallet={setWalletChargeRide}
+                  onArchive={handleArchive}
+                />
+              ))}
+              {active.length === 0 && (
+                <p className="text-base text-slate-500">No active rides.</p>
+              )}
+            </div>
+          </details>
         </section>
       </div>
 
@@ -431,23 +427,26 @@ export default function DispatcherDashboard() {
         />
       )}
       {/* Less frequent: dispatch mode, new driver applications and ID checks. */}
-      <div className="px-6 pb-2 max-w-6xl mx-auto">
-        <DispatchModePanel />
-      </div>
-      <div className="px-6 pb-6 max-w-6xl mx-auto empty:hidden">
-        <DriverApplicationsPanel />
-      </div>
-
-      {pendingIdVerifications.length > 0 && (
-        <div className="px-6 pb-6 max-w-6xl mx-auto">
-          <div id="id-checks" className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-5">
-            <h2 className="font-bold text-lg text-amber-800 mb-3">
-              Pending ID Verifications ({pendingIdVerifications.length})
-            </h2>
-            <IdReviewList users={pendingIdVerifications} />
+      <div className="px-6 pb-6 max-w-6xl mx-auto">
+        <details className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200" close>
+          <summary className="cursor-pointer font-bold text-slate-800 text-lg">Owner tools</summary>
+          <div className="space-y-6 pt-4">
+            <LeaseAlert />
+            <DispatchModePanel />
+            <div className="empty:hidden">
+              <DriverApplicationsPanel />
+            </div>
+            {pendingIdVerifications.length > 0 && (
+              <div id="id-checks" className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-5">
+                <h2 className="font-bold text-lg text-amber-800 mb-3">
+                  Pending ID Verifications ({pendingIdVerifications.length})
+                </h2>
+                <IdReviewList users={pendingIdVerifications} />
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        </details>
+      </div>
 
     </div>
   );
