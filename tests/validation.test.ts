@@ -46,7 +46,7 @@ test('valid input succeeds and lowercases email', () => {
 });
 
 test('mobile with address deleted fails with Service address message', () => {
-  const input = valid() as Record<string, any>;
+  const input = valid() as unknown as Record<string, unknown>;
   delete input.address;
   const res = bookingSchema.safeParse(input);
   assert.equal(res.success, false);
@@ -57,7 +57,7 @@ test('mobile with address deleted fails with Service address message', () => {
 });
 
 test('serviceIds alignment in mobile mode fails with shop bay message', () => {
-  const input = valid() as Record<string, any>;
+  const input = valid() as unknown as Record<string, unknown>;
   input.serviceIds = ['alignment'];
   const res = bookingSchema.safeParse(input);
   assert.equal(res.success, false);
@@ -85,13 +85,13 @@ test('vehicle.vin with letter O fails', () => {
 });
 
 test('website honeypot fails', () => {
-  const input = { ...valid(), website: 'spam' } as Record<string, any>;
+  const input = { ...valid(), website: 'spam' } as unknown as Record<string, unknown>;
   const res = bookingSchema.safeParse(input);
   assert.equal(res.success, false);
 });
 
 test('serviceIds empty with short symptoms fails', () => {
-  const input = valid() as Record<string, any>;
+  const input = valid() as unknown as Record<string, unknown>;
   input.serviceIds = [];
   input.symptoms = 'hi';
   const res = bookingSchema.safeParse(input);
@@ -99,21 +99,21 @@ test('serviceIds empty with short symptoms fails', () => {
 });
 
 test('mediaPaths with directory traversal fails', () => {
-  const input = valid() as Record<string, any>;
+  const input = valid() as unknown as Record<string, unknown>;
   input.mediaPaths = ['../etc/passwd'];
   const res = bookingSchema.safeParse(input);
   assert.equal(res.success, false);
 });
 
 test('mediaPaths with valid pending path succeeds', () => {
-  const input = valid() as Record<string, any>;
+  const input = valid() as unknown as Record<string, unknown>;
   input.mediaPaths = ['pending/2026-11/a.jpg'];
   const res = bookingSchema.safeParse(input);
   assert.equal(res.success, true);
 });
 
 test('shop mode without address and shop service succeeds', () => {
-  const input = valid() as Record<string, any>;
+  const input = valid() as unknown as Record<string, unknown>;
   input.mode = 'shop';
   delete input.address;
   input.serviceIds = ['alignment'];
