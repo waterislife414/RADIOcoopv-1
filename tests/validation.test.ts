@@ -46,8 +46,7 @@ test('valid input succeeds and lowercases email', () => {
 });
 
 test('mobile with address deleted fails with Service address message', () => {
-  const input = valid();
-  // @ts-expect-error testing invalid input
+  const input = valid() as Record<string, unknown>;
   delete input.address;
   const res = bookingSchema.safeParse(input);
   assert.equal(res.success, false);
@@ -86,7 +85,7 @@ test('vehicle.vin with letter O fails', () => {
 });
 
 test('website honeypot fails', () => {
-  const input = { ...valid(), website: 'spam' };
+  const input = { ...valid(), website: 'spam' } as Record<string, unknown>;
   const res = bookingSchema.safeParse(input);
   assert.equal(res.success, false);
 });
@@ -114,9 +113,8 @@ test('mediaPaths with valid pending path succeeds', () => {
 });
 
 test('shop mode without address and shop service succeeds', () => {
-  const input = valid();
+  const input = valid() as Record<string, unknown>;
   input.mode = 'shop';
-  // @ts-expect-error testing optional address
   delete input.address;
   input.serviceIds = ['alignment'];
   const res = bookingSchema.safeParse(input);
