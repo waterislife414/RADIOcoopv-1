@@ -31,6 +31,40 @@ export default function Profile() {
   const [faceUploading, setFaceUploading] = useState(false);
   const [faceUploadError, setFaceUploadError] = useState("");
   const [openPerks, setOpenPerks] = useState({});
+  const [showDealsOptin, setShowDealsOptin] = useState(false);
+
+  useEffect(() => {
+    try {
+      const hideUntil = localStorage.getItem("dealsOptInHideUntil");
+      if (hideUntil && Date.now() < Number(hideUntil)) {
+        setShowDealsOptin(false);
+        return;
+      }
+    } catch {}
+    if (userProfile && userProfile.marketingOptIn !== true) {
+      setShowDealsOptin(true);
+    } else {
+      setShowDealsOptin(false);
+    }
+  }, [userProfile]);
+
+  async function handleAcceptDeals() {
+    if (!currentUser) return;
+    try {
+      await updateDoc(doc(db, "users", currentUser.uid), {
+        marketingOptIn: true,
+      });
+      setShowDealsOptin(false);
+    } catch {}
+  }
+
+  function handleHideDeals() {
+    try {
+      const future = Date.now() + 30 * 24 * 60 * 60 * 1000;
+      localStorage.setItem("dealsOptInHideUntil", String(future));
+    } catch {}
+    setShowDealsOptin(false);
+  }
 
   function togglePerks(tier) {
     setOpenPerks((prev) => ({ ...prev, [tier]: !prev[tier] }));
@@ -121,6 +155,31 @@ export default function Profile() {
       <BrandHeader />
       <div className="px-6 py-8">
         <div className="max-w-md mx-auto">
+          {showDealsOptin && (
+            <div data-testid="deals-optin" className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-5 mb-6 text-center space-y-3">
+              <p className="font-bold text-lg text-slate-900">Don't miss out on what you could be saving</p>
+              <p className="text-sm text-slate-700">Get the latest deals in your area by text and email.</p>
+              <button
+                type="button"
+                data-testid="deals-yes"
+                onClick={handleAcceptDeals}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl shadow transition"
+              >
+                Yes, send me deals
+              </button>
+              <div>
+                <button
+                  type="button"
+                  data-testid="deals-no"
+                  onClick={handleHideDeals}
+                  className="text-xs text-slate-500 underline hover:text-slate-700 mt-1"
+                >
+                  Not now
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="bg-gradient-to-b from-navy-950 to-navy-900 bg-grain relative overflow-hidden rounded-2xl px-6 py-7 text-center mb-6">
             <p className="font-display font-bold text-2xl text-white">
               Welcome to the {HUB_NAME}, {userProfile.firstName}!
