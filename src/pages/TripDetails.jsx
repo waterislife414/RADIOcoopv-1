@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { collection, getDocs, limit, orderBy, query, where } from "firebase/firestore";
+import { collection, getDocs, limit, orderBy, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { useAuth } from "../context/AuthContext";
 import ConsentModal from "../components/legal/ConsentModal";
@@ -8,6 +8,7 @@ import PinPicker from "../components/PinPicker";
 import AddressSearch from "../components/AddressSearch";
 import { readLocationOnce } from "../utils/rideLive";
 import { BRAND, COMPANY_EMAIL, COMPANY_PHONE_DISPLAY } from "../config/constants";
+import { zoneForPoint } from "../../functions/lib/dispatchCore.mjs";
 
 import { consentIsCurrent } from "../legal/documents";
 const RIDER_DOCS = ["rider-terms", "privacy"];
@@ -45,6 +46,7 @@ export default function TripDetails() {
   const { ride, updateRide, addStop, removeStop } = useRide();
   const navigate = useNavigate();
 
+  const [zones, setZones] = useState([]);
   const [stopInput, setStopInput] = useState("");
   const [showStops, setShowStops] = useState(ride.stops.length > 0);
   const [scheduleType, setScheduleType] = useState(ride.scheduleType);
@@ -57,6 +59,13 @@ export default function TripDetails() {
   const [locating, setLocating] = useState(false);
   const [locateError, setLocateError] = useState("");
   const [pickerTarget, setPickerTarget] = useState(null); // 'pickup' | 'dropoff' | null
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "zones"), (s) =>
+      setZones(s.docs.map((d) => ({ id: d.id, ...d.data() })))
+    );
+    return () => unsub();
+  }, []);
 
   // Optional: attaches the rider's GPS pin so the ride lands in the right
   // zone and the driver can navigate straight to them.
@@ -186,6 +195,12 @@ export default function TripDetails() {
 
   const recentList = recent.map((p) => p);
 
+  const pickupZoneId = typeof ride.pickupLat === "number" ? zoneForPoint(zones, ride.pickupLng, ride.pickupLat) : null;
+  const pickupZoneObj = zones.find((z) => z.id === pickupZoneId);
+
+  const dropoffZoneId = typeof ride.dropoffLat === "number" ? zoneForPoint(zones, ride.dropoffLng, ride.dropoffLat) : null;
+  const dropoffZoneObj = zones.find((z) => z.id === dropoffZoneId);
+
   return (
     <div className="min-h-screen bg-white">
       <BrandHeader />
@@ -258,6 +273,11 @@ export default function TripDetails() {
                 onPin={() => setPickerTarget("pickup")}
                 recents={recentList}
               />
+              {typeof ride.pickupLat === "number" && (
+                <p data-testid="pickup-zone" className="mt-1 text-sm font-semibold">
+                  {pickupZoneObj ? `✓ ${pickupZoneObj.label || pickupZoneObj.name || pickupZoneObj.id}` : "Outside our zones — we'll still try"}
+                </p>
+              )}
               {locateError && <p className="text-sm text-red-600 mt-1">{locateError}</p>}
             </div>
 
@@ -278,6 +298,11 @@ export default function TripDetails() {
                 onPin={() => setPickerTarget("dropoff")}
                 recents={recentList}
               />
+              {typeof ride.dropoffLat === "number" && (
+                <p data-testid="dropoff-zone" className="mt-1 text-sm font-semibold">
+                  {dropoffZoneObj ? `✓ ${dropoffZoneObj.label || dropoffZoneObj.name || dropoffZoneObj.id}` : "Outside our zones — we'll still try"}
+                </p>
+              )}
             </div>
 
             {/* Out of area: simple yes/no first, details only reveal after they engage */}
