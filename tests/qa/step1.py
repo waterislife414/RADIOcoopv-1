@@ -119,6 +119,40 @@ def body(browser):
         expect(iv).to_have_url(re.compile("/admin/login"))
     check("admin: gated to login", admin_gate)
 
+    def faq_opens():
+        pg.goto(BASE + "/")
+        pg.get_by_text("How does the warranty work?").click()
+        expect(pg.get_by_text(re.compile("12-month / 12,000-mile warranty"))).to_be_visible()
+    check("home: FAQ opens", faq_opens)
+
+    sp = new_page(browser, mobile=True)
+    def shop_key_drop_flow():
+        sp.goto(BASE + "/book?mode=shop")
+        sp.get_by_text("After-hours key drop", exact=True).click()
+        sp.get_by_role("button", name=re.compile("^Continue")).click()
+        sp.locator("#b-year").select_option("2019")
+        sp.locator("#b-make").fill("Toyota")
+        sp.locator("#b-model").fill("Camry")
+        sp.locator("#b-miles").fill("88000")
+        sp.get_by_role("button", name=re.compile("^Continue")).click()
+        sp.get_by_role("button", name=re.compile("Wheel Alignment")).click()
+        sp.get_by_role("button", name=re.compile("^Continue")).click()
+        sp.locator("section button[aria-pressed]").nth(1).click()
+        sp.get_by_role("button", name=re.compile(r"ET\s*Open|ET\s*Last spot")).first.click()
+        sp.get_by_role("button", name=re.compile("^Continue")).click()
+        sp.locator("#b-name").fill("Shop Tester")
+        sp.locator("#b-phone").fill("(334) 555-0101")
+        sp.locator("#b-email").fill("shop@example.com")
+        sp.get_by_role("button", name=re.compile("Confirm booking")).click()
+        expect(sp.locator("h1")).to_contain_text("on the board", timeout=20000)
+        expect(sp.get_by_text("After-hours key drop requested")).to_be_visible()
+    check("booking: shop flow with key drop", shop_key_drop_flow)
+
+    def memberships_fleet_quote():
+        mb.goto(BASE + "/memberships")
+        expect(mb.locator("#fleet").get_by_role("link", name=re.compile("Get quote"))).to_be_visible()
+    check("memberships: fleet quote", memberships_fleet_quote)
+
     dk = new_page(browser, mobile=False)
 
     def desktop_nav():
