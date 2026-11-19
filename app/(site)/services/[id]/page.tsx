@@ -6,12 +6,16 @@ import { SERVICES, SERVICE_BY_ID } from '@/config/services';
 import { BUSINESS, telHref } from '@/config/business';
 import { ButtonLink, buttonClasses } from '@/components/ui/Button';
 import { formatCentsShort } from '@/lib/money';
+import { getServices } from '@/lib/content';
+
+const priceLabel = (c: number | null) => (c === null ? 'Call for quote' : formatCentsShort(c));
 
 export async function generateStaticParams() {
   return SERVICES.map((s) => ({ id: s.id }));
 }
 
 export const dynamicParams = false;
+export const revalidate = 300;
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -19,14 +23,15 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   if (!s) return {};
   return {
     title: `${s.name} in Phenix City, AL & Columbus, GA`,
-    description: `${s.blurb} Starting at ${formatCentsShort(s.startingAtCents)}.`,
+    description: `${s.blurb} Starting at ${priceLabel(s.startingAtCents)}.`,
     alternates: { canonical: `/services/${s.id}` },
   };
 }
 
 export default async function ServicePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const s = SERVICE_BY_ID.get(id);
+  const live = await getServices();
+  const s = live.find((x) => x.id === id) ?? (SERVICE_BY_ID.get(id) ? null : undefined);
   if (!s) notFound();
 
   const jsonLd = {
@@ -43,11 +48,11 @@ export default async function ServicePage({ params }: { params: Promise<{ id: st
     offers: {
       '@type': 'Offer',
       priceCurrency: 'USD',
-      price: (s.startingAtCents / 100).toFixed(2),
+      ...(s.startingAtCents !== null ? { price: (s.startingAtCents / 100).toFixed(2) } : {}),
     },
   };
 
-  const otherServices = SERVICES.filter((o) => o.mode === s.mode && o.id !== s.id);
+  const otherServices = live.filter((o) => o.mode === s.mode && o.id !== s.id);
 
   return (
     <>
@@ -63,7 +68,7 @@ export default async function ServicePage({ params }: { params: Promise<{ id: st
           <h1 className="font-display mt-3 text-4xl">{s.name}</h1>
           <p className="mt-4">
             <span className="text-sm text-slate-400">Starting at</span>{' '}
-            <span className="text-4xl font-black text-white">{formatCentsShort(s.startingAtCents)}</span>
+            <span className="text-4xl font-black text-white">{priceLabel(s.startingAtCents)}</span>
             {s.plusParts && <span className="text-sm text-slate-400"> + parts</span>}
           </p>
           <p className="mt-2 flex items-center gap-1.5 text-sm text-slate-300">
@@ -109,7 +114,7 @@ export default async function ServicePage({ params }: { params: Promise<{ id: st
                       href={`/services/${o.id}`}
                       className="block rounded-lg border border-slate-200 p-3 text-sm font-semibold text-slate-800 hover:border-amber-500 hover:bg-amber-50/50"
                     >
-                      {o.name} <span className="text-slate-500">({formatCentsShort(o.startingAtCents)})</span>
+                      {o.name} <span className="text-slate-500">({priceLabel(o.startingAtCents)})</span>
                     </Link>
                   </li>
                 ))}

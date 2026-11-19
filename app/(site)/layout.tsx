@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { AnnouncementBar } from '@/components/layout/AnnouncementBar';
 import { DemoBanner } from '@/components/layout/DemoBanner';
 import { Footer } from '@/components/layout/Footer';
 import { Header } from '@/components/layout/Header';
@@ -12,6 +13,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
         Skip to content
       </a>
       <DemoBanner />
+      <AnnouncementBar />
       <Header />
       <main id="main">{children}</main>
       <Footer />

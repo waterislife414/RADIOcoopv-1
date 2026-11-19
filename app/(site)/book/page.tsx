@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { BookingWizard, type WizardInitial } from '@/components/booking/BookingWizard';
+import { getServices, getSiteSettings } from '@/lib/content';
 import { getRates } from '@/lib/db/settings';
+import { LAUNCH } from '@/lib/mode';
 import { upcomingOpenDates } from '@/lib/time';
 
 export const metadata: Metadata = {
@@ -14,7 +16,7 @@ const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) 
 
 export default async function BookPage({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams;
-  const rates = await getRates();
+  const [rates, services, settings] = await Promise.all([getRates(), getServices(), getSiteSettings()]);
   const modeParam = one(sp.mode);
   const initial: WizardInitial = {
     mode: modeParam === 'mobile' || modeParam === 'shop' ? modeParam : null,
@@ -32,6 +34,9 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
       <BookingWizard
         initial={initial}
         openDates={upcomingOpenDates()}
+        launch={LAUNCH}
+        services={services}
+        paymentNote={settings.paymentNote}
         rates={{ calloutFeeCents: rates.mobileCalloutFeeCents, depositCents: rates.bookingDepositCents, diagnosticFeeCents: rates.diagnosticFeeCents }}
       />
     </div>

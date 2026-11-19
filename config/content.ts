@@ -20,7 +20,8 @@ export type Review = {
 
 export const REVIEWS: readonly Review[] = [];
 
-export type FaqItem = { q: string; a: string };
+/** launchA: answer used in launch mode (no online payments/digital estimates yet). */
+export type FaqItem = { q: string; a: string; launchA?: string };
 
 export const FAQ: readonly FaqItem[] = [
   {
@@ -42,6 +43,7 @@ export const FAQ: readonly FaqItem[] = [
   {
     q: 'How do I pay?',
     a: 'You get an itemized digital estimate to approve before work starts. When the job is done, pay by card, Apple Pay, or Google Pay from the same link. Fleet accounts can be set up with monthly invoicing and net-15 terms.',
+    launchA: 'Kyle tells you the price before any work starts, and you pay when the job is done. Ask what payment he takes when you book. Business with work trucks? Ask about fleet pricing.',
   },
   {
     q: 'Do you cover both Alabama and Georgia?',

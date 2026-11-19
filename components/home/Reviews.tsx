@@ -1,5 +1,4 @@
 import { Clock, ExternalLink, MapPin, Star } from 'lucide-react';
-import { BUSINESS } from '@/config/business';
 import { REVIEWS } from '@/config/content';
 import { buttonClasses } from '@/components/ui/Button';
 
@@ -13,7 +12,7 @@ function Stars({ value, className = 'h-4 w-4' }: { value: number; className?: st
   );
 }
 
-export function Reviews() {
+export function Reviews({ googleReviewUrl }: { googleReviewUrl: string | null }) {
   const count = REVIEWS.length;
   const avg = count ? REVIEWS.reduce((s, r) => s + r.rating, 0) / count : 0;
 
@@ -34,9 +33,9 @@ export function Reviews() {
               </p>
             )}
           </div>
-          <a href={BUSINESS.googleReviewUrl} target="_blank" rel="noopener noreferrer" className={buttonClasses('primary', 'md')}>
+          {googleReviewUrl && <a href={googleReviewUrl} target="_blank" rel="noopener noreferrer" className={buttonClasses('primary', 'md')}>
             <Star className="h-4 w-4" aria-hidden /> Review us on Google <ExternalLink className="h-3.5 w-3.5" aria-hidden />
-          </a>
+          </a>}
         </div>
 
         {count > 0 && (

@@ -4,6 +4,7 @@ import { ArrowRight, MapPin, Receipt, ShieldCheck, Truck, Warehouse, Zap } from 
 import { BUSINESS } from '@/config/business';
 import { PHOTOS } from '@/config/media';
 import { formatCentsShort } from '@/lib/money';
+import { LAUNCH } from '@/lib/mode';
 
 /**
  * Full-bleed night-rescue photo behind the headline. Gradients keep text readable:
@@ -34,7 +35,7 @@ export function Hero({ calloutFeeCents, diagnosticFeeCents }: { calloutFeeCents:
             Honest Auto Repair — <span className="text-amber-400">In Our Shop or In Your Driveway</span>
           </h1>
           <p className="mt-4 max-w-xl text-base text-slate-200 sm:text-lg">
-            Itemized digital estimate before a wrench turns. {formatCentsShort(diagnosticFeeCents)} diagnostic{' '}
+            {LAUNCH ? 'You know the price before any work starts.' : 'Itemized digital estimate before a wrench turns.'} {formatCentsShort(diagnosticFeeCents)} diagnostic{' '}
             <strong className="text-white">waived when you approve the repair</strong>. Can’t fix it? You don’t pay.
           </p>
 

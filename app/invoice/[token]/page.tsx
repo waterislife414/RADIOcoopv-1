@@ -13,6 +13,7 @@ import { balanceDueCents } from '@/lib/invoice-math';
 import { getInvoiceByToken, getSignedInspectionPhotos } from '@/lib/invoices';
 import { qrSvg } from '@/lib/qr';
 import { formatET } from '@/lib/time';
+import { LAUNCH } from '@/lib/mode';
 import { approveEstimate } from './actions';
 
 export const dynamic = 'force-dynamic';
@@ -20,6 +21,7 @@ export const metadata: Metadata = { title: 'Your Estimate & Invoice', robots: { 
 
 export default async function InvoicePage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ paid?: string }> }) {
   const [{ token }, sp] = await Promise.all([params, searchParams]);
+  if (LAUNCH) notFound();
   const inv = await getInvoiceByToken(token);
   if (!inv || inv.status === 'draft') notFound();
 

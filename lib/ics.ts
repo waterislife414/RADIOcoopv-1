@@ -12,13 +12,13 @@ function escapeText(s: string): string {
 
 /** Fold lines > 75 octets per RFC 5545 §3.1. */
 function fold(line: string): string {
-  const bytes = Buffer.from(line, 'utf8');
-  if (bytes.length <= 75) return line;
+  const enc = new TextEncoder();
+  if (enc.encode(line).length <= 75) return line;
   const parts: string[] = [];
   let current = '';
   let currentBytes = 0;
   for (const ch of line) {
-    const b = Buffer.byteLength(ch, 'utf8');
+    const b = enc.encode(ch).length;
     const limit = parts.length === 0 ? 75 : 74;
     if (currentBytes + b > limit) {
       parts.push(current);

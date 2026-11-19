@@ -9,7 +9,8 @@ import type { SignedPhoto } from '@/lib/invoices';
  * State lives in short-lived cookies so it survives serverless instance hops. Used for the client
  * preview link and for the QA click-through in CI. Never enable in production.
  */
-export const DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === '1';
+/** No-backend mode: demo preview OR zero-cost launch mode. */
+export const DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === '1' || process.env.NEXT_PUBLIC_LAUNCH_MODE === '1';
 export const DEMO_INVOICE_TOKEN = 'demo-estimate-kyles-auto-0001';
 
 const BOOKING_COOKIE = 'demo_booking';

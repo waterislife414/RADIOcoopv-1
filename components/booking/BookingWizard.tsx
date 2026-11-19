@@ -15,6 +15,9 @@ import { formatDateISO } from '@/lib/time';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 import { readStoredUtm } from '@/components/layout/UtmCapture';
 import type { AvailabilityResponse } from '@/app/api/availability/route';
+import type { PricedService } from '@/lib/content';
+import { bookingRef } from '@/lib/ids';
+import { LaunchSent, saveToNetlifyForms, type LaunchRequest } from '@/components/booking/launch';
 
 // ---------------------------------------------------------------- types
 
@@ -94,7 +97,17 @@ function ChoiceCard({
 
 // ---------------------------------------------------------------- component
 
-export function BookingWizard({ initial, rates, openDates }: { initial: WizardInitial; rates: WizardRates; openDates: string[] }) {
+export function BookingWizard({
+  initial, rates, openDates, launch = false, services, paymentNote = 'Pay when the job is done.',
+}: {
+  initial: WizardInitial;
+  rates: WizardRates;
+  openDates: string[];
+  /** Zero-cost mode: no deposit, no uploads; request goes to Netlify Forms + the customer texts Kyle. */
+  launch?: boolean;
+  services?: PricedService[];
+  paymentNote?: string;
+}) {
   const router = useRouter();
   const topRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState(0);
@@ -107,6 +120,19 @@ export function BookingWizard({ initial, rates, openDates }: { initial: WizardIn
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [honeypot, setHoneypot] = useState('');
+  const [loc, setLoc] = useState<{ lat: number; lng: number } | null>(null);
+  const [locBusy, setLocBusy] = useState(false);
+  const [sent, setSent] = useState<{ r: LaunchRequest; saved: boolean } | null>(null);
+
+  function shareLocation() {
+    if (!('geolocation' in navigator)) { setError('This phone can’t share location here. Type the address instead.'); return; }
+    setLocBusy(true);
+    navigator.geolocation.getCurrentPosition(
+      (p) => { setLoc({ lat: p.coords.latitude, lng: p.coords.longitude }); setLocBusy(false); setError(null); },
+      () => { setLocBusy(false); setError('Location is blocked. Type the address instead, or allow location and try again.'); },
+      { enableHighAccuracy: true, timeout: 12000 },
+    );
+  }
 
   const set = useCallback(<K extends keyof Draft>(k: K, v: Draft[K]) => setD((p) => ({ ...p, [k]: v })), []);
 
@@ -209,7 +235,7 @@ export function BookingWizard({ initial, rates, openDates }: { initial: WizardIn
   function validate(s: number): string | null {
     if (s === 0) {
       if (!d.mode) return 'Choose mobile repair or shop drop-off.';
-      if (d.mode === 'mobile') {
+      if (d.mode === 'mobile' && !(launch && loc)) {
         if (!/^\d{5}$/.test(d.zip)) return 'Enter the 5-digit ZIP where the vehicle is.';
         if (coverage?.status !== 'mobile') return 'That ZIP is outside our mobile radius — switch to Shop Drop-Off.';
         if (d.street.trim().length < 3) return 'Enter the street address where the vehicle is parked.';
@@ -250,6 +276,32 @@ export function BookingWizard({ initial, rates, openDates }: { initial: WizardIn
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  async function submitLaunch() {
+    const pick = (services ?? SERVICES);
+    const r: LaunchRequest = {
+      ref: bookingRef(),
+      name: d.name.trim(),
+      phone: d.phone.trim(),
+      email: d.email.trim(),
+      mode: d.mode ?? 'mobile',
+      address: d.mode === 'mobile' && d.street.trim() ? `${d.street.trim()}, ${d.city.trim()}, ${d.state} ${d.zip}`.trim() : '',
+      location: loc ? `https://maps.google.com/?q=${loc.lat.toFixed(5)},${loc.lng.toFixed(5)}` : '',
+      keyDrop: d.mode === 'shop' && d.afterHoursKeyDrop,
+      vehicle: `${d.year} ${d.make} ${d.model}`.trim() + (d.mileage ? `, ${Number(d.mileage).toLocaleString('en-US')} mi` : ''),
+      services: d.serviceIds.map((id) => pick.find((s) => s.id === id)?.name ?? id).join(', '),
+      symptoms: d.symptoms.trim() + (d.parkingNotes.trim() && d.mode === 'mobile' ? ` (Parking: ${d.parkingNotes.trim()})` : ''),
+      date: d.date ?? '',
+      windowId: d.windowId ?? '',
+      promo: promo.state === 'ok' ? d.promoCode : '',
+    };
+    const saved = await saveToNetlifyForms(r, honeypot);
+    try { sessionStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+    setSent({ r, saved });
+    setSubmitting(false);
+    setStep(5);
+    topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   async function submit() {
     for (let s = 0; s <= 4; s++) {
       const err = validate(s);
@@ -257,6 +309,7 @@ export function BookingWizard({ initial, rates, openDates }: { initial: WizardIn
     }
     setSubmitting(true);
     setError(null);
+    if (launch) { await submitLaunch(); return; }
     const utm = initial.utm.source ? initial.utm : readStoredUtm();
     const payload = {
       mode: d.mode,
@@ -302,14 +355,15 @@ export function BookingWizard({ initial, rates, openDates }: { initial: WizardIn
     return Array.from({ length: now - 1979 }, (_, i) => String(now - i));
   }, []);
   const shop = publicShopAddress();
-  const serviceList = d.mode === 'mobile' ? SERVICES.filter((s) => s.mode === 'mobile') : SERVICES;
+  const allServices = services ?? SERVICES;
+  const serviceList = d.mode === 'mobile' ? allServices.filter((s) => s.mode === 'mobile') : allServices;
 
   return (
     <div ref={topRef} className="mx-auto max-w-2xl scroll-mt-20 px-4 pb-32 pt-6 md:pb-12">
       {/* progress */}
       <div className="mb-6">
         <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-500">
-          <span>Step {step + 1} of {STEPS.length} · {STEPS[step]}</span>
+          <span>Step {step + 1} of {STEPS.length} · {launch && step === 5 ? 'Sent' : STEPS[step]}</span>
           <a href={telHref} className="flex items-center gap-1 text-slate-900 hover:text-amber-600"><Phone className="h-3.5 w-3.5" aria-hidden />Rather call?</a>
         </div>
         <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-slate-200" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}>
@@ -332,6 +386,16 @@ export function BookingWizard({ initial, rates, openDates }: { initial: WizardIn
 
           {d.mode === 'mobile' && (
             <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
+              {launch && (
+                <div>
+                  <button type="button" onClick={shareLocation} disabled={locBusy}
+                    className={`flex h-12 w-full items-center justify-center gap-2 rounded-lg font-bold ${loc ? 'bg-emerald-50 text-emerald-800 ring-2 ring-emerald-500' : 'bg-slate-900 text-white'}`}>
+                    {locBusy ? <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden /> : <MapPin className="h-5 w-5" aria-hidden />}
+                    {loc ? 'Location added — Kyle gets a map pin' : 'Use my location (roadside? tap here)'}
+                  </button>
+                  <p className="mt-1 text-xs text-slate-500">{loc ? 'Add the address below too if you know it.' : 'Or type the address below.'}</p>
+                </div>
+              )}
               <Field label="ZIP where the vehicle is" htmlFor="b-zip">
                 <input id="b-zip" className={inputCls} inputMode="numeric" autoComplete="postal-code" maxLength={5} value={d.zip}
                   onChange={(e) => {
@@ -451,6 +515,9 @@ export function BookingWizard({ initial, rates, openDates }: { initial: WizardIn
                 className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200">+ {c}</button>
             ))}
           </div>
+          {launch ? (
+            <p className="flex items-start gap-2 rounded-xl bg-slate-100 p-4 text-sm text-slate-700"><Camera className="mt-0.5 h-5 w-5 shrink-0" aria-hidden /> Got photos or a video of the problem? Text them to Kyle after you book.</p>
+          ) : (
           <div className="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-4">
             <p className="flex items-center gap-2 font-bold"><Camera className="h-5 w-5" aria-hidden /> Photos or video (optional)</p>
             <p className="mt-1 text-sm text-slate-600">Dash lights, leaks, a 10-second clip of the noise. Up to 5 files, 50 MB each.</p>
@@ -477,6 +544,7 @@ export function BookingWizard({ initial, rates, openDates }: { initial: WizardIn
               </ul>
             )}
           </div>
+          )}
         </section>
       )}
 
@@ -559,6 +627,12 @@ export function BookingWizard({ initial, rates, openDates }: { initial: WizardIn
             </div>
           </div>
 
+          {launch ? (
+            <div className="flex items-start gap-3 rounded-xl border-2 border-emerald-500 bg-emerald-50 p-4">
+              <CreditCard className="mt-0.5 h-5 w-5 shrink-0 text-emerald-700" aria-hidden />
+              <p className="text-sm"><strong>Nothing to pay now.</strong> {paymentNote} {BUSINESS.guarantee.display}</p>
+            </div>
+          ) : (
           <div className="space-y-3">
             <p className="text-sm font-bold">How do you want to start?</p>
             <ChoiceCard active={d.paymentChoice === 'estimate'} onClick={() => set('paymentChoice', 'estimate')} icon={FileText}
@@ -568,6 +642,7 @@ export function BookingWizard({ initial, rates, openDates }: { initial: WizardIn
                 title={`Hold my slot — ${formatCentsShort(rates.depositCents)} refundable deposit`} sub="Card / Apple Pay / Google Pay via Stripe. Credited to your final invoice." />
             )}
           </div>
+          )}
 
           <div className="rounded-xl bg-slate-900 p-4 text-sm text-white">
             <p className="mb-2 flex items-center gap-2 font-extrabold text-amber-400"><CalendarCheck className="h-4 w-4" aria-hidden /> Summary</p>
@@ -577,15 +652,17 @@ export function BookingWizard({ initial, rates, openDates }: { initial: WizardIn
               <dt className="text-slate-400">Services</dt><dd>{d.serviceIds.map((id) => SERVICE_BY_ID.get(id)?.name).join(', ') || 'Diagnosis'}</dd>
               <dt className="text-slate-400">When</dt><dd>{d.date ? formatDateISO(d.date) : '—'} · {BOOKING_WINDOWS.find((w) => w.id === d.windowId)?.label ?? '—'}</dd>
               {promo.state === 'ok' && (<><dt className="text-slate-400">Promo</dt><dd>{d.promoCode}</dd></>)}
-              <dt className="text-slate-400">Due now</dt><dd className="font-bold">{d.paymentChoice === 'deposit' ? formatCents(rates.depositCents) : '$0.00'}</dd>
+              <dt className="text-slate-400">Due now</dt><dd className="font-bold">{!launch && d.paymentChoice === 'deposit' ? formatCents(rates.depositCents) : '$0.00'}</dd>
             </dl>
             <p className="mt-3 text-xs text-slate-400">Diagnostic {formatCentsShort(rates.diagnosticFeeCents)} waived with repair. {BUSINESS.guarantee.display}</p>
           </div>
         </section>
       )}
 
+      {step === 5 && sent && <LaunchSent r={sent.r} saved={sent.saved} />}
+
       {/* nav */}
-      <div className="bottom-bar fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 p-3 backdrop-blur md:static md:mt-8 md:border-0 md:bg-transparent md:p-0"
+      {step < 5 && <div className="bottom-bar fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 p-3 backdrop-blur md:static md:mt-8 md:border-0 md:bg-transparent md:p-0"
         style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
         <div className="mx-auto flex max-w-2xl gap-3">
           {step > 0 && (
@@ -600,11 +677,11 @@ export function BookingWizard({ initial, rates, openDates }: { initial: WizardIn
           ) : (
             <button type="button" onClick={() => void submit()} disabled={submitting} className="flex h-14 flex-1 items-center justify-center gap-2 rounded-lg bg-amber-500 text-lg font-extrabold text-slate-900 hover:bg-amber-400 disabled:opacity-60">
               {submitting ? <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden /> : <CalendarCheck className="h-5 w-5" aria-hidden />}
-              {d.paymentChoice === 'deposit' ? 'Continue to secure payment' : 'Confirm booking'}
+              {launch ? 'Send my request' : d.paymentChoice === 'deposit' ? 'Continue to secure payment' : 'Confirm booking'}
             </button>
           )}
         </div>
-      </div>
+      </div>}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Phone, Wrench } from 'lucide-react';
 import { BUSINESS, telHref } from '@/config/business';
 import { ButtonLink } from '@/components/ui/Button';
+import { LAUNCH } from '@/lib/mode';
 
 export function Header() {
   return (
@@ -18,7 +19,7 @@ export function Header() {
         <nav className="hidden items-center gap-6 text-sm font-semibold text-slate-200 md:flex" aria-label="Main">
           <Link href="/#services" className="hover:text-white">Services & Pricing</Link>
           <Link href="/#coverage" className="hover:text-white">Service Area</Link>
-          <Link href="/memberships" className="hover:text-white">Memberships</Link>
+          {!LAUNCH && <Link href="/memberships" className="hover:text-white">Memberships</Link>}
           <Link href="/#faq" className="hover:text-white">FAQ</Link>
         </nav>
         <div className="flex items-center gap-2">

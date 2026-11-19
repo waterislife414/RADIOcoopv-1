@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Clock, Mail, MapPin, Phone, ShieldCheck } from 'lucide-react';
 import { BUSINESS, BUSINESS_EMAIL, mailtoHref, publicShopAddress, telHref } from '@/config/business';
+import { LAUNCH } from '@/lib/mode';
 
 export function Footer() {
   const addr = publicShopAddress();
@@ -39,10 +40,10 @@ export function Footer() {
           <Link href="/book?mode=mobile" className="hover:text-white">Mobile Mechanic</Link>
           <Link href="/book?mode=shop" className="hover:text-white">Shop Drop-Off</Link>
           <Link href="/#services" className="hover:text-white">Pricing</Link>
-          <Link href="/memberships" className="hover:text-white">Memberships</Link>
-          <Link href="/memberships#fleet" className="hover:text-white">Fleet Plans</Link>
+          {!LAUNCH && <Link href="/memberships" className="hover:text-white">Memberships</Link>}
+          {!LAUNCH && <Link href="/memberships#fleet" className="hover:text-white">Fleet Plans</Link>}
           <Link href="/#faq" className="hover:text-white">FAQ</Link>
-          <a href={BUSINESS.googleReviewUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white">Leave a Review</a>
+          {!BUSINESS.googleReviewUrl.includes('YOUR_LINK') && <a href={BUSINESS.googleReviewUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white">Leave a Review</a>}
         </nav>
       </div>
       <div className="border-t border-white/10 py-4 text-center text-xs text-slate-500">

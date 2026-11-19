@@ -1,6 +1,7 @@
 import 'server-only';
 import { DEFAULT_RATES, type BusinessRates } from '@/config/business';
 import { FALLBACK_PROMOS, type Promo } from '@/config/promos';
+import { getSheetFees, getSheetPromos } from '@/lib/content';
 import { DEMO } from '@/lib/demo';
 import { isSupabaseConfigured } from '@/lib/env';
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -19,7 +20,7 @@ export function rowToRates(r: BusinessSettingsRow): BusinessRates {
 
 /** Live rates with config fallback (keeps marketing pages up if the DB is unreachable). */
 export async function getRates(): Promise<BusinessRates> {
-  if (DEMO || !isSupabaseConfigured() || !process.env.SUPABASE_SERVICE_ROLE_KEY) return DEFAULT_RATES;
+  if (DEMO || !isSupabaseConfigured() || !process.env.SUPABASE_SERVICE_ROLE_KEY) return { ...DEFAULT_RATES, ...(await getSheetFees()) };
   try {
     const { data, error } = await supabaseAdmin().from('business_settings').select('*').eq('id', 1).maybeSingle();
     if (error || !data) return DEFAULT_RATES;
@@ -51,7 +52,7 @@ const toPromo = (p: PromoRow): Promo => ({
 });
 
 export async function getLivePromos(): Promise<Promo[]> {
-  if (DEMO || !isSupabaseConfigured() || !process.env.SUPABASE_SERVICE_ROLE_KEY) return [...FALLBACK_PROMOS];
+  if (DEMO || !isSupabaseConfigured() || !process.env.SUPABASE_SERVICE_ROLE_KEY) return (await getSheetPromos()) ?? [...FALLBACK_PROMOS];
   try {
     const { data, error } = await supabaseAdmin().from('promos').select('*').eq('active', true).order('sort');
     if (error || !data) return [...FALLBACK_PROMOS];
@@ -70,7 +71,7 @@ export async function validatePromo(
   const normalized = code.trim().toUpperCase();
   if (!/^[A-Z0-9_-]{3,24}$/.test(normalized)) return { ok: false, reason: 'That code doesn’t look right.' };
   if (DEMO) {
-    const p = FALLBACK_PROMOS.find((x) => x.code === normalized);
+    const p = (await getLivePromos()).find((x) => x.code === normalized);
     if (!p) return { ok: false, reason: 'That code is expired or not valid.' };
     if (p.scope !== 'any' && p.scope !== ctx.mode) return { ok: false, reason: `This offer is for ${p.scope} appointments only.` };
     return { ok: true, promo: p };

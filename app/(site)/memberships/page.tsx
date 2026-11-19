@@ -2,7 +2,9 @@ import type { Metadata } from 'next';
 import { CircleCheck, CreditCard, Gauge, Truck } from 'lucide-react';
 import { PLANS, type PlanId } from '@/config/memberships';
 import { ManageBillingButton, MembershipPlans } from '@/components/memberships/MembershipPlans';
+import { redirect } from 'next/navigation';
 import { DEMO } from '@/lib/demo';
+import { LAUNCH } from '@/lib/mode';
 import { publicEnv } from '@/lib/env';
 import { membershipPriceId } from '@/lib/stripe';
 
@@ -15,6 +17,7 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 export default async function MembershipsPage({ searchParams }: { searchParams: Promise<{ status?: string; session_id?: string }> }) {
+  if (LAUNCH) redirect('/');
   const sp = await searchParams;
   const availability = Object.fromEntries(
     PLANS.map((p) => [p.id, { month: DEMO || Boolean(membershipPriceId(p.id, 'month')), year: (DEMO && p.annualCents !== null) || Boolean(membershipPriceId(p.id, 'year')) }]),

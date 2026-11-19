@@ -12,12 +12,19 @@ export const BUSINESS_EMAIL = 'kyledubios2412@gmail.com' as const;
 /** false → "Phenix City, AL 36869 — Exact bay address sent upon booking confirmation". */
 export const SHOW_EXACT_SHOP_ADDRESS = false;
 
+/** Kyle's real cell, set as NEXT_PUBLIC_BUSINESS_PHONE (10 digits) in the hosting env. */
+const PHONE_DIGITS = (process.env.NEXT_PUBLIC_BUSINESS_PHONE ?? '').replace(/\D/g, '').replace(/^1(?=\d{10}$)/, '');
+const PHONE =
+  PHONE_DIGITS.length === 10
+    ? { display: `(${PHONE_DIGITS.slice(0, 3)}) ${PHONE_DIGITS.slice(3, 6)}-${PHONE_DIGITS.slice(6)}`, e164: `+1${PHONE_DIGITS}` }
+    : { display: '(334) 555-5555', e164: '+13345555555' };
+
 export const BUSINESS = {
   name: 'Dubois Automotive Rescue',
   shortName: 'Dubois Auto Rescue',
   owner: { name: 'Kyle Dubois', title: 'Owner / Lead Technician' },
   email: BUSINESS_EMAIL,
-  phone: { display: '(334) 555-5555', e164: '+13345555555' },
+  phone: PHONE,
   address: {
     street: '[Street #] The Lane',
     city: 'Phenix City',

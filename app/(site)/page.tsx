@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { CreditCard, FileText, ScanLine, ShieldCheck } from 'lucide-react';
+import { CalendarCheck, CreditCard, FileText, ScanLine, ShieldCheck } from 'lucide-react';
 import { BUSINESS } from '@/config/business';
 import { BEFORE_AFTER, PHOTOS, VIDEOS } from '@/config/media';
 import { BusinessJsonLd } from '@/components/layout/JsonLd';
@@ -13,13 +13,23 @@ import { ServicesGrid } from '@/components/home/ServicesGrid';
 import { VideoShowcase } from '@/components/home/VideoShowcase';
 import { ButtonLink } from '@/components/ui/Button';
 import { PhotoSlot } from '@/components/ui/PhotoSlot';
+import { getServices, getSiteSettings } from '@/lib/content';
 import { getLivePromos, getRates } from '@/lib/db/settings';
+import { LAUNCH } from '@/lib/mode';
 import { formatCentsShort } from '@/lib/money';
 
 export const revalidate = 300;
 
 export default async function HomePage() {
-  const [rates, promos] = await Promise.all([getRates(), getLivePromos()]);
+  const [rates, promos, services, settings] = await Promise.all([getRates(), getLivePromos(), getServices(), getSiteSettings()]);
+  const steps = LAUNCH
+    ? [
+        { icon: CalendarCheck, t: 'Book or call', d: 'Pick a day and time online in 2 minutes, or just call. Kyle confirms by text.' },
+        { icon: ScanLine, t: 'Diagnose', d: `${formatCentsShort(rates.diagnosticFeeCents)} diagnosis, waived when you approve the repair. Can’t find it? You don’t pay.` },
+        { icon: FileText, t: 'Price first', d: 'Kyle tells you the price before any work starts. Nothing gets added without asking.' },
+        { icon: CreditCard, t: 'Pay & drive', d: `${settings.paymentNote} Can’t fix it? You don’t pay.` },
+      ]
+    : null;
 
   return (
     <>
@@ -29,19 +39,19 @@ export default async function HomePage() {
         <OffersBar promos={promos} />
       </Suspense>
       <RadiusChecker calloutFeeCents={rates.mobileCalloutFeeCents} />
-      <ServicesGrid diagnosticFeeCents={rates.diagnosticFeeCents} laborRateCents={rates.shopLaborRateCents} />
+      <ServicesGrid services={services} diagnosticFeeCents={rates.diagnosticFeeCents} laborRateCents={rates.shopLaborRateCents} />
 
       {/* How pricing works */}
       <section className="bg-white">
         <div className="mx-auto max-w-6xl px-4 py-14">
           <h2 className="font-display text-3xl sm:text-4xl">No surprise bills. Ever.</h2>
           <ol className="mt-8 grid gap-4 md:grid-cols-4">
-            {[
+            {(steps ?? [
               { icon: ScanLine, t: 'Diagnose', d: `${formatCentsShort(rates.diagnosticFeeCents)} pro diagnosis, waived when you approve the repair. Can’t find it? You don’t pay.` },
               { icon: FileText, t: 'Itemized estimate', d: 'Parts, labor hours × rate, fees and tax — texted to you with inspection photos.' },
               { icon: ShieldCheck, t: 'You approve', d: 'Sign from your phone. No approval, no work. Nothing gets added without asking.' },
               { icon: CreditCard, t: 'Pay & drive', d: 'Card, Apple Pay or Google Pay. Can’t fix it? You don’t pay.' },
-            ].map(({ icon: Icon, t, d }, i) => (
+            ]).map(({ icon: Icon, t, d }, i) => (
               <li key={t} className="relative rounded-xl border border-slate-200 p-5">
                 <span className="absolute -top-3 left-5 rounded bg-amber-500 px-2 text-xs font-black text-slate-900">STEP {i + 1}</span>
                 <Icon className="h-7 w-7 text-slate-900" aria-hidden />
@@ -81,7 +91,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <Reviews />
+      <Reviews googleReviewUrl={settings.googleReviewUrl} />
       <Faq />
 
       <section className="hazard p-1.5">

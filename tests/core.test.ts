@@ -7,6 +7,7 @@ import { zonedToUtc, isOpenDay } from '../lib/time';
 import { buildIcs } from '../lib/ics';
 import { withUtm, qrSvg } from '../lib/qr';
 import { bookingRef } from '../lib/ids';
+import { parseCsv } from '../lib/csv';
 
 test('email spelling is exact (dubios, not dubois)', () => {
   assert.equal(BUSINESS_EMAIL, 'kyledubios2412@gmail.com');
@@ -72,4 +73,10 @@ test('qr + utm', async () => {
 
 test('booking ref format', () => {
   assert.match(bookingRef(), /^KA-[A-HJ-NP-Z2-9]{7}$/);
+});
+
+test('csv parser handles quotes, commas and newlines (Google Sheet export)', () => {
+  const rows = parseCsv('"Service","Starting price ($)"\n"Brake Pads, per axle","149"\n"Say ""hi""","line1\nline2"\n');
+  assert.deepEqual(rows[1], ['Brake Pads, per axle', '149']);
+  assert.deepEqual(rows[2], ['Say "hi"', 'line1\nline2']);
 });

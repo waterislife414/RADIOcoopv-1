@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { Clock, ShieldCheck, Truck, Warehouse } from 'lucide-react';
-import { SERVICES, type Service, type ServiceMode } from '@/config/services';
+import type { ServiceMode } from '@/config/services';
+import type { PricedService } from '@/lib/content';
 import { formatCentsShort } from '@/lib/money';
 import { ServiceIcon } from '@/components/home/ServiceIcon';
 
-export function ServicesGrid({ diagnosticFeeCents, laborRateCents }: { diagnosticFeeCents: number; laborRateCents: number }) {
+export function ServicesGrid({ services, diagnosticFeeCents, laborRateCents }: { services: PricedService[]; diagnosticFeeCents: number; laborRateCents: number }) {
   const [mode, setMode] = useState<ServiceMode>('mobile');
-  const list: Service[] = SERVICES.filter((s) => s.mode === mode).map((s) =>
+  const list: PricedService[] = services.filter((s) => s.mode === mode).map((s) =>
     s.id === 'diagnostics' ? { ...s, startingAtCents: diagnosticFeeCents } : s,
   );
 
@@ -73,9 +74,15 @@ export function ServicesGrid({ diagnosticFeeCents, laborRateCents }: { diagnosti
               <p className="mt-3 flex-1 text-sm text-slate-600">{s.blurb}</p>
               <div className="mt-4 flex items-end justify-between gap-3">
                 <p>
-                  <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">Starting at</span>
-                  <span className="text-2xl font-extrabold">{formatCentsShort(s.startingAtCents)}</span>
-                  {s.plusParts && <span className="ml-1 text-xs font-semibold text-slate-500">+ parts</span>}
+                  {s.startingAtCents !== null && <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">Starting at</span>}
+                  {s.startingAtCents === null ? (
+                    <span className="text-xl font-extrabold">Call for quote</span>
+                  ) : (
+                    <>
+                      <span className="text-2xl font-extrabold">{formatCentsShort(s.startingAtCents)}</span>
+                      {s.plusParts && <span className="ml-1 text-xs font-semibold text-slate-500">+ parts</span>}
+                    </>
+                  )}
                 </p>
                 <Link
                   href={`/book?mode=${s.mode}&service=${s.id}`}

@@ -18,7 +18,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           </div>
         </div>
         {DEMO ? (
-          <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">Kyle’s dashboard (jobs board, estimate builder, QR Studio) signs in with his Supabase account, so it’s turned off in this preview.</p>
+          <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">Kyle’s dashboard (jobs board, estimate builder, QR Studio) signs in with his Supabase account, so it’s turned off for now. Prices, specials and the top banner are edited in Kyle’s Google Sheet.</p>
         ) : (
           <LoginForm notAdmin={sp.error === 'not_admin'} />
         )}

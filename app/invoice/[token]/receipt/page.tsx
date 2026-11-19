@@ -9,6 +9,7 @@ import { PrintButton } from '@/components/invoice/PrintButton';
 import { getInvoiceByToken } from '@/lib/invoices';
 import { formatCents } from '@/lib/money';
 import { formatET } from '@/lib/time';
+import { LAUNCH } from '@/lib/mode';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Official Receipt', robots: { index: false, follow: false } };
@@ -16,6 +17,7 @@ export const metadata: Metadata = { title: 'Official Receipt', robots: { index: 
 /** Print-optimized official receipt (Letter, 0.5in margins). "Save as PDF" from the browser print dialog. */
 export default async function ReceiptPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
+  if (LAUNCH) notFound();
   const inv = await getInvoiceByToken(token);
   if (!inv) notFound();
   if (inv.status !== 'paid') redirect(`/invoice/${token}`);

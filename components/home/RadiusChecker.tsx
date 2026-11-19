@@ -6,6 +6,7 @@ import { CircleCheck, Info, MapPin, Phone, Warehouse } from 'lucide-react';
 import { BUSINESS, telHref } from '@/config/business';
 import { MOBILE_ZIPS, SERVICE_AREA, checkCoverage, type CoverageResult } from '@/config/serviceArea';
 import { formatCentsShort } from '@/lib/money';
+import { LAUNCH } from '@/lib/mode';
 import { buttonClasses } from '@/components/ui/Button';
 import { PhotoSlot } from '@/components/ui/PhotoSlot';
 import { PHOTOS } from '@/config/media';
@@ -61,7 +62,7 @@ export function RadiusChecker({ calloutFeeCents }: { calloutFeeCents: number }) 
                     <CircleCheck className="h-5 w-5" aria-hidden /> Yes — we come to you in {result.entry.city}, {result.entry.state}.
                   </p>
                   <p className="mt-1 text-sm text-emerald-900">
-                    Mobile callout: <strong>{formatCentsShort(result.calloutFeeCents)}</strong> (waived 2×/yr for members).
+                    Mobile callout: <strong>{formatCentsShort(result.calloutFeeCents)}</strong>{LAUNCH ? '.' : ' (waived 2×/yr for members).'}
                   </p>
                   <Link href={`/book?mode=mobile&zip=${result.entry.zip}`} className={buttonClasses('primary', 'md', 'mt-3 w-full sm:w-auto')}>
                     Send a Mobile Mechanic
