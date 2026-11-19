@@ -60,6 +60,7 @@ function CompareCard() {
             </div>
           ))}
         </div>
+        <p className="mt-2 text-[11px] text-slate-400">Estimates only. See Compare prices for details.</p>
         <p className="mt-4 text-center font-bold text-emerald-300">Compare prices &rarr;</p>
       </div>
     </Link>
