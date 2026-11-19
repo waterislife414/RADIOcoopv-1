@@ -60,7 +60,7 @@ export default function CompareRideshare() {
           </div>
 
           <p className="text-xs text-center text-slate-500" data-testid="compare-footnote">
-            Uber and Lyft estimate: $2.10 per mile plus a $4.50 booking fee (averages as of Aug 5, 2026). Real prices vary by city, time and demand.
+            Uber and Lyft estimates use $2.10 per mile plus a $4.50 booking fee, averages gathered Aug 5, 2026. Real prices vary by city, time and demand. These are estimates only. Radio Co-op does not control, verify or guarantee Uber or Lyft prices and is not responsible for their accuracy.
           </p>
 
           <Link
