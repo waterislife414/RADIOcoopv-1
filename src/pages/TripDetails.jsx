@@ -34,23 +34,6 @@ function looksLikeStreetAddress(s) {
   return words.length >= 2;
 }
 
-function RecentChips({ places, current, onPick, label }) {
-  const list = places.filter((p) => p !== current);
-  if (!list.length) return null;
-  return (
-    <div className="mt-2">
-      <p className="text-sm text-slate-600 mb-1.5">{label}</p>
-      <div className="flex flex-wrap gap-2">
-        {list.slice(0, 4).map((p) => (
-          <button key={p} type="button" onClick={() => onPick(p)} className="min-h-[44px] max-w-full truncate rounded-full border-2 border-blue-200 bg-blue-50 px-4 text-base font-semibold text-blue-800">
-            &#128339; {p}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function TripDetails() {
   const { currentUser, userProfile, saveLegalConsent } = useAuth();
   // Every rider reads and agrees to the terms on every booking.
@@ -201,6 +184,8 @@ export default function TripDetails() {
     navigate(dayPass || !ride.wantsPriorityPass ? "/payment" : "/fast-pass");
   }
 
+  const recentList = recent.map((p) => p);
+
   return (
     <div className="min-h-screen bg-white">
       <BrandHeader />
@@ -245,90 +230,54 @@ export default function TripDetails() {
             </div>
 
             <div>
-              <label htmlFor="pickup" className="block text-base font-semibold text-slate-700 mb-1.5">
-                Pickup Location
-              </label>
+              <div className="flex justify-between items-center mb-1.5">
+                <label htmlFor="pickup" className="block text-base font-semibold text-slate-700">
+                  Pickup Location
+                </label>
+                <button
+                  type="button"
+                  onClick={shareLocation}
+                  disabled={locating}
+                  className="text-sm font-semibold text-blue-600 hover:underline"
+                >
+                  {typeof ride.pickupLat === "number"
+                    ? "✓ Location attached"
+                    : locating
+                      ? "Finding you…"
+                      : "📍 Use my location"}
+                </button>
+              </div>
               <AddressSearch
                 id="pickup"
                 testid="pickup-search"
                 className="w-full border-2 border-slate-300 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
                 value={ride.pickup}
                 onChange={(t) => updateRide({ pickup: t })}
-                onPick={(r) => updateRide({ pickup: r.text, pickupLat: r.lat, pickupLng: r.lng })}
+                onPick={(r) => updateRide({ pickup: r.text || r.address, pickupLat: r.lat, pickupLng: r.lng })}
                 placeholder={COPY.pickupPlaceholder}
+                onPin={() => setPickerTarget("pickup")}
+                recents={recentList}
               />
-              <div className="mt-1 flex justify-between items-center text-sm">
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ride.pickup)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-testid="find-on-maps-pickup"
-                  className="text-blue-600 font-semibold hover:underline"
-                >
-                  Find it on Google Maps
-                </a>
-                <button
-                  type="button"
-                  data-testid="pin-pickup"
-                  onClick={() => setPickerTarget("pickup")}
-                  className="text-blue-600 font-semibold hover:underline"
-                >
-                  Drop a pin {typeof ride.pickupLat === "number" && <span className="text-emerald-600">✓ Pin set</span>}
-                </button>
-              </div>
-              <RecentChips places={recent} current={ride.pickup} label="Recent places" onPick={(p) => updateRide({ pickup: p })} />
-              <button
-                type="button"
-                onClick={shareLocation}
-                disabled={locating}
-                className={`mt-2 w-full rounded-xl py-2.5 text-base font-semibold border-2 transition ${
-                  typeof ride.pickupLat === "number"
-                    ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                    : "border-slate-300 text-slate-700"
-                }`}
-              >
-                {typeof ride.pickupLat === "number"
-                  ? "✓ Your location is attached — drivers find you faster"
-                  : locating
-                    ? "Finding you…"
-                    : "\u{1F4CD} Share my location with the driver"}
-              </button>
               {locateError && <p className="text-sm text-red-600 mt-1">{locateError}</p>}
             </div>
 
             <div>
-              <label htmlFor="dropoff" className="block text-base font-semibold text-slate-700 mb-1.5">
-                Drop-off Location
-              </label>
+              <div className="flex justify-between items-center mb-1.5">
+                <label htmlFor="dropoff" className="block text-base font-semibold text-slate-700">
+                  Drop-off Location
+                </label>
+              </div>
               <AddressSearch
                 id="dropoff"
                 testid="dropoff-search"
                 className="w-full border-2 border-slate-300 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
                 value={ride.dropoff}
                 onChange={(t) => updateRide({ dropoff: t })}
-                onPick={(r) => updateRide({ dropoff: r.text, dropoffLat: r.lat, dropoffLng: r.lng })}
+                onPick={(r) => updateRide({ dropoff: r.text || r.address, dropoffLat: r.lat, dropoffLng: r.lng })}
                 placeholder={COPY.dropoffPlaceholder}
+                onPin={() => setPickerTarget("dropoff")}
+                recents={recentList}
               />
-              <div className="mt-1 flex justify-between items-center text-sm">
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ride.dropoff)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-testid="find-on-maps-dropoff"
-                  className="text-blue-600 font-semibold hover:underline"
-                >
-                  Find it on Google Maps
-                </a>
-                <button
-                  type="button"
-                  data-testid="pin-dropoff"
-                  onClick={() => setPickerTarget("dropoff")}
-                  className="text-blue-600 font-semibold hover:underline"
-                >
-                  Drop a pin {typeof ride.dropoffLat === "number" && <span className="text-emerald-600">✓ Pin set</span>}
-                </button>
-              </div>
-              <RecentChips places={recent} current={ride.dropoff} label="Recent places" onPick={(p) => updateRide({ dropoff: p })} />
             </div>
 
             {/* Out of area: simple yes/no first, details only reveal after they engage */}
