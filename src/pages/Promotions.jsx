@@ -5,7 +5,6 @@ import {
   COMPANY_PHONE_DISPLAY,
   COMPANY_PHONE_TEL,
   PROMO_CODES,
-  SUBSCRIPTION_TIERS,
   SUBSCRIPTION_TRIAL_DAYS,
 } from "../config/constants";
 
@@ -27,7 +26,6 @@ function Promo({ eyebrow, title, children, to, cta, tone = "gold" }) {
 
 /** Everything currently on offer, built from the settings so it never goes stale. */
 export default function Promotions() {
-  const { BASIC, PREMIUM } = SUBSCRIPTION_TIERS;
   return (
     <div className="min-h-screen bg-white">
       <BrandHeader tagline="Promotions" />
@@ -37,9 +35,7 @@ export default function Promotions() {
 
           <Promo eyebrow="Membership" title={`Try it free for ${SUBSCRIPTION_TRIAL_DAYS} days`} to="/join" cta="See Membership Plans">
             <p>
-              {BASIC.name} ${BASIC.monthlyPrice}/mo or {PREMIUM.name} ${PREMIUM.monthlyPrice}/mo. Members get 1 free entry fee
-              every {BASIC.ridesForFreeEntry} completed rides; {PREMIUM.name} adds a free mile on that ride and first place in
-              line for dispatch.
+              Basic $9.99/mo or $109.89/yr, Premium $19.99/mo or $219.89/yr (1 month free). Unlock in-app wallet, driver alerts, live map tracking, and Priority Day Passes.
             </p>
           </Promo>
 
@@ -47,8 +43,8 @@ export default function Promotions() {
             <p>Share your referral code. When your friend becomes a member, you get ${PROMO_CODES.REFERRAL_BONUS} toward your next ride.</p>
           </Promo>
 
-          <Promo eyebrow="Free account" title="Lower card fee" to="/sign-up" cta="Sign Up Free" tone="blue">
-            <p>Riders with an account pay a $1.80 card fee instead of $2.00, every ride.</p>
+          <Promo eyebrow="Free account" title="Lower card fee & Wallet" to="/sign-up" cta="Sign Up Free" tone="blue">
+            <p>Riders with an account get an in-app wallet, deals and offers, plus free entry fee every 10 rides over $5.</p>
           </Promo>
 
           <Promo eyebrow="In a hurry?" title="Priority Day Pass, $5" to="/trip-details" cta="Book with the Day Pass">

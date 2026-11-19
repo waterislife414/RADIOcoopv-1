@@ -50,11 +50,9 @@
     "adStripText": "Advertise your business here — Call us today",
     "memberPitchHeading": "Become a member and unlock perks",
     "memberPerks": [
-      "Free account: $1.80 card fee instead of $2.00",
-      "Members: 1 free entry fee every 10 completed rides",
-      "Basic and Premium: watch your driver on the map as they come to you",
-      "Premium: call your driver directly, 1 free mile every 10 rides, and first in line for dispatch",
-      "$5 credit when a friend you refer becomes a member"
+      "In-app wallet",
+      "A free entry fee every 10 rides over $5 (or every $50 in rides)",
+      "Deals and offers in your area"
     ],
     "motto": "Gotta Go? CALL RADIO!",
     "dayPass": {
@@ -133,6 +131,7 @@
       "BASIC": {
         "name": "Basic",
         "monthlyPrice": 9.99,
+        "yearlyPrice": 109.89,
         "ridesForFreeEntry": 10,
         "perks": {
           "freeEntryPer10Rides": true,
@@ -141,7 +140,8 @@
       },
       "PREMIUM": {
         "name": "Premium",
-        "monthlyPrice": 14.99,
+        "monthlyPrice": 19.99,
+        "yearlyPrice": 219.89,
         "ridesForFreeEntry": 10,
         "perks": {
           "freeEntryPer10Rides": true,
