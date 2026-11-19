@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { CalendarCheck, Phone } from 'lucide-react';
-import { telHref } from '@/config/business';
+import { BUSINESS, telHref } from '@/config/business';
 
 /** Thumb-zone CTA bar for the roadside visitor. Hidden ≥ md and inside the booking flow (it has its own nav). */
 export function StickyMobileBar() {
@@ -17,7 +17,7 @@ export function StickyMobileBar() {
       <a
         href={telHref}
         className="flex h-14 items-center justify-center gap-2 rounded-lg border-2 border-white/80 text-base font-extrabold text-white active:bg-white/10"
-        aria-label="Tap to call Kyle's Auto"
+        aria-label={`Tap to call ${BUSINESS.shortName}`}
       >
         <Phone className="h-5 w-5" aria-hidden /> Tap to Call
       </a>

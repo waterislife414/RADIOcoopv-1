@@ -1,5 +1,5 @@
 -- =============================================================================
--- Kyle's Auto & Mobile Repair — Supabase schema
+-- Dubois Automotive Rescue — Supabase schema
 -- Run once in Supabase SQL Editor (or `supabase db push` as a migration).
 -- Money: integer cents. Tax rates: integer parts-per-million (9.75% = 97500).
 -- Access model: RLS ON everywhere. Public site never touches tables directly;

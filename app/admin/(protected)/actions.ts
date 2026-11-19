@@ -3,7 +3,6 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { BUSINESS } from '@/config/business';
 import { requireAdmin } from '@/lib/auth';
 import { vehicleLabel } from '@/lib/bookings';
 import { BOOKING_FLOW, type BookingRow, type BookingStatus, type CustomerRow, type InvoiceRow, type PromoRow, type TaxPresetRow, type VehicleRow } from '@/lib/db/types';
@@ -90,7 +89,6 @@ export async function createInvoiceFromBooking(formData: FormData): Promise<void
       ...totalsToRow(totals),
       deposit_applied_cents: booking.deposit_status === 'paid' ? booking.deposit_paid_cents : 0,
       odometer: booking.vehicle?.mileage ?? null,
-      warranty_terms: BUSINESS.warranty.terms,
     })
     .select('id')
     .single();
@@ -235,7 +233,7 @@ export async function saveInvoice(payload: InvoicePayload): Promise<SaveResult> 
   } else {
     const { data, error } = await supabase
       .from('invoices')
-      .insert({ ...row, token: invoiceToken(), status: 'draft', warranty_terms: BUSINESS.warranty.terms })
+      .insert({ ...row, token: invoiceToken(), status: 'draft' })
       .select('id')
       .single();
     if (error || !data) return { ok: false, error: 'Could not create invoice.' };

@@ -55,7 +55,7 @@ export function Hero({ calloutFeeCents, diagnosticFeeCents }: { calloutFeeCents:
 
       <ul className="relative grid grid-cols-2 border-t border-white/10 bg-slate-800 text-sm font-bold md:grid-cols-4">
         {[
-          { icon: ShieldCheck, label: '12-Mo / 12K-Mile Warranty', tone: 'text-emerald-400' },
+          { icon: ShieldCheck, label: 'No Fix, No Charge', tone: 'text-emerald-400' },
           { icon: Truck, label: 'Same-Day Mobile', tone: 'text-amber-400' },
           { icon: Receipt, label: 'Transparent Quotes', tone: 'text-amber-400' },
           { icon: MapPin, label: 'Serving Phenix City & Columbus', tone: 'text-amber-400' },

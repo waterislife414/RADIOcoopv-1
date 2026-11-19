@@ -1,4 +1,4 @@
-# Kyle's Auto & Mobile Repair: what every worker must know
+# Dubois Automotive Rescue (Kyle Dubois): what every worker must know
 Business: one-man auto repair in Phenix City, AL 36869 (shop bay + mobile mechanic, ~25 mi radius incl. Columbus GA / Fort Benning). Owner/tech Kyle Dubois. Customers are often standing next to a broken car on a phone. Appointment times are Eastern Time (ET).
 Stack: Next.js 16 App Router, TypeScript strict, Tailwind v4 (tokens in app/globals.css: ink #0F172A, steel #1E293B, brand amber #F59E0B, ok emerald #10B981; font "Archivo Variable"; utilities `font-display`, `hazard`, `grid-plate`). Icons: lucide-react (check the name exists in node_modules/lucide-react/dist/lucide-react.d.ts; e.g. there is no Trash2/Loader2/AlertTriangle — use Trash, LoaderCircle, Info).
 

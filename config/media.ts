@@ -19,7 +19,7 @@ export const PHOTOS = {
   heroRig: {
     id: 'hero-rig',
     src: null,
-    alt: "Kyle's mobile repair truck parked in a Phenix City driveway with tools out",
+    alt: 'Dubois Automotive Rescue truck parked in a Phenix City driveway with tools out',
     aspect: '4 / 3',
     guidance:
       '4:3, min 1600×1200. The actual mobile rig in a real customer driveway, tailgate/side boxes open, Kyle working. Shoot early morning or golden hour, phone held landscape. No stock photos, no AI images.',
@@ -90,7 +90,7 @@ export const VIDEOS: readonly VideoSlot[] = [
     duration: '0:45',
     provider: 'youtube',
     source: null,
-    poster: { id: 'poster-meet-kyle', src: null, alt: 'Kyle standing beside the mobile repair truck', aspect: '16 / 9', guidance: '16:9 poster frame from the video. Script: who you are, where you serve (Phenix City, Smiths Station, Columbus, Fort Benning), warranty, how booking works. Film vertical too for Reels/Shorts.' },
+    poster: { id: 'poster-meet-kyle', src: null, alt: 'Kyle standing beside the mobile repair truck', aspect: '16 / 9', guidance: '16:9 poster frame from the video. Script: who you are, where you serve (Phenix City, Smiths Station, Columbus, Fort Benning), no fix no charge, how booking works. Film vertical too for Reels/Shorts.' },
   },
   {
     id: 'alternator-clip',

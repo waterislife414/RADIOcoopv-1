@@ -13,7 +13,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <div className="mb-6 flex items-center gap-2">
           <span className="grid h-10 w-10 place-items-center rounded-md bg-amber-500"><Wrench className="h-5 w-5" aria-hidden /></span>
           <div>
-            <p className="font-display text-lg leading-none">Kyle’s Shop Admin</p>
+            <p className="font-display text-lg leading-none">Dubois Rescue Admin</p>
             <p className="text-xs text-slate-500">Jobs · Estimates · QR Studio</p>
           </div>
         </div>

@@ -74,7 +74,7 @@ export function RadiusChecker({ calloutFeeCents }: { calloutFeeCents: number }) 
                       ? `${result.entry.city} is ~${result.entry.approxMiles} mi out — past our mobile radius.`
                       : `${zip} isn’t on our mobile list yet.`}
                   </p>
-                  <p className="mt-1 text-sm text-amber-900">Drop it at our Phenix City bay instead — same warranty, same pricing.</p>
+                  <p className="mt-1 text-sm text-amber-900">Drop it at our Phenix City bay instead — same pricing, same no-fix-no-charge promise.</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Link href="/book?mode=shop" className={buttonClasses('dark', 'md')}>
                       <Warehouse className="h-4 w-4" aria-hidden /> Book Shop Drop-Off

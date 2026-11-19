@@ -579,7 +579,7 @@ export function BookingWizard({ initial, rates, openDates }: { initial: WizardIn
               {promo.state === 'ok' && (<><dt className="text-slate-400">Promo</dt><dd>{d.promoCode}</dd></>)}
               <dt className="text-slate-400">Due now</dt><dd className="font-bold">{d.paymentChoice === 'deposit' ? formatCents(rates.depositCents) : '$0.00'}</dd>
             </dl>
-            <p className="mt-3 text-xs text-slate-400">Diagnostic {formatCentsShort(rates.diagnosticFeeCents)} waived with repair. {BUSINESS.warranty.display}.</p>
+            <p className="mt-3 text-xs text-slate-400">Diagnostic {formatCentsShort(rates.diagnosticFeeCents)} waived with repair. {BUSINESS.guarantee.display}</p>
           </div>
         </section>
       )}

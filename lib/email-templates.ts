@@ -20,7 +20,7 @@ ${cta ? `<p style="margin:24px 0"><a href="${esc(cta.href)}" style="background:#
 <tr><td style="background:#1E293B;color:#CBD5E1;padding:16px 24px;font-size:12px;line-height:1.6">
 ${esc(BUSINESS.name)} · ${esc(BUSINESS.address.city)}, ${esc(BUSINESS.address.region)} ${esc(BUSINESS.address.postalCode)}<br>
 ${esc(BUSINESS.phone.display)} · <a href="mailto:${BUSINESS_EMAIL}" style="color:#FCD34D">${BUSINESS_EMAIL}</a><br>
-${esc(BUSINESS.hours.display)} · ${esc(BUSINESS.warranty.display)}</td></tr>
+${esc(BUSINESS.hours.display)} · ${esc(BUSINESS.guarantee.short)}</td></tr>
 </table></td></tr></table></body></html>`;
 }
 
@@ -66,7 +66,7 @@ ${table(
     (d.promoCode ? row('Promo', esc(d.promoCode)) : '') +
     row('Payment', d.paymentChoice === 'deposit' ? `Refundable deposit ${formatCents(d.depositCents)} (credited to your invoice)` : 'Free estimate first — nothing charged yet'),
 )}
-<p style="font-size:13px;color:#475569">You will get an itemized digital estimate to approve before any work starts. Diagnostic fee is waived when you approve the repair.</p>
+<p style="font-size:13px;color:#475569">You will get an itemized digital estimate to approve before any work starts. Diagnostic fee is waived when you approve the repair — and if Kyle can’t find or fix the problem, you don’t pay.</p>
 <p style="font-size:13px"><a href="${esc(d.icsUrl)}">Add to calendar (.ics)</a></p>`;
   return {
     subject: `Booked: ${d.dateLabel}, ${d.windowLabel} — ${d.ref}`,
@@ -144,18 +144,18 @@ export function receiptEmail(d: ReceiptEmailData): Email {
         `<tr><td style="padding:6px 0;border-bottom:1px solid #E2E8F0">${esc(LINE_TYPE_LABEL[i.type])}: ${esc(i.description)}${i.type === 'labor' ? ` (${i.quantity} hr)` : i.quantity !== 1 ? ` ×${i.quantity}` : ''}</td><td style="padding:6px 0;border-bottom:1px solid #E2E8F0;text-align:right">${formatCents(i.line_total_cents)}</td></tr>`,
     )
     .join('');
-  const body = `<p>Thank you, ${esc(d.customerName.split(' ')[0])}. Payment received — this is your official receipt and warranty record.</p>
+  const body = `<p>Thank you, ${esc(d.customerName.split(' ')[0])}. Payment received — this is your official receipt.</p>
 ${table(row('Receipt', esc(d.number)) + row('Vehicle', esc(d.vehicle)) + (d.vin ? row('VIN', `<span style="font-family:monospace">${esc(d.vin)}</span>`) : '') + (d.odometer ? row('Odometer', `${d.odometer.toLocaleString('en-US')} mi`) : '') + row('Paid', esc(d.paidAt)) + row('Transaction ID', `<span style="font-family:monospace;font-size:12px">${esc(d.transactionId)}</span>`))}
 <table role="presentation" width="100%" style="border-collapse:collapse;font-size:14px;margin-top:16px">${lines}
 <tr><td style="padding:6px 0">Subtotal</td><td style="text-align:right">${formatCents(d.subtotalCents)}</td></tr>
 <tr><td style="padding:6px 0">Sales tax (${esc(d.taxName)})</td><td style="text-align:right">${formatCents(d.taxCents)}</td></tr>
 ${d.depositAppliedCents ? `<tr><td style="padding:6px 0">Deposit applied</td><td style="text-align:right">−${formatCents(d.depositAppliedCents)}</td></tr>` : ''}
 <tr><td style="padding:8px 0;font-weight:800">Paid today</td><td style="text-align:right;font-weight:800">${formatCents(d.paidCents)}</td></tr></table>
-<p style="font-size:12px;color:#475569;margin-top:16px"><strong>${esc(BUSINESS.warranty.display)}.</strong> ${esc(BUSINESS.warranty.terms)}</p>`;
+`;
   return {
     subject: `Receipt ${d.number} — ${BUSINESS.name}`,
     html: layout('Payment received', body, { label: 'View / print receipt', href: d.receiptUrl }),
-    text: `Receipt ${d.number}\nVehicle: ${d.vehicle}\nPaid: ${formatCents(d.paidCents)} on ${d.paidAt}\nTransaction: ${d.transactionId}\n${BUSINESS.warranty.display}\n${d.receiptUrl}`,
+    text: `Receipt ${d.number}\nVehicle: ${d.vehicle}\nPaid: ${formatCents(d.paidCents)} on ${d.paidAt}\nTransaction: ${d.transactionId}\n${d.receiptUrl}`,
   };
 }
 

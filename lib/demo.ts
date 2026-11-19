@@ -1,6 +1,5 @@
 import 'server-only';
 import { cookies } from 'next/headers';
-import { BUSINESS } from '@/config/business';
 import type { BookingWithRelations, InvoiceItemRow, InvoiceStatus, InvoiceWithRelations } from '@/lib/db/types';
 import { computeTotals, lineTotalCents, type LineInput } from '@/lib/invoice-math';
 import type { SignedPhoto } from '@/lib/invoices';
@@ -74,7 +73,7 @@ export async function demoInvoice(): Promise<InvoiceWithRelations> {
     discount_cents: t.discountCents, subtotal_cents: t.subtotalCents, taxable_cents: t.taxableCents, tax_cents: t.taxCents,
     total_cents: t.totalCents, deposit_applied_cents: 0, amount_paid_cents: paid ? t.totalCents : 0,
     odometer: 128_420, notes: 'Battery light on, voltage at idle 12.1 V. Alternator output failed under load. Belt glazed with cracks — replacing with the alternator. Battery tested good (640 CCA).',
-    warranty_terms: BUSINESS.warranty.terms, sent_at: now,
+    warranty_terms: null, sent_at: now,
     approved_at: st.approved_at ?? null, approved_signature: st.approved_signature ?? null, approved_ip: null, approved_user_agent: null,
     paid_at: st.paid_at ?? null, stripe_checkout_session_id: null,
     stripe_payment_intent_id: paid ? 'pi_DEMO_not_a_real_charge' : null, stripe_charge_id: paid ? 'ch_DEMO' : null,

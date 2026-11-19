@@ -12,7 +12,7 @@ export function Header() {
             <Wrench className="h-5 w-5" aria-hidden />
           </span>
           <span className="font-display text-[17px] leading-none sm:text-lg">
-            Kyle&apos;s Auto<span className="block text-[11px] font-semibold tracking-[0.2em] text-amber-400 [font-stretch:100%]">& MOBILE REPAIR</span>
+            Dubois<span className="block text-[11px] font-semibold tracking-[0.2em] text-amber-400 [font-stretch:100%]">AUTOMOTIVE RESCUE</span>
           </span>
         </Link>
         <nav className="hidden items-center gap-6 text-sm font-semibold text-slate-200 md:flex" aria-label="Main">

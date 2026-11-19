@@ -32,12 +32,12 @@ export const FAQ: readonly FaqItem[] = [
     a: 'Anything that needs a lift or special equipment: transmissions, heavy engine work, alignments, A/C recovery/recharge, and suspension rebuilds. If we arrive and find the job needs a lift, we will tell you before doing anything and help arrange getting it to the bay.',
   },
   {
-    q: 'How does the warranty work?',
-    a: 'Parts and labor we supply carry a 12-month / 12,000-mile warranty, whichever comes first. Your receipt is your warranty record — it is emailed to you and always available from your invoice link.',
+    q: 'What if you can’t find or fix the problem?',
+    a: 'Then you don’t pay. If Kyle can’t diagnose it or can’t fix it, there’s no charge — not for the diagnostic and not for the trip out.',
   },
   {
     q: 'Where do your parts come from? Can I bring my own?',
-    a: 'We use quality OEM-equivalent or OEM parts from local suppliers in Phenix City and Columbus so most jobs get done same day. You can supply your own parts, but customer-supplied parts are labor-only and not covered by the parts warranty.',
+    a: 'We use quality OEM-equivalent or OEM parts from local suppliers in Phenix City and Columbus so most jobs get done same day. You can supply your own parts; those jobs are labor-only.',
   },
   {
     q: 'How do I pay?',
@@ -49,7 +49,7 @@ export const FAQ: readonly FaqItem[] = [
   },
   {
     q: 'Is the diagnostic fee really waived?',
-    a: 'Yes. If you approve the repair we diagnosed, the diagnostic fee comes off your invoice. If you decide not to repair, you pay only the diagnostic fee and keep the written findings.',
+    a: 'Yes. If you approve the repair we diagnosed, the diagnostic fee comes off your invoice. If Kyle finds the problem and you decide not to repair, you pay only the diagnostic fee and keep the written findings. If he can’t find it, you pay nothing.',
   },
   {
     q: 'What time zone are your appointments in?',

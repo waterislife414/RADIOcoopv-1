@@ -13,8 +13,8 @@ export const BUSINESS_EMAIL = 'kyledubios2412@gmail.com' as const;
 export const SHOW_EXACT_SHOP_ADDRESS = false;
 
 export const BUSINESS = {
-  name: "Kyle's Auto & Mobile Repair",
-  shortName: "Kyle's Auto",
+  name: 'Dubois Automotive Rescue',
+  shortName: 'Dubois Auto Rescue',
   owner: { name: 'Kyle Dubois', title: 'Owner / Lead Technician' },
   email: BUSINESS_EMAIL,
   phone: { display: '(334) 555-5555', e164: '+13345555555' },
@@ -42,12 +42,11 @@ export const BUSINESS = {
     shopLaborRateCents: 11000,
     bookingDepositCents: 8900,
   },
-  warranty: {
-    months: 12,
-    miles: 12000,
-    display: '12-Month / 12,000-Mile Parts & Labor Warranty',
-    terms:
-      'Parts and labor supplied by Kyle\'s Auto & Mobile Repair are warranted against defects in materials and workmanship for 12 months or 12,000 miles, whichever comes first, from the invoice date. Customer-supplied parts, wear items damaged by misuse, collision, neglect, or repairs altered by another shop are excluded. Keep this receipt — it is your warranty record.',
+  /** Kyle's promise. Kyle asked NOT to advertise a parts/labor warranty — do not add one back. */
+  guarantee: {
+    short: 'No Fix, No Charge',
+    display: 'Can’t find it or can’t fix it? You don’t pay.',
+    terms: 'If Kyle can’t diagnose the problem or can’t fix it, there’s no charge — not for the diagnostic and not for the trip out.',
   },
   googleReviewUrl: 'https://g.page/r/YOUR_LINK/review',
   areaServed: [

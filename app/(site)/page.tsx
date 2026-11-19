@@ -37,10 +37,10 @@ export default async function HomePage() {
           <h2 className="font-display text-3xl sm:text-4xl">No surprise bills. Ever.</h2>
           <ol className="mt-8 grid gap-4 md:grid-cols-4">
             {[
-              { icon: ScanLine, t: 'Diagnose', d: `${formatCentsShort(rates.diagnosticFeeCents)} pro diagnosis — waived when you approve the repair.` },
+              { icon: ScanLine, t: 'Diagnose', d: `${formatCentsShort(rates.diagnosticFeeCents)} pro diagnosis, waived when you approve the repair. Can’t find it? You don’t pay.` },
               { icon: FileText, t: 'Itemized estimate', d: 'Parts, labor hours × rate, fees and tax — texted to you with inspection photos.' },
               { icon: ShieldCheck, t: 'You approve', d: 'Sign from your phone. No approval, no work. Nothing gets added without asking.' },
-              { icon: CreditCard, t: 'Pay & drive', d: `Card, Apple Pay or Google Pay. ${BUSINESS.warranty.display}.` },
+              { icon: CreditCard, t: 'Pay & drive', d: 'Card, Apple Pay or Google Pay. Can’t fix it? You don’t pay.' },
             ].map(({ icon: Icon, t, d }, i) => (
               <li key={t} className="relative rounded-xl border border-slate-200 p-5">
                 <span className="absolute -top-3 left-5 rounded bg-amber-500 px-2 text-xs font-black text-slate-900">STEP {i + 1}</span>

@@ -91,7 +91,7 @@ export default async function ConfirmationPage({
 
         <p className="mt-6 flex items-start gap-2 text-sm text-slate-600">
           <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" aria-hidden />
-          Next: you’ll get an itemized digital estimate with inspection photos. No work starts until you approve it. {BUSINESS.warranty.display}.
+          Next: you’ll get an itemized digital estimate with inspection photos. No work starts until you approve it. {BUSINESS.guarantee.display}
         </p>
       </div>
     </div>

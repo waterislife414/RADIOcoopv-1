@@ -5,7 +5,7 @@ import { BUSINESS } from '@/config/business';
 import { siteUrl } from '@/lib/env';
 
 const description =
-  'Honest auto repair in Phenix City, AL and Columbus, GA — mobile mechanic in your driveway or a shop bay. Transparent flat-rate pricing, diagnostic fee waived with repair, 12-month / 12,000-mile warranty.';
+  'Honest auto repair in Phenix City, AL and Columbus, GA — mobile mechanic in your driveway or a shop bay. Transparent flat-rate pricing, diagnostic fee waived with repair, and no fix means no charge.';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),

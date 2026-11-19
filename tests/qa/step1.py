@@ -121,8 +121,8 @@ def body(browser):
 
     def faq_opens():
         pg.goto(BASE + "/")
-        pg.get_by_text("How does the warranty work?").click()
-        expect(pg.get_by_text(re.compile("12-month / 12,000-mile warranty"))).to_be_visible()
+        pg.get_by_text("What if you can’t find or fix the problem?").click()
+        expect(pg.get_by_text(re.compile("Then you don’t pay"))).to_be_visible()
     check("home: FAQ opens", faq_opens)
 
     sp = new_page(browser, mobile=True)
@@ -152,6 +152,12 @@ def body(browser):
         mb.goto(BASE + "/memberships")
         expect(mb.locator("#fleet").get_by_role("link", name=re.compile("Get quote"))).to_be_visible()
     check("memberships: fleet quote", memberships_fleet_quote)
+
+    def no_warranty():
+        for path in ["/", "/book", "/memberships", DEMO_INVOICE]:
+            pg.goto(BASE + path)
+            assert "warrant" not in pg.inner_text("body").lower(), f"warranty text on {path}"
+    check("copy: no warranty wording (Kyle's request)", no_warranty)
 
     dk = new_page(browser, mobile=False)
 

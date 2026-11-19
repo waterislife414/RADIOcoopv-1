@@ -58,11 +58,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ token:
           <LineItems inv={inv} compact />
         </div>
 
-        <section className="mt-8 rounded-lg border-2 border-slate-900 p-4 text-xs leading-relaxed print:break-inside-avoid">
-          <p className="text-sm font-extrabold uppercase tracking-wider">Warranty — {BUSINESS.warranty.display}</p>
-          <p className="mt-1">{inv.warranty_terms || BUSINESS.warranty.terms}</p>
-          <p className="mt-2">Warranty claims: {BUSINESS.phone.display} · {BUSINESS_EMAIL}. Reference receipt {inv.number}.</p>
-        </section>
+        <p className="mt-8 text-xs text-slate-600 print:break-inside-avoid">Questions about this job: {BUSINESS.phone.display} · {BUSINESS_EMAIL}. Reference receipt {inv.number}.</p>
 
         <p className="mt-6 text-center text-xs text-slate-500">Thank you for trusting {BUSINESS.name}. {BUSINESS.hours.display}.</p>
       </article>

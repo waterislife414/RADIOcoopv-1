@@ -84,7 +84,7 @@ export default async function InvoicePage({ params, searchParams }: { params: Pr
         <footer className="mt-8 grid gap-4 border-t border-slate-200 pt-6 text-xs text-slate-600 sm:grid-cols-[1fr_auto]">
           <p className="flex items-start gap-2">
             <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-500" aria-hidden />
-            <span><strong>{BUSINESS.warranty.display}.</strong> {inv.warranty_terms || BUSINESS.warranty.terms}</span>
+            <span><strong>{BUSINESS.guarantee.short}.</strong> {BUSINESS.guarantee.terms}</span>
           </p>
           <div className="hidden w-24 sm:block" aria-label="QR code for this invoice" dangerouslySetInnerHTML={{ __html: qr }} />
         </footer>

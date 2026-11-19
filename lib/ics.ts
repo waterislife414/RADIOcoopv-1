@@ -48,7 +48,7 @@ export function buildIcs(e: IcsEvent, now: Date = new Date()): string {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Kyles Auto & Mobile Repair//Booking//EN',
+    'PRODID:-//Dubois Automotive Rescue//Booking//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',

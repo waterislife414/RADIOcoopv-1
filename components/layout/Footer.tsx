@@ -11,7 +11,7 @@ export function Footer() {
           <p className="font-display text-xl text-white">{BUSINESS.name}</p>
           <p className="mt-2 text-sm">Shop bay + mobile mechanic serving Phenix City, Smiths Station, Ladonia, Columbus & Fort Benning.</p>
           <p className="mt-4 flex items-start gap-2 text-sm">
-            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" aria-hidden /> {BUSINESS.warranty.display}
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" aria-hidden /> {BUSINESS.guarantee.display}
           </p>
         </div>
         <address className="space-y-3 text-sm not-italic">

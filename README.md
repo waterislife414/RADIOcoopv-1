@@ -1,4 +1,4 @@
-# Kyle's Auto & Mobile Repair
+# Dubois Automotive Rescue
 
 Next.js 16 (App Router, TypeScript) · Tailwind v4 · Supabase · Stripe · Resend · `qrcode`.
 Phenix City, AL 36869 / Columbus, GA. Shop bay plus mobile mechanic.

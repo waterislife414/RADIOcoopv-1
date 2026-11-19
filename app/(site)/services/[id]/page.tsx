@@ -78,7 +78,7 @@ export default async function ServicePage({ params }: { params: Promise<{ id: st
           <ul className="space-y-3">
             <li className="flex items-center gap-3 text-slate-700">
               <CircleCheck className="h-5 w-5 shrink-0 text-emerald-500" aria-hidden />
-              <span>{BUSINESS.warranty.display}</span>
+              <span>{BUSINESS.guarantee.display}</span>
             </li>
             <li className="flex items-center gap-3 text-slate-700">
               <CircleCheck className="h-5 w-5 shrink-0 text-emerald-500" aria-hidden />
