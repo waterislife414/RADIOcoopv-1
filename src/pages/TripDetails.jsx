@@ -9,6 +9,7 @@ import AddressSearch from "../components/AddressSearch";
 import { readLocationOnce } from "../utils/rideLive";
 import { BRAND, COMPANY_EMAIL, COMPANY_PHONE_DISPLAY } from "../config/constants";
 
+import { consentIsCurrent } from "../legal/documents";
 const RIDER_DOCS = ["rider-terms", "privacy"];
 import { useRide } from "../context/RideContext";
 import BrandHeader from "../components/BrandHeader";
@@ -171,6 +172,10 @@ export default function TripDetails() {
       } catch {
         // Can't check right now: let them book.
       }
+    }
+    if (currentUser && consentIsCurrent(userProfile?.legal, RIDER_DOCS)) {
+      proceed(userProfile.legal);
+      return;
     }
     setAskConsent(true);
   }
