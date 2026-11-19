@@ -28,7 +28,7 @@ function sectionsFor({ signedIn, isDriver, isAdmin, isShop }) {
           { to: "/driver/inspection?type=repair", label: "Report a Problem" },
         ],
       },
-      { title: "Company", items: [{ to: "/", label: "Home Page" }, { to: "/about", label: "About Us" }, { to: "/contact", label: "Contact Us" }] },
+      { title: "Company", items: [{ to: "/", label: "Home Page" }, { to: "/about", label: "About Us" }, { to: "/contact", label: "Contact Us" }, { to: "/qr", label: "QR Code" }] },
       { title: "Legal", items: LEGAL },
     ];
   }
@@ -45,7 +45,7 @@ function sectionsFor({ signedIn, isDriver, isAdmin, isShop }) {
           { to: "/promotions", label: "Promotions" },
         ],
       },
-      { title: "Company", items: [{ to: "/about", label: "About Us" }, { to: "/contact", label: "Contact Us" }, { to: "/help", label: "Help & Questions" }, ...(isAdmin ? [{ to: "/admin/dashboard", label: "Dispatch Desk" }, { to: "/shop", label: "Shop Board" }] : [])] },
+      { title: "Company", items: [{ to: "/about", label: "About Us" }, { to: "/contact", label: "Contact Us" }, { to: "/help", label: "Help & Questions" }, { to: "/qr", label: "QR Code" }, ...(isAdmin ? [{ to: "/admin/dashboard", label: "Dispatch Desk" }, { to: "/shop", label: "Shop Board" }] : [])] },
       { title: "Legal", items: LEGAL.slice(0, 2) },
       { title: "Drivers", items: [{ to: "/driver/sign-in", label: "Driver Sign In" }, { to: "/become-a-driver", label: "Come Join Our Team" }] },
     ];
@@ -61,7 +61,7 @@ function sectionsFor({ signedIn, isDriver, isAdmin, isShop }) {
         { to: "/compare", label: "Compare Rates" },
       ],
     },
-    { title: "Company", items: [{ to: "/about", label: "About Us" }, { to: "/contact", label: "Contact Us" }, { to: "/help", label: "Help & Questions" }, { to: "/promotions", label: "Promotions" }] },
+    { title: "Company", items: [{ to: "/about", label: "About Us" }, { to: "/contact", label: "Contact Us" }, { to: "/help", label: "Help & Questions" }, { to: "/promotions", label: "Promotions" }, { to: "/qr", label: "QR Code" }] },
     { title: "Legal", items: LEGAL },
     { title: "Drivers", items: [{ to: "/driver/sign-in", label: "Driver Sign In" }, { to: "/become-a-driver", label: "Come Join Our Team" }] },
   ];
