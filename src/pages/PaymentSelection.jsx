@@ -85,6 +85,9 @@ export default function PaymentSelection() {
 
   function selectSimplePayment(method) {
     updateRide({ paymentMethod: method });
+    if (method === "cash" && ride.wantsPriorityPass) {
+      return;
+    }
     submitRide(method);
   }
 
@@ -148,6 +151,20 @@ export default function PaymentSelection() {
               </Elements>
             </div>
           </div>
+
+          {ride.paymentMethod === "cash" && ride.wantsPriorityPass && (
+            <div data-testid="pass-cash-warning" className="rounded-xl bg-red-50 border-2 border-red-300 text-red-800 p-3 font-semibold mb-6 flex justify-between items-center">
+              <span>Priority Day Pass can&rsquo;t be paid with cash.</span>
+              <button
+                type="button"
+                data-testid="pass-remove"
+                onClick={() => updateRide({ wantsPriorityPass: false })}
+                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-sm font-bold"
+              >
+                Remove pass
+              </button>
+            </div>
+          )}
 
           {/* Hidden until a first-ride discount is actually applied at checkout. */}
           {PROMO_CODES.FIRST_RIDE_ACTIVE && (
