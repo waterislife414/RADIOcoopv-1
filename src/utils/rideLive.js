@@ -41,7 +41,7 @@ export function useShareLocation(rideId, on) {
         last = now;
         riderPing({ rideId, lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy }).catch(() => {});
       },
-      (e) => setState(e?.code === 1 ? "denied" : "unavailable"),
+      (e) => setState((s) => (e?.code === 1 ? "denied" : s === "on" || e?.code === 3 ? s : "unavailable")),
       { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
     );
     return () => navigator.geolocation.clearWatch(id);
