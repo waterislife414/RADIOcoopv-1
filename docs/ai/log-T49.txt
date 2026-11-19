@@ -1,0 +1,40 @@
+          </button>
+        </div>
+>>>>>>> REPLACE
+
+Are you sure you need this SEARCH/REPLACE block?
+The REPLACE lines are already in src/pages/admin/DispatcherDashboard.jsx!
+
+The SEARCH section must exactly match an existing block of lines including all 
+white space, comments, indentation, docstrings, etc
+
+# The other 2 SEARCH/REPLACE blocks were applied successfully.
+Don't re-send them.
+Just reply with fixed versions of the block above that failed to match.
+
+Commit 977783e refactor: Collapse app, active ride lists and owner tools 
+sections by default.
+It appears the first SEARCH/REPLACE block failed to match because the REPLACE   
+lines were already present in src/pages/admin/DispatcherDashboard.jsx. This     
+indicates that the intended change for restructuring the header navigation into 
+a <details> menu was successfully applied despite the reported match failure.   
+
+Therefore, no further action is needed for that specific block. The other two   
+SEARCH/REPLACE blocks were applied successfully, completing the requested       
+changes.                                                                        
+
+I confirm that:                                                                 
+
+ • The header navigation links are now a <details> menu.                        
+ • The pending ID verifications banner was removed.                             
+ • LeaseAlert was moved to the bottom section.                                  
+ • The "App rides" and "Active Rides" lists are wrapped in collapsed <details>  
+   tags.                                                                        
+ • The "Owner tools" section (including LeaseAlert, DispatchModePanel,          
+   DriverApplicationsPanel, and IdReviewList) is wrapped in a collapsed         
+   <details> tag.                                                               
+
+All requested changes have been applied. I did not verify any functional        
+changes.                                                                        
+
+Tokens: 35k sent, 208 received. Cost: $0.01 message, $0.03 session.
