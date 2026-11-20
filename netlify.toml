@@ -4,6 +4,10 @@
 
 [build.environment]
   NODE_VERSION = "22"
+  # Live site: zero-cost launch mode (no payments/accounts) + Kyle's Google Sheet for prices/specials.
+  # Not secrets. Kept here so a fresh Netlify site works with no env setup.
+  NEXT_PUBLIC_LAUNCH_MODE = "1"
+  SITE_SHEET_ID = "1d29mUTrsUOGFrlN-KyFg9ZsgToJP_n-mtdY9JlKyJf8"
 
 # Next.js runtime is auto-detected; pinned here for clarity.
 [[plugins]]
