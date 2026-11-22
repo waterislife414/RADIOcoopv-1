@@ -1,0 +1,7 @@
+owner_name,address,city,state,zip,holder,property_type,amount,reported,property_id
+ZZ TESTPERSON ALPHA,1 Fake St,Phenix City,AL,36867,Example Life Insurance Co,Life insurance proceeds,over $500,2021,SYN-001
+ZZ TESTPERSON ALPHA,1 Fake St,Phenix City,AL,36867,Example Exchange Inc,Crypto account,over $100,2022,SYN-002
+ZZ TESTPERSON BRAVO,2 Fake St,Opelika,AL,36801,Example Power Co,Utility deposit,under $100,2020,SYN-003
+ZZ TESTPERSON CHARLIE,3 Fake St,Columbus,GA,31901,Example Bank,Savings account,over $100,2025,SYN-004
+ZZ TEST BUSINESS LLC,4 Fake Ave,Phenix City,AL,36869,Example Vendor Co,Vendor check,over $250,2021,SYN-005
+ZZ TEST BUSINESS LLC,4 Fake Ave,Phenix City,AL,36869,Example Refund Dept,Refund,under $100,2022,SYN-006

@@ -1,0 +1,51 @@
+# Manager-owned. Workers read this; they never edit it.
+state: AL
+law:
+  citation: "Ala. Code 35-12-93 (HB104, eff. 2026-06-01)"
+  waiting_months: 24          # agreement void until 24 months after delivery to Treasurer
+  fee_cap_pct: 10
+  # reports are due Nov 1; when only a year is known, treat delivery as Dec 31 of that year (conservative)
+  year_only_delivery: "12-31"
+floors:
+  single_claim_min_cents: 10001   # a lone property must be strictly above $100 to be worth working
+  multi_claim_override: true      # owner with 2+ properties is kept even if each is small
+amount_buckets:
+  # regexes against the portal's amount text; first match wins. kind: lower|upper|exact
+  - { pattern: '(?i)^\s*under\s*\$?\s*([\d,]+)', kind: upper }
+  - { pattern: '(?i)^\s*(?:over|more than|above)\s*\$?\s*([\d,]+)', kind: lower }
+  - { pattern: '(?i)^\s*\$?\s*([\d,]+(?:\.\d{2})?)\s*$', kind: exact }
+signals:
+  high:   # holder or property type matches => wealth/priority hint, never proof
+    - '(?i)life\s*(insurance|ins)'
+    - '(?i)annuit'
+    - '(?i)coinbase|crypto|bitcoin|digital asset'
+    - '(?i)brokerage|securit|stock|dividend|schwab|fidelity|vanguard|merrill|edward jones|etrade|robinhood'
+    - '(?i)\bIRA\b|401\s*\(?k|pension|retirement'
+  medium:
+    - '(?i)savings|checking|certificate of deposit|\bCD\b|bank|credit union'
+    - '(?i)royalt|mineral|oil|gas'
+    - '(?i)refund|vendor|accounts payable|check'
+  low:
+    - '(?i)utility|deposit|payroll|wage|rebate'
+tiers:
+  A: { known_min_cents: 50000, multi_claim_with_high_signal: true, high_signal_min_cents: 10001 }
+  B: { known_min_cents: 10001, multi_claim_min_total_cents: 10001 }
+  C: { hold_unknown_single_over_floor: true }
+auto_drop:
+  - under_waiting_period       # handled by gate: HOLD if date unknown, DROP only if provably too new
+  - single_below_floor
+  - already_claimed
+  - owner_is_government
+  - owner_unidentifiable       # common name + no address
+  - deceased_no_heir_found     # after research budget exhausted
+research_budget:
+  max_minutes_per_case_tier_a: 45
+  max_minutes_per_case_tier_b: 15
+geography:
+  home: { city: "Phenix City", county: "Russell", state: AL }
+  near_counties_al: [Russell, Lee, Chambers, Macon, Barbour, Bullock]
+  near_counties_ga: [Muscogee, Harris, Chattahoochee]
+  out_of_area: allow_if_tier_a_and_contact_easy   # easy win with real money overrides distance
+outreach:
+  channel_order: [mail, phone_voice_manual, email]
+  automated_text_or_robocall: false   # TCPA: no without prior consent

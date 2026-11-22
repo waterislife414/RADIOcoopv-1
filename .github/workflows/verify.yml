@@ -1,0 +1,27 @@
+name: verify
+# Free "full test" bot. Push branch verify/<anything>. Tests the tip of main.
+on:
+  push:
+    branches: ['verify/**']
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main, fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install -r requirements.txt
+      - name: Run everything
+        run: |
+          O=/tmp/verify.txt; : > $O
+          step(){ n="$1"; shift; if "$@" > /tmp/step.log 2>&1; then echo "PASS $n" >> $O; else echo "FAIL $n" >> $O; tail -8 /tmp/step.log | cut -c1-200 | sed 's/^/    /' >> $O; fi; }
+          step lint ruff check .
+          step tests pytest -q
+          echo "== $(pytest -q 2>&1 | tail -1)" >> $O
+          mkdir -p docs/ai; cp $O docs/ai/verify.txt
+          git config user.name verify-bot; git config user.email verify-bot@users.noreply.github.com
+          git checkout -B verify/result; git add docs/ai/verify.txt; git commit -qm "verify result"; git push -f origin verify/result

@@ -1,0 +1,12 @@
+# REAL DATA NEVER GOES IN GIT
+data/*
+!data/README.md
+exports/
+*.db
+*.sqlite
+*.csv
+!fixtures/*.csv
+.env
+__pycache__/
+.pytest_cache/
+.ruff_cache/
