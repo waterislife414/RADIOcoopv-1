@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useRide } from "../context/RideContext";
 import { recentPlacesFull } from "../utils/recentPlaces";
@@ -13,8 +14,11 @@ import {
   COMPANY_WORDMARK,
   COMPANY_NAME,
   COPY,
+  FARE_CONFIG,
+  BRAND,
 } from "../config/constants";
 import { calcMeterFareOnly, UBER_COLUMBUS_EXAMPLES } from "../config/fareCalc";
+import { estimateTrip, dollars } from "../../functions/lib/fareEstimate.mjs";
 
 const money = (n) => `$${n.toFixed(2)}`;
 
@@ -216,24 +220,76 @@ function QuickTrips() {
   const { updateRide } = useRide();
   const navigate = useNavigate();
   const places = recentPlacesFull().slice(0, 3);
+
+  const [currentLocation, setCurrentLocation] = useState(null);
+  const [locating, setLocating] = useState(false);
+
+  useEffect(() => {
+    if (!navigator.permissions?.query) return;
+
+    let active = true;
+    navigator.permissions.query({ name: "geolocation" }).then((permissionStatus) => {
+      if (active && permissionStatus.state === "granted") {
+        setLocating(true);
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            if (active) {
+              setCurrentLocation({
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+              });
+              setLocating(false);
+            }
+          },
+          () => {
+            if (active) setLocating(false);
+          },
+          { maximumAge: 120000, timeout: 5000, enableHighAccuracy: false }
+        );
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   if (!places.length) return null;
+
   return (
     <div data-testid="home-quick-trips" className="space-y-2">
       <p className="text-sm font-semibold text-slate-200 text-center">Go again</p>
       <div className="flex flex-wrap justify-center gap-2">
-        {places.map((p) => (
-          <button
-            key={p.text}
-            type="button"
-            onClick={() => {
-              updateRide({ dropoff: p.text, dropoffLat: p.lat, dropoffLng: p.lng });
-              navigate("/trip-details");
-            }}
-            className="max-w-full truncate rounded-full bg-white/10 border-2 border-white/25 px-4 py-2 text-base font-semibold text-white"
-          >
-            {p.text}
-          </button>
-        ))}
+        {places.map((p) => {
+          const hasCoords = typeof p.lat === "number" && typeof p.lng === "number";
+          let fareEstimate = null;
+          if (hasCoords && currentLocation) {
+            const estimate = estimateTrip({
+              points: [currentLocation, { lat: p.lat, lng: p.lng }],
+              fare: FARE_CONFIG,
+              passengers: 1, // Default to 1 passenger for quick estimates
+              cfg: BRAND.pricing.estimate,
+            });
+            if (estimate) {
+              fareEstimate = dollars(estimate.fareCents);
+            }
+          }
+
+          return (
+            <button
+              key={p.text}
+              type="button"
+              onClick={() => {
+                updateRide({ dropoff: p.text, dropoffLat: p.lat, dropoffLng: p.lng });
+                navigate("/trip-details");
+              }}
+              className="max-w-full truncate rounded-full bg-white/10 border-2 border-white/25 px-4 py-2 text-base font-semibold text-white"
+            >
+              {p.text}
+              {fareEstimate && <span className="ml-1 text-slate-300 font-normal">({fareEstimate})</span>}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
