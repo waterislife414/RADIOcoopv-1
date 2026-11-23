@@ -17,3 +17,5 @@ L15 Code you write must not make network calls or scrape websites. Query builder
 L16 When a task says "create" a file, write it ONCE. A past run pasted the whole module twice (duplicate imports/defs); read your finished file top to bottom before finishing.
 L17 Rules keys are exact: use rules['signals'] (plural) and read config/rules.yaml, never guess a key name; a wrong .get() silently returns an empty default.
 L18 SQL MAX() on text sorts alphabetically; rank text enums with a CASE expression.
+L19 "Mailing address on file" means a contacts row of kind mail (a researched, sourced address), never owners.address from the portal (stale last-known). Queue, case sheet and readiness must agree.
+L20 Test inserts must satisfy NOT NULL and foreign keys in db/schema.sql (contacts need owner_id). When a rule makes an old assertion wrong, fix the assertion, not the rule.
