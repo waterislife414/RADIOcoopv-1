@@ -1,7 +1,7 @@
 """Reporting module for ranked owners and property aggregation."""
 import csv
-import sqlite3
 from pathlib import Path
+import sqlite3
 
 def ranked_rows(conn: sqlite3.Connection) -> list[dict]:
     """Return ranked owners with aggregated property metrics, sorted by tier (A, B, C, X) and total value desc."""

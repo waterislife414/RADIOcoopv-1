@@ -1,9 +1,11 @@
 """Tests for uprec/report module."""
 import sqlite3
+
 import pytest
 
 from uprec.db import init_db
 from uprec.report import export_csv, ranked_rows
+
 
 @pytest.fixture
 def memory_db():
