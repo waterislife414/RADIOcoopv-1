@@ -1,0 +1,40 @@
+Retrying in 32.0 seconds...
+The SEARCH block failed because the line pg.click("text=Use my location");      
+pg.wait_for_timeout(1200) was not exactly matched in tests/qa/round2.py. My     
+apologies.                                                                      
+
+Here is the corrected SEARCH/REPLACE block:                                     
+
+                                                                                
+tests/qa/round2.py                                                              
+<<<<<<< SEARCH                                                                  
+def to_price(pg):                                                               
+    pg.goto(BASE + "/trip-details"); pg.wait_for_timeout(900)                   
+    pg.click("text=Use my location"); pg.wait_for_timeout(1200)                 
+    pin_dropoff(pg)                                                             
+    for _ in range(20):                                                         
+        if pg.locator("[data-testid=price-fees]").count(): return               
+        pg.wait_for_timeout(300)                                                
+                                                                                
+with sync_playwright() as p:                                                    
+    b, ctx = launch(p)                                                          
+    pg = ctx.new_page(); errs = []; watch(pg, errs)                             
+    pg.goto(BASE + "/?as=demo-rider"); pg.wait_for_timeout(1500)                
+=======                                                                         
+def to_price(pg):                                                               
+    pg.goto(BASE + "/trip-details"); pg.wait_for_timeout(900)                   
+    use_location(pg)                                                            
+    pin_dropoff(pg)                                                             
+    for _ in range(20):                                                         
+        if pg.locator("[data-testid=price-fees]").count(): return               
+        pg.wait_for_timeout(300)                                                
+                                                                                
+with sync_playwright() as p:                                                    
+    b, ctx = launch(p)                                                          
+    pg = ctx.new_page(); errs = []; watch(pg, errs)                             
+    pg.goto(BASE + "/?as=demo-rider"); pg.wait_for_timeout(1500)                
+>>>>>>> REPLACE                                                                 
+                                                                                
+
+Tokens: 72k sent, 322 received. Cost: $0.03 message, $0.08 session.
+Applied edit to tests/qa/round2.py

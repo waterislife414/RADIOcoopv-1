@@ -1,6 +1,6 @@
 # Rider-simple click-through: one Book button, price before paying, totals per way of paying,
 # the same price after booking, extras folded away, driver first name on the pickup card.
-# Run: QA_BASE=http://127.0.0.1:8790 python3 tests/qa/simple.py  (demo build served on that port)
+# Run: QA_BASE=http127.0.0.1:8790 python3 tests/qa/simple.py  (demo build served on that port)
 import re, sys
 from common import *
 from playwright.sync_api import sync_playwright
@@ -27,11 +27,16 @@ with sync_playwright() as p:
         assert "/trip-details" in pg.url, pg.url
         hint = pg.inner_text("[data-testid=price-estimate]")
         assert "to see your price" in hint, hint
-        pg.click("text=Use my location"); pg.wait_for_timeout(1200)
+        use_location(pg)
         pin_dropoff(pg)
         t = pg.inner_text("[data-testid=price-amount]")
-        btn = pg.inner_text("button:has-text('Continue to Payment')")
-        return ("About $" in t and money(t) >= 2.16 and money(btn) == money(t)) or f"price={t!r} button={btn!r}"
+        # Check for either "Continue to Payment" or "Agree & book" / "Book" (one-tap)
+        if pg.locator("[data-testid=book-now]").count():
+            btn = pg.inner_text("[data-testid=book-now]")
+            return ("About $" in t and money(t) >= 2.16 and money(btn) == money(t)) or f"price={t!r} button={btn!r}"
+        else:
+            btn = pg.inner_text("button:has-text('Continue to Payment')")
+            return ("About $" in t and money(t) >= 2.16 and money(btn) == money(t)) or f"price={t!r} button={btn!r}"
     check("Booking: price shows before paying, and on the Continue button", price_before_paying)
 
     def extras_folded():
@@ -47,6 +52,7 @@ with sync_playwright() as p:
         pg.fill("input[placeholder='Jane']", "Simple"); pg.fill("input[placeholder='Doe']", "Tester")
         pg.fill("input[type=tel]", "7065550123")
         pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
+        # Assuming the agree_modal will handle the inline consent on TripDetails
         agree_modal(pg, "Agree & Continue"); pg.wait_for_timeout(900)
         assert "/payment" in pg.url, pg.url
         cash = money(pg.inner_text("[data-testid=total-cash]"))
@@ -78,16 +84,22 @@ with sync_playwright() as p:
     check("Signed-in booking: shows 'Riding as' instead of name and phone boxes", member_riding_as)
 
     def driver_first_name():
-        pg.click("text=Use my location"); pg.wait_for_timeout(1200)
+        use_location(pg)
         pin_dropoff(pg)
-        pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
-        if pg.locator("text=You already have a ride").count():
+        # Handle one-tap booking for members with saved cards
+        if pg.locator("[data-testid=book-now]").count():
+            pg.click("[data-testid=book-now]"); pg.wait_for_timeout(2500)
+        else:
             pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
-        if pg.locator("[data-testid=legal-scroll]").count():
-            agree_modal(pg, "Agree & Continue")
-        pg.wait_for_timeout(1200)
-        pg.locator("text=Card").first.click(); pg.wait_for_timeout(400)
-        pg.fill("input[placeholder='Cardholder Name']", "Riley Example"); pg.click("button:has-text('Authorize Card')")
+            if pg.locator("text=You already have a ride").count():
+                pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
+            # Assuming the agree_modal will handle the inline consent on TripDetails
+            if pg.locator("[data-testid=legal-scroll]").count():
+                agree_modal(pg, "Agree & Continue")
+            pg.wait_for_timeout(1200)
+            pg.locator("text=Card").first.click(); pg.wait_for_timeout(400)
+            pg.fill("input[placeholder='Cardholder Name']", "Riley Example"); pg.click("button:has-text('Authorize Card')")
+
         for _ in range(90):
             if pg.locator("[data-testid=driver-identity]").count():
                 break

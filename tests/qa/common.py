@@ -41,7 +41,7 @@ def agree_modal(pg, confirm):
     try:
         pg.wait_for_selector("[data-testid=legal-scroll]", timeout=1500)
     except Exception:
-        return
+        return  # riders agree by tapping the Book/Continue button: no pop-up
     if pg.locator("[data-testid=consent-quick]").count():
         # Riders: one box, no scrolling (Nov 23 decision).
         pg.check("[data-testid=consent-agree]"); pg.click(f"button:has-text('{confirm}')"); return
@@ -61,3 +61,13 @@ def more_options(pg):
     # Booking extras (passengers, stops, round trip, wheelchair, share location, schedule) sit behind "More options".
     b=pg.locator("[data-testid=more-options]")
     if b.count() and b.get_attribute("aria-expanded")!="true": b.click(); pg.wait_for_timeout(200)
+def use_location(pg):
+    # Clicks "Use my location" if visible, otherwise waits for "Location attached".
+    if pg.locator("button:has-text('Use my location')").count():
+        pg.click("button:has-text('Use my location')")
+        pg.wait_for_timeout(1200)
+    else:
+        for _ in range(30): # Wait up to 3 seconds for location to attach
+            if pg.locator("text=✓ Location attached").count():
+                break
+            pg.wait_for_timeout(100)
