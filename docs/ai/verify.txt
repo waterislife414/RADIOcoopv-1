@@ -1,0 +1,30 @@
+PASS lint
+PASS unit
+PASS build
+PASS build:demo
+PASS e2e:profile
+PASS e2e:board
+PASS e2e:dispatch
+PASS e2e:dispatcher
+FAIL e2e:lease
+      code: 'ERR_ASSERTION',
+      actual: undefined,
+      expected: 7000,
+      operator: 'strictEqual',
+      diff: 'simple'
+    }
+PASS e2e:closeout
+PASS e2e:incentives
+PASS e2e:phone
+PASS e2e:fastpass
+PASS e2e:inspections
+PASS e2e:callissues
+FAIL e2e:rideflow
+      code: 'ERR_ASSERTION',
+      actual: undefined,
+      expected: [Array],
+      operator: 'deepStrictEqual',
+      diff: 'simple'
+    }
+PASS e2e:support
+PASS rules
