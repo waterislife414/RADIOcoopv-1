@@ -1,9 +1,8 @@
 """Tests for gating logic."""
 import sqlite3
-from datetime import date
 import pytest
 
-from upres.db import init_db
+from uprec.db import init_db
 from uprec.gate import eligible_after, gate_owner
 
 

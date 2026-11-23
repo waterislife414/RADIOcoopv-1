@@ -1,6 +1,6 @@
 """Gate logic: calculate eligibility dates and evaluate owner status."""
-from datetime import date
 import calendar
+from datetime import date
 
 
 def add_months(d: date, months: int) -> date:
@@ -74,11 +74,9 @@ def gate_owner(conn, owner_id: int, today_str: str, rules: dict) -> str:
         max_c = p["amount_max_cents"]
         min_c = p["amount_min_cents"]
         is_below = False
-        if max_c is not None and max_c < single_floor:
-            is_below = True
-        elif min_c is not None and min_c < single_floor and max_c is not None and max_c < single_floor:
-            is_below = True
-        elif max_c is not None and max_c <= 10000:
+        if (max_c is not None and max_c < single_floor) or \
+           (min_c is not None and min_c < single_floor and max_c is not None and max_c < single_floor) or \
+           (max_c is not None and max_c <= 10000):
             is_below = True
 
         if is_below:
