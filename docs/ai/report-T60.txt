@@ -1,0 +1,17 @@
+task T60
+code_files_changed 1
+unit pass
+build pass
+build:demo pass
+qa step1 FAIL
+tests ok
+PASS 1 Dispatcher: pegboard, map, panes, status key, + New call drawer with Quick Entry 
+PASS 2 Rider books card ride; shows in dispatcher Working list 
+PASS 3 Driver 44: demo location, Go Online, Check Ready, DemoBar location + 2 PM popup 
+PASS 4a Driver: Report a problem with note -> Thanks, we've got it 
+PASS 4b Ask-dispatch Check Ready -> approval popup -> approve -> driver answer, car 44 in zone 
+PASS 5 Deny needs a reason, then reaches driver 
+FAIL 6 Dispatcher chip -> CarActionsModal takes ready and on-call/offered car off -> Locator.click: Timeout 30000ms exceeded. :: SCREEN [http://127.0.0.1:8790/admin/dashboard] testids=['pegboard', 'status-key', 'new-call
+PASS 7 No console errors / failed requests (dispatcher + driver) 
+== Step 1: 7/8 passed
+  FAIL 6 Dispatcher chip -> CarActionsModal takes ready and on-call/offered car off -> Locator.click: Timeout 30000ms exceeded. :: SCREEN [http://127.0.0.1:8790/admin/dashboard] testids=['pegboard', 'status-key', 'new-ca
