@@ -1,6 +1,7 @@
 """Reporting module for ranked owners and property aggregation."""
 import csv
 import sqlite3
+
 from pathlib import Path
 
 def ranked_rows(conn: sqlite3.Connection) -> list[dict]:
