@@ -1,0 +1,4 @@
+task T6
+code_files_changed 2
+lint FAIL
+tests pass

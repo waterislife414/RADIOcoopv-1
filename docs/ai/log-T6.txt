@@ -1,0 +1,40 @@
+
+## Running: ruff check uprec/report.py
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> uprec/report.py:2:1
+  |
+1 |   """Reporting module for ranked owners and property aggregation."""
+2 | / import csv
+3 | | import sqlite3
+4 | |
+5 | | from pathlib import Path
+  | |________________________^
+6 |
+7 |   def ranked_rows(conn: sqlite3.Connection) -> list[dict]:
+  |
+help: Organize imports
+  |
+3 | import sqlite3
+4 + from pathlib import Path
+5 |
+  - from pathlib import Path
+6 |
+  |
+
+Found 1 error.
+[*] 1 fixable with `--fix`.
+
+## See relevant line below marked with █.
+
+uprec/report.py:
+  1│"""Reporting module for ranked owners and property aggregation."""
+  2█import csv
+  3│import sqlite3
+  4│
+  5│from pathlib import Path
+  6│
+...⋮...
+
+
+Only 3 reflections allowed, stopping.
