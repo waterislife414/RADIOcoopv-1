@@ -30,7 +30,8 @@ def render_case_sheet(conn: sqlite3.Connection, owner_id: int, rules: dict, toda
         lines.append("| Holder | Type | Amount Text | Reported | Eligible After | Signal |")
         lines.append("|---|---|---|---|---|---|")
         for p in props:
-            lines.append(f"| {p['holder'] or ''} | {p['property_type'] or ''} | {p['amount_text'] or ''} | {p['reported_date'] or p['reported_year'] or ''} | {p['eligible_after'] or ''} | {p['signal']} |")
+            reported = p['reported_date'] if p['reported_date'] else (str(p['reported_year']) if p['reported_year'] else '')
+            lines.append(f"| {p['holder'] or ''} | {p['property_type'] or ''} | {p['amount_text'] or ''} | {reported} | {p['eligible_after'] or ''} | {p['signal']} |")
     else:
         lines.append("No properties recorded.")
     lines.append("")
@@ -67,7 +68,7 @@ def render_case_sheet(conn: sqlite3.Connection, owner_id: int, rules: dict, toda
     state = owner['state'] or 'AL'
     county = owner['county']
 
-    if county:
+    if county: # Only add county-specific queries if county is not None or empty
         for q in queries.probate_queries(name, county):
             lines.append(f"- {q}")
         for q in queries.property_record_queries(name, county):
