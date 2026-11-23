@@ -61,3 +61,11 @@ test("rewards: every 10th counted ride, rides of $5 or more, members only", () =
   assert.equal(S.countsForReward({ customerId: "u1" }), true);
   assert.equal(S.countsForReward({ customerId: "guest", meterCents: 900 }), false);
 });
+
+test("price lock ends when the rider changes the drop-off or makes a stop during the ride", () => {
+  const ride = { customerId: "u1", estMiles: 5, passengers: 1 };
+  assert.ok(S.priceLockCapCents({ ride, fare: FARE }) > 0);
+  assert.equal(S.priceLockCapCents({ ride: { ...ride, routeChangedAt: 1 }, fare: FARE }), null);
+  assert.equal(S.priceLockCapCents({ ride: { ...ride, stopCount: 1 }, fare: FARE }), null);
+  assert.equal(S.tripChanged({ stopCount: 0 }), false);
+});

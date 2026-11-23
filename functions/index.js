@@ -461,17 +461,23 @@ exports.captureFare = onCall(
       if (paymentMethodId) throw new HttpsError("invalid-argument", "The driver charges the card on file only.");
     }
 
-    // A typed meter far above the trip estimate goes to the office, not onto the card.
+    // A typed meter far above the trip estimate goes to the office, not onto the card,
+    // unless the rider approves it on the driver's phone. After a drop-off change or a stop
+    // the estimate no longer fits the trip: only the overall cap applies.
     const F = await fareLib();
+    const changedTrip = !!ride.routeChangedAt || (Number(ride.stopCount) || 0) > 0;
     const check = F.meterCheck({
       meterCents: Math.round(meterFare * 100),
-      estMiles: ride.estMiles,
+      estMiles: changedTrip ? null : ride.estMiles,
       fare: BRANDING.fare,
       passengers: ride.passengers || 1,
       cfg: BRANDING.driverMeter || {},
       estimateCfg: BRANDING.estimate || {},
     });
-    if (!requesterIsAdmin && !check.ok) {
+    const capCheck = F.meterCheck({ meterCents: Math.round(meterFare * 100), estMiles: null, fare: BRANDING.fare, cfg: BRANDING.driverMeter || {} });
+    const overEstimate = !check.ok && capCheck.ok;
+    const riderOks = driverSettling && (preview === true || riderApproved === true);
+    if (!requesterIsAdmin && !check.ok && !(overEstimate && (riderOks || requesterIsRider))) {
       throw new HttpsError(
         "failed-precondition",
         `That's more than this trip should cost (limit $${(check.limitCents / 100).toFixed(2)}). Check the meter, or call the office to settle it.`
@@ -537,7 +543,19 @@ exports.captureFare = onCall(
 
     // The driver's phone shows this to the rider before they approve: nothing is charged.
     if (preview === true) {
-      return { preview: true, ...bd, cardFeeCents, priorityPassCents, welcomeCents, capCents, totalCents: bd.chargeCents + cardFeeCents + priorityPassCents };
+      return {
+        preview: true,
+        ...bd,
+        cardFeeCents,
+        priorityPassCents,
+        welcomeCents,
+        capCents,
+        totalCents: bd.chargeCents + cardFeeCents + priorityPassCents,
+        // More than the estimate: the rider's screen says so before they tap Pay.
+        overEstimate,
+        estFareCents: check.estFareCents,
+        tripChanged: changedTrip,
+      };
     }
 
     // Cancel/no-show fees the rider still owes from an earlier ride ride along

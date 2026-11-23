@@ -223,3 +223,85 @@ exports.startMaskedCall = onCall({ secrets: [TWILIO_AUTH_TOKEN] }, async (reques
   if (!res.ok) throw new HttpsError("unavailable", "The call didn't go through. Try again or call the office.");
   return { mode, otherLabel, callerId: number };
 });
+
+// ---------------------------------------------------------------------------
+// Changing the trip during the ride (owner question Nov 23, 2026).
+// The meter keeps running, so the fare stays right; these keep the driver's
+// screen, Price Lock and the meter check honest about what changed.
+
+const STOP_END_MIN = Number(BRANDING.rideRules?.stopEndTripMinutes) || 15;
+const push = require("./push");
+const { getZones } = require("./zoneStore");
+let coreLibPromise = null;
+const coreLib = () => (coreLibPromise ||= import("./lib/dispatchCore.mjs"));
+const LIVE = ["dispatched", "in_transit"];
+
+// Rider: "Change where you're going". The driver's screen shows the new address
+// (with Navigate) and his phone alerts. Price Lock ends: the meter sets the fare.
+exports.changeDropoff = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "Sign in first.");
+  const rideId = rideIdFrom(request.data);
+  const dropoff = String(request.data?.dropoff || "").trim().slice(0, 200);
+  if (dropoff.length < 4) throw new HttpsError("invalid-argument", "Pick the new address from the list.");
+  const fix = fixFrom(request.data);
+  const zones = await getZones().catch(() => []);
+  const C = await coreLib();
+  const dropZoneId = zones.length ? C.zoneForPoint(zones, fix.lng, fix.lat)?.id || null : null;
+  const dropZoneLabel = zones.find((z) => z.id === dropZoneId)?.label || null;
+  const at = Date.now();
+  const ride = await db().runTransaction(async (tx) => {
+    const r = (await tx.get(rideRef(rideId))).data();
+    if (!r || r.customerId !== uid) throw new HttpsError("not-found", "Ride not found.");
+    if (!LIVE.includes(r.status) || r.finalFare != null) throw new HttpsError("failed-precondition", "This ride can't be changed now. Tell your driver.");
+    const inbox = r.driverId ? (await tx.get(inboxRef(r.driverId))).data() : null;
+    tx.update(rideRef(rideId), {
+      dropoff,
+      dropLat: fix.lat,
+      dropLng: fix.lng,
+      dropZoneId,
+      routeChangedAt: at,
+      routeChanges: FieldValue.arrayUnion({ from: r.dropoff || null, to: dropoff, at }),
+    });
+    if (inbox?.current?.rideId === rideId) {
+      tx.update(inboxRef(r.driverId), {
+        "current.dropoff": dropoff,
+        "current.dropLat": fix.lat,
+        "current.dropLng": fix.lng,
+        "current.dropZoneLabel": dropZoneLabel,
+        "current.routeChangedAt": at,
+      });
+    }
+    return r;
+  });
+  if (ride.driverId) await push.toDrivers([ride.driverId], { title: "New drop-off", body: dropoff, tag: `route_${rideId}` });
+  return { ok: true };
+});
+
+// Driver: "Rider stepped out" / "Rider's back". The meter keeps running while he
+// waits; after STOP_END_MIN minutes he may end the trip and charge the meter so far.
+exports.stopWait = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid || request.auth.token?.driver !== true) throw new HttpsError("permission-denied", "Drivers only.");
+  const rideId = rideIdFrom(request.data);
+  const action = request.data?.action === "end" ? "end" : "start";
+  const at = Date.now();
+  return db().runTransaction(async (tx) => {
+    const r = (await tx.get(rideRef(rideId))).data();
+    if (!r || r.driverId !== uid) throw new HttpsError("not-found", "Ride not found.");
+    if (r.status !== "in_transit") throw new HttpsError("failed-precondition", "Pick up the rider first.");
+    const inbox = (await tx.get(inboxRef(uid))).data();
+    const onInbox = inbox?.current?.rideId === rideId;
+    if (action === "start") {
+      if (r.stopWait?.startedAt) return { ok: true, startedAt: r.stopWait.startedAt };
+      const stopWait = { startedAt: at, endTripAt: at + STOP_END_MIN * 60000 };
+      tx.update(rideRef(rideId), { stopWait, stopCount: FieldValue.increment(1) });
+      if (onInbox) tx.update(inboxRef(uid), { "current.stopWait": stopWait });
+      return { ok: true, startedAt: at };
+    }
+    if (!r.stopWait?.startedAt) return { ok: true };
+    tx.update(rideRef(rideId), { stopWait: null, stopWaitMs: FieldValue.increment(Math.max(0, at - r.stopWait.startedAt)) });
+    if (onInbox) tx.update(inboxRef(uid), { "current.stopWait": null });
+    return { ok: true };
+  });
+});

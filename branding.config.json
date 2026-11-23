@@ -331,7 +331,7 @@
   "policies": {
     "dataRetentionDays": 5,
     "mvrLookbackYears": 7,
-    "legalVersion": "2026-11-23.3"
+    "legalVersion": "2026-11-23.4"
   },
   "about": {
     "_note": "Confirm with Malcolm before going live. established: Yelp lists 'Established in 1980' and YellowPages '46 years in business'. owners: as given by Jared. community: leave null until confirmed (e.g. 'Proud supporters of our EMS, firefighters and police.').",
@@ -364,7 +364,10 @@
       "requireVerifiedId": false,
       "requireLocation": true,
       "requireCardOrWallet": true
-    }
+    },
+    "stopEndTripMinutes": 15,
+    "stillWaitingCheckMinutes": 30,
+    "_stopNote": "Stops during a ride: the meter keeps running while the car waits. After stopEndTripMinutes the driver may end the trip and charge the meter so far; at stillWaitingCheckMinutes his phone asks if he's still waiting."
   },
   "ridePerks": {
     "_note": "Who gets the live driver map and the private Call-your-driver button. DAY_PASS = the $5 Priority Day Pass. Drivers can always call their rider.",
@@ -389,5 +392,10 @@
     "_note": "Problem reports (Report a problem / Ask dispatch) are saved and emailed to these addresses. Fill in when handing over.",
     "devEmail": "[INSERT_DEV_EMAIL]",
     "ownerEmail": "[INSERT_OWNER_EMAIL]"
+  },
+  "auth": {
+    "_note": "Sign-in choices. google: 'Continue with Google' (turn on Google in Firebase Console > Authentication > Sign-in method; no key needed). phone: later.",
+    "google": true,
+    "phone": false
   }
 }

@@ -80,6 +80,8 @@ test("riders: book a ride, but never set dispatch or money fields", async () => 
     { cardFunding: "debit" },
     { driverCardCostCents: 0 },
     { creditUsedCents: 500 },
+    { routeChangedAt: 1 },
+    { stopCount: 0 },
   ]) {
     await assertFails(setDoc(doc(rider(), "rides/x"), ride({ customerId: "rider1", ...bad })));
   }

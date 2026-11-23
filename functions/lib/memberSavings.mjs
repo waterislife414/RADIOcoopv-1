@@ -27,14 +27,17 @@ export function cardCostCents(amountCents, cost = CARD_COST_DEFAULTS) {
 /** Signed-in rider (not a guest or a phone booking). */
 export const isMember = (ride) => !!ride?.customerId && ride.customerId !== "guest";
 
+/** The rider changed the drop-off or made a stop during the ride: the meter decides, nothing is locked. */
+export const tripChanged = (ride) => !!ride?.routeChangedAt || (Number(ride?.stopCount) || 0) > 0;
+
 /**
  * Price Lock: the most a member pays for this trip by card, or null when there is no lock
- * (guests, out-of-area, stops, no estimate). Top of the range shown at booking + waiting
+ * (guests, out-of-area, stops, no estimate, or the trip changed during the ride). Top of the range shown at booking + waiting
  * after the free minutes (the rider's own waiting is never locked).
  */
 export function priceLockCapCents({ ride, fare, estimateCfg = {}, waitPerMinuteCents = 35, waitGraceMinutes = 2, deals = {} }) {
   const d = { ...MEMBER_DEALS_DEFAULTS, ...deals };
-  if (!d.priceLock || !isMember(ride) || ride.outOfArea || (ride.stops || []).length) return null;
+  if (!d.priceLock || !isMember(ride) || ride.outOfArea || (ride.stops || []).length || tripChanged(ride)) return null;
   const p = priceMiles({ miles: Number(ride.estMiles), fare, passengers: ride.passengers || 1, roundTrip: !!ride.roundTrip, cfg: estimateCfg });
   if (!p) return null;
   const waitedMin = Math.ceil(cents(ride.waitedMs) / 60000);

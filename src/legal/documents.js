@@ -24,6 +24,7 @@ const DEALS_ON = !!DEALS_CFG.priceLock || DEALS_CFG.welcomeCreditCents > 0;
 const WELCOME = Number(DEALS_CFG.welcomeCreditCents) || 0;
 const EVERY = Number(DEALS_CFG.rewardEveryRides) || 10;
 const MIN_FARE = Number(DEALS_CFG.rewardMinFareCents) || 0;
+const STOP_END_MIN = Number(BRAND.rideRules?.stopEndTripMinutes) || 15;
 const CARD_FEE_TERMS =
   CARD_CFG.mode === "flat"
     ? `Card fee: card payments in the app include a card fee of ${dollars(CARD_FEE)} (${dollars(CARD_FEE_MEMBER)} with a free account), shown before you pay.`
@@ -81,6 +82,7 @@ export const DOCUMENTS = {
           `No-show: if you are not at the car ${RR.noShowAfterMinutes} minutes after your driver arrives, your driver may cancel the ride as a no-show and you will be charged ${dollars(RR.noShowFee)}. A no-show fee is only charged when the app shows your driver was at the pickup or next to your phone's shared location.`,
           "Cancel and no-show fees go to your driver for the trip out. They are taken from your card hold or saved card. Fees that can't be collected that way may be added to a later card payment in the app.",
           "Riders who request an accessible vehicle, or who tell us they need extra time to reach or get into the car, are never charged wait time or no-show fees.",
+          `Changing your trip: during the ride you can change where you're going in the app or by telling your driver, and you can ask your driver to stop on the way. The meter keeps running, including while the car waits for you at a stop. Price Lock does not apply once you change the drop-off or make a stop. If you are not back within ${STOP_END_MIN} minutes at a stop, your driver may end the trip and charge what's on the meter to your card. If you pay cash, your driver may ask you to pay what's on the meter before a long stop. Time a driver spends helping a rider with a disability get in or out is never a reason to end a trip.`,
           "Who dispatches your ride: the app sends rides to drivers on its own for riders with an account, a checked ID, location sharing on and a card or account balance. Other rides (phone bookings, guests, cash, no location, or an ID we haven't checked yet) are dispatched by our office. Cancel and no-show fees do not apply to them. Once a driver is assigned to one of these rides, call us to cancel.",
           `The ${PASS} costs ${PASS_PRICE}. It moves your rides ahead of riders without priority, to the same place in line as Premium members, shows your driver on a map and lets you call your driver, for every ride you book until midnight (local time) on the day you buy it. A guest's pass covers one ride and moves it up the line; the map and calling need a free account. It does not promise a pickup time. The ${PASS} is non-refundable once paid.`,
           "All rides, memberships and add-on fees are non-refundable once a ride has been dispatched or completed, except where the law requires a refund.",
@@ -158,6 +160,7 @@ export const DOCUMENTS = {
           "From riders: your name, phone number, email, pickup and drop-off addresses, your location if you choose to share it, ride and payment history, any photo or ID you upload, and messages you send us. Card details are handled by our payment processor; we do not store full card numbers.",
           "From drivers and applicants: contact details, driver's license and license number, driving record (MVR), answers to screening questions, background information, uploaded documents, vehicle inspection photos and videos, damage and repair reports, typed signatures, vehicle and lease records, payments, ride activity, and your location while you are on the board.",
           "Places you booked recently are saved only on your own phone, so you can tap them next time.",
+          "If you sign in with Google, Google gives us your name and email address. We never see your Google password, and we don't get anything else from your Google account.",
           "During a ride: where your phone was when you booked, your location until pickup if you share it, when your driver arrived and how close to the pickup, your replies such as \u201cI'm at the car,\u201d and records of calls between you and your driver through our number, including recordings.",
           "From everyone: basic device and usage information, such as the type of phone or browser and the pages you open.",
         ],

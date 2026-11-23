@@ -74,7 +74,9 @@ service cloud.firestore {
               // Card meter, fee and tip records (and the data prices are learned from).
               'cardFunding', 'meterCents', 'estFareCents', 'meterEnteredBy', 'tipAddedAt', 'tipChargedCents',
               'balanceOwedCents', 'lockOffCents', 'creditUsedCents', 'fareChargedCents', 'driverCardCostCents',
-              'riderApproved', 'rewardCountedAt', 'rewardEarnedCents', 'chargeQuestionAt'];
+              'riderApproved', 'rewardCountedAt', 'rewardEarnedCents', 'chargeQuestionAt',
+              // Trip changes during the ride: only Cloud Functions record them.
+              'routeChangedAt', 'routeChanges', 'stopWait', 'stopCount', 'stopWaitMs'];
     }
 
     match /rides/{rideId} {

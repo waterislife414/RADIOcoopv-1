@@ -4,6 +4,20 @@ The app was built carefully, but none of this is legal advice. Each line says wh
 today and where to change it. Text lives in `src/legal/documents.js`; numbers live in
 `branding.config.json` (changing a fee there also bumps the terms version, so everyone agrees again).
 
+## Changed Nov 23, 2026, fourth time (legal version 2026-11-23.4; everyone agrees again)
+- [ ] **Terms §4, changing your trip.** During the ride a rider can change the drop-off in the app (the driver's phone
+  shows it and rings) or tell the driver; stops on request. The meter keeps running, also while waiting at a stop
+  ($0.35/min; the physical meter can't give free minutes mid-ride). Price Lock ends after a drop-off change or a stop.
+  After 15 minutes at a stop (`rideRules.stopEndTripMinutes`) the driver may end the trip and charge the meter so far to
+  the card; cash riders may be asked to pay the meter before a long stop. Disability: time helping a rider in or out is
+  never a reason to end a trip. Is that enough for the ADA rule against extra charges for riders with disabilities?
+- [ ] **Meter over the estimate.** The driver's typed meter can now go over the old limit (2.5x estimate + $15) when the
+  rider approves it on the driver's phone (they see "This is more than the trip estimate"), or after a drop-off change
+  or a stop (then only the $250 cap applies). Without the rider there, the old limit still sends it to the office.
+- [ ] **Privacy §1, Google sign-in.** "Continue with Google" gives us name and email only. Riders who sign in with Google
+  then add their phone and agree with the same one box. Later App Store (iOS) app: Apple requires an equivalent private
+  sign-in option (Sign in with Apple) when Google sign-in is offered.
+
 ## Changed Nov 23, 2026, third time (legal version 2026-11-23.3; everyone agrees again)
 Owner delegated these decisions to the build team ("easy, quick, accurate, few steps, good deals for loyal members").
 - [ ] **No card fee (replaces the 3% credit surcharge).** Same price cash or card (`pricing.cardFee.mode` "none"). No
