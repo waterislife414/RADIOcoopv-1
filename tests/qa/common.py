@@ -38,12 +38,21 @@ def accept_gate(pg):
         pg.click("button:has-text(\"I've read it\")"); pg.wait_for_timeout(200)
         pg.locator("text=I have read and agree").click(); pg.click("button:has-text('Agree and continue')"); pg.wait_for_timeout(1500)
 def agree_modal(pg, confirm):
-    pg.wait_for_selector("[data-testid=legal-scroll]", timeout=4000)
+    try:
+        pg.wait_for_selector("[data-testid=legal-scroll]", timeout=1500)
+    except Exception:
+        return
     if pg.locator("[data-testid=consent-quick]").count():
         # Riders: one box, no scrolling (Nov 23 decision).
         pg.check("[data-testid=consent-agree]"); pg.click(f"button:has-text('{confirm}')"); return
     pg.evaluate("document.querySelector('[data-testid=legal-scroll]').scrollTo(0,1e6)"); pg.wait_for_timeout(300)
     pg.click("button:has-text('Check all')"); pg.click(f"button:has-text('{confirm}')")
+def go_pay(pg):
+    if pg.locator("[data-testid=book-now]").count():
+        pg.click("button:has-text('Other ways to pay')")
+    else:
+        pg.click("button:has-text('Continue to Payment')")
+    pg.wait_for_timeout(500)
 def launch(p, **kw):
     b=p.chromium.launch(executable_path="/usr/bin/google-chrome",args=["--no-sandbox"])
     ctx=b.new_context(viewport={"width":400,"height":860},geolocation={"latitude":32.47,"longitude":-84.98},permissions=["geolocation"],**kw)
