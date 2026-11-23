@@ -1,4 +1,4 @@
-sqlite3
+import sqlite3
 import pytest
 
 from uprec.casesheet import render_case_sheet
