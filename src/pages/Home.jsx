@@ -15,10 +15,10 @@ import {
   COMPANY_NAME,
   COPY,
   FARE_CONFIG,
-  BRAND,
 } from "../config/constants";
 import { calcMeterFareOnly, UBER_COLUMBUS_EXAMPLES } from "../config/fareCalc";
 import { estimateTrip, dollars } from "../../functions/lib/fareEstimate.mjs";
+import { useTunedEstimateCfg } from "../lib/tripEstimate";
 
 const money = (n) => `$${n.toFixed(2)}`;
 
@@ -222,7 +222,7 @@ function QuickTrips() {
   const places = recentPlacesFull().slice(0, 3);
 
   const [currentLocation, setCurrentLocation] = useState(null);
-  const [locating, setLocating] = useState(false);
+  const estimateCfg = useTunedEstimateCfg(); // same self-tuned road factor as the booking screen
 
   useEffect(() => {
     if (!navigator.permissions?.query) return;
@@ -230,7 +230,6 @@ function QuickTrips() {
     let active = true;
     navigator.permissions.query({ name: "geolocation" }).then((permissionStatus) => {
       if (active && permissionStatus.state === "granted") {
-        setLocating(true);
         navigator.geolocation.getCurrentPosition(
           (position) => {
             if (active) {
@@ -238,12 +237,9 @@ function QuickTrips() {
                 lat: position.coords.latitude,
                 lng: position.coords.longitude,
               });
-              setLocating(false);
             }
           },
-          () => {
-            if (active) setLocating(false);
-          },
+          () => {},
           { maximumAge: 120000, timeout: 5000, enableHighAccuracy: false }
         );
       }
@@ -268,7 +264,7 @@ function QuickTrips() {
               points: [currentLocation, { lat: p.lat, lng: p.lng }],
               fare: FARE_CONFIG,
               passengers: 1, // Default to 1 passenger for quick estimates
-              cfg: BRAND.pricing.estimate,
+              cfg: estimateCfg,
             });
             if (estimate) {
               fareEstimate = dollars(estimate.fareCents);

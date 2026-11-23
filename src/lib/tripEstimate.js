@@ -14,7 +14,7 @@ import { db } from "../config/firebase";
 // Read once per visit; until it arrives (or if it's missing) the config value is used.
 let tuned = null;
 let tuning = null;
-function useTunedEstimateCfg() {
+export function useTunedEstimateCfg() {
   const [, bump] = useState(0);
   useEffect(() => {
     if (tuned || tuning) return;
