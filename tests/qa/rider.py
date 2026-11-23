@@ -36,6 +36,7 @@ with sync_playwright() as p:
     check("Booking: empty form doesn't continue", empty_booking)
     def toggles():
         out=[]
+        more_options(pg)
         pg.click("[aria-label='Trip outside the local area']"); pg.wait_for_timeout(200); out.append(pg.locator("#area-select").count()==1)
         pg.click("[aria-label='Trip outside the local area']"); pg.wait_for_timeout(200)
         n0=pg.locator("input").count(); pg.click("[aria-label='Add stops']"); pg.wait_for_timeout(200); out.append(pg.locator("input").count()>n0)
@@ -53,7 +54,7 @@ with sync_playwright() as p:
     def guest_book():
         pg.goto(BASE+"/trip-details"); pg.wait_for_timeout(800)
         pg.fill("input[placeholder='Jane']","Guest"); pg.fill("input[placeholder='Doe']","Tester")
-        pg.fill("#pickup","900 Broadway, Columbus GA"); pg.fill("#dropoff","Peachtree Mall"); pg.fill("input[type=tel]","7065550100")
+        pg.fill("#pickup","900 Broadway, Columbus GA"); pg.fill("#dropoff","3131 Manchester Expy, Columbus GA"); pg.fill("input[type=tel]","7065550100")
         pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(400)
         locked=pg.locator("[data-testid=consent-boxes] input[disabled]").count()
         agree_modal(pg,"Agree & Continue"); pg.wait_for_timeout(700)
@@ -98,6 +99,7 @@ with sync_playwright() as p:
     check("Sign in works; profile loads with referral code", signin_ok)
     def schedule():
         pg.goto(BASE+"/trip-details"); pg.wait_for_timeout(900)
+        more_options(pg)
         pg.locator("button", has_text="Schedule Later").first.click(); pg.wait_for_timeout(200)
         ok=pg.locator("input[type=datetime-local]").count()==1
         pg.locator("button", has_text="Ride Now").first.click(); pg.wait_for_timeout(200)
@@ -106,10 +108,10 @@ with sync_playwright() as p:
     # --- Rider books by card, then cancels
     def card_book():
         pg.goto(BASE+"/trip-details"); pg.wait_for_timeout(900)
-        if pg.locator("input[placeholder='Jane']").input_value()=="": pg.fill("input[placeholder='Jane']","Quinn")
-        if pg.locator("input[placeholder='Doe']").input_value()=="": pg.fill("input[placeholder='Doe']","Tester")
-        pg.fill("#pickup","1795 Cusseta Rd, Columbus GA"); pg.fill("#dropoff","Columbus Airport")
-        if pg.locator("input[type=tel]").input_value()=="": pg.fill("input[type=tel]","7065550199")
+        if pg.locator("input[placeholder='Jane']").count() and pg.locator("input[placeholder='Jane']").input_value()=="": pg.fill("input[placeholder='Jane']","Quinn")
+        if pg.locator("input[placeholder='Doe']").count() and pg.locator("input[placeholder='Doe']").input_value()=="": pg.fill("input[placeholder='Doe']","Tester")
+        pg.fill("#pickup","1795 Cusseta Rd, Columbus GA"); pg.fill("#dropoff","3250 W Britt David Rd, Columbus GA")
+        if pg.locator("input[type=tel]").count() and pg.locator("input[type=tel]").input_value()=="": pg.fill("input[type=tel]","7065550199")
         pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
         if pg.locator("[data-testid=legal-scroll]").count(): agree_modal(pg,"Agree & Continue"); pg.wait_for_timeout(600)
         assert "/payment" in pg.url, "not on payment: "+pg.url

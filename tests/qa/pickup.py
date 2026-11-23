@@ -6,7 +6,8 @@ def put(pg, path, data):
     pg.evaluate("([k,p,d])=>{const s=JSON.parse(localStorage.getItem(k)||'{}');s[p]=Object.assign(s[p]||{},d);localStorage.setItem(k,JSON.stringify(s))}", [KEY,path,data])
 def book(pg, pickup, share=True, pay="Card"):
     pg.goto(BASE+"/trip-details"); pg.wait_for_timeout(900)
-    pg.fill("#pickup", pickup); pg.fill("#dropoff","Peachtree Mall")
+    pg.fill("#pickup", pickup); pg.fill("#dropoff","3131 Manchester Expy, Columbus GA")
+    more_options(pg)
     sw=pg.locator("[aria-label='Share my location with my driver']")
     if (sw.get_attribute("aria-checked")=="true") != share: sw.click()
     pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
@@ -44,7 +45,7 @@ with sync_playwright() as p:
     # B. Terms every booking
     def terms_again():
         pg.goto(BASE+"/trip-details"); pg.wait_for_timeout(800)
-        pg.fill("#pickup","QA 2 Broadway"); pg.fill("#dropoff","Mall")
+        pg.fill("#pickup","22 Broadway, Columbus GA"); pg.fill("#dropoff","3131 Manchester Expy, Columbus GA")
         pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
         if pg.locator("text=You already have a ride").count(): pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
         return pg.locator("[data-testid=legal-scroll]").count()==1 or "no agreement pop-up on 2nd booking"

@@ -50,10 +50,10 @@ with sync_playwright() as p:
     def c2():
         R.goto(BASE+"/?as=demo-rider"); R.wait_for_timeout(1200)
         R.goto(BASE+"/trip-details"); R.wait_for_timeout(900)
-        if R.locator("input[placeholder='Jane']").input_value()=="": R.fill("input[placeholder='Jane']","Quinn")
-        if R.locator("input[placeholder='Doe']").input_value()=="": R.fill("input[placeholder='Doe']","Tester")
+        if R.locator("input[placeholder='Jane']").count() and R.locator("input[placeholder='Jane']").input_value()=="": R.fill("input[placeholder='Jane']","Quinn")
+        if R.locator("input[placeholder='Doe']").count() and R.locator("input[placeholder='Doe']").input_value()=="": R.fill("input[placeholder='Doe']","Tester")
         R.fill("#pickup","1795 Cusseta Rd, Columbus GA"); R.fill("#dropoff","QA Step1 Dropoff")
-        if R.locator("input[type=tel]").input_value()=="": R.fill("input[type=tel]","7065550199")
+        if R.locator("input[type=tel]").count() and R.locator("input[type=tel]").input_value()=="": R.fill("input[type=tel]","7065550199")
         R.click("button:has-text('Continue to Payment')"); R.wait_for_timeout(500)
         if R.locator("[data-testid=legal-scroll]").count(): agree_modal(R, "Agree & Continue"); R.wait_for_timeout(600)
         assert "/payment" in R.url, "not on payment: "+R.url

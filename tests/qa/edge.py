@@ -8,7 +8,7 @@ with sync_playwright() as p:
     def odd_typing():
         pg.goto(BASE+"/trip-details"); pg.wait_for_timeout(900)
         pg.fill("input[placeholder='Jane']","Mary-Jo"); pg.fill("input[placeholder='Doe']","O'Brien 😀")
-        pg.fill("#pickup",'Apt #5 & "B", 900 Broadway; Columbus GA <test>'); pg.fill("#dropoff","Peachtree Mall – Food Court")
+        pg.fill("#pickup",'Apt #5 & "B", 900 Broadway; Columbus GA <test>'); pg.fill("#dropoff","3131 Manchester Expy, Columbus GA")
         pg.fill("input[type=tel]","(706) 555-0100")
         pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
         agree_modal(pg,"Agree & Continue"); pg.wait_for_timeout(700)
@@ -18,7 +18,7 @@ with sync_playwright() as p:
     check("Typing: apostrophes, symbols, emoji and a formatted phone number book fine", odd_typing)
     def short_phone():
         pg.goto(BASE+"/trip-details"); pg.wait_for_timeout(800)
-        pg.fill("input[placeholder='Jane']","A"); pg.fill("input[placeholder='Doe']","B"); pg.fill("#pickup","900 Broadway"); pg.fill("#dropoff","Mall")
+        pg.fill("input[placeholder='Jane']","A"); pg.fill("input[placeholder='Doe']","B"); pg.fill("#pickup","900 Broadway"); pg.fill("#dropoff","3131 Manchester Expy, Columbus GA")
         pg.fill("input[type=tel]","555")
         pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
         return (pg.locator("[data-testid=legal-scroll]").count()==0 and "/trip-details" in pg.url) or "a 3-digit phone number was accepted"
@@ -32,8 +32,8 @@ with sync_playwright() as p:
         pg.click("form button[type=submit]"); pg.wait_for_timeout(500); agree_modal(pg,"Agree & Create Account"); pg.wait_for_timeout(2000)
         pg.goto(BASE+"/trip-details"); pg.wait_for_timeout(1000)
         if pg.locator("#pickup").input_value()=="": pg.fill("#pickup","900 Broadway, Columbus")
-        pg.fill("#dropoff","Peachtree Mall")
-        if pg.locator("input[type=tel]").input_value()=="": pg.fill("input[type=tel]","7065550102")
+        pg.fill("#dropoff","3131 Manchester Expy, Columbus GA")
+        if pg.locator("input[type=tel]").count() and pg.locator("input[type=tel]").input_value()=="": pg.fill("input[type=tel]","7065550102")
         pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(700)
         return pg.locator("[data-testid=legal-scroll]").count()==1 or f"no agreement pop-up on the next booking: {pg.url}"
     check("Agreement pop-up comes back on every booking, even for members", signup_then_book_no_repeat)

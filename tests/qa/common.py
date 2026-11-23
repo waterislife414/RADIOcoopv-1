@@ -45,3 +45,7 @@ def launch(p, **kw):
     b=p.chromium.launch(executable_path="/usr/bin/google-chrome",args=["--no-sandbox"])
     ctx=b.new_context(viewport={"width":400,"height":860},geolocation={"latitude":32.47,"longitude":-84.98},permissions=["geolocation"],**kw)
     return b, ctx
+def more_options(pg):
+    # Booking extras (passengers, stops, round trip, wheelchair, share location, schedule) sit behind "More options".
+    b=pg.locator("[data-testid=more-options]")
+    if b.count() and b.get_attribute("aria-expanded")!="true": b.click(); pg.wait_for_timeout(200)
