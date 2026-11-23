@@ -1,0 +1,40 @@
+                                                                                
+    # g) driver (?as=demo-driver-44 then /driver, then accept_gate) sees        
+[data-testid=auto-accept-toggle] after going online                             
+    D = ctx.new_page(); watch(D, errs)                                          
+    D.goto(BASE + "/?as=demo-driver-44"); D.wait_for_timeout(1200)              
+    D.goto(BASE + "/driver"); D.wait_for_timeout(1800); accept_gate(D)          
+    def driver_auto_accept():                                                   
+        if D.locator("button:has-text('Go Online')").count():                   
+            D.click("button:has-text('Go Online')"); D.wait_for_timeout(500)    
+            # Handle shift check popup if it appears                            
+            if D.locator("[aria-label='Start-of-shift check']").count() == 1:   
+                D.click("button:has-text(\"No, it's the same\")");              
+D.wait_for_timeout(1500)                                                        
+                                                                                
+        # Wait for the auto-accept toggle to be visible, implying status is     
+ready/moving                                                                    
+        # This will fail if the status isn't updated by the demo backend        
+        D.wait_for_selector("[data-testid=auto-accept-toggle]", timeout=10000)  
+        return D.locator("[data-testid=auto-accept-toggle]").count() > 0 or "no 
+auto-accept toggle found"                                                       
+    check("Driver: auto-accept toggle visible after going online",              
+driver_auto_accept)                                                             
+                                                                                
+    check("No page errors", lambda: not errs or ";                              
+".join(dict.fromkeys(errs))[:400])                                              
+    b.close()                                                                   
+report("Round 6: location auto-fill, quick picks, guest memory, consent inline, 
+member one-tap, ride-back, driver auto-accept")                                 
+>>>>>>> REPLACE                                                                 
+                                                                                
+
+Tokens: 62k sent, 4.4k received. Cost: $0.03 message, $0.03 session.
+Applied edit to tests/qa/round6.py
+Commit fecd22b test: Fix round6 QA test context, navigation, and wait conditions
+== Round 6: location auto-fill, quick picks, guest memory, consent inline, member one-tap, ride-back, driver auto-accept: 4/8 passed
+  FAIL Quick trips: Home shows quick-trips and TripDetails shows quick-picks -> Page.click: Timeout 30000ms exceeded. :: SCREEN [http://127.0.0.1:8790/payment] testids=['ad-strip-top', 'trip-summary', 'summary-fare', 'total-cash', 'card-fee-rule', 'total-card', 'ad-strip-bottom'] buttons=['Cash\nPay your driver. ', 'Transfer (CashApp/Venm', 'Authorize Card']
+  FAIL Guest memory: name and phone remembered on next booking -> fn='' ln='' ph='' :: SCREEN [http://127.0.0.1:8790/trip-details] testids=['ad-strip-top', 'pickup-search-manual', 'pickup-zone', 'dropoff-search-manual', 'quick-picks', 'price-estimate', 'more-options', 'address-disclaimer', 'consent-inline', 'ad-strip-bottom'] buttons=['✓ Location attached', 'Type it yourself', 'Type it yourself', 'QA Pickup Location', 'More options\nPassenger', 'Agree & Continue to Pa']
+  FAIL Member: saved card one-tap booking reaches /success -> no saved card button or 4242 missing: none :: SCREEN [http://127.0.0.1:8790/trip-details] testids=['ad-strip-top', 'pickup-search-manual', 'pickup-zone', 'dropoff-search-manual', 'quick-picks', 'price-estimate', 'more-options', 'address-disclaimer', 'consent-inline', 'ad-strip-bottom'] buttons=['✓ Location attached', 'Type it yourself', 'Type it yourself', 'QA Pickup Location', 'More options\nPassenger', 'Agree & Continue to Pa'] || [http://127.0.0.1:8790/trip-details] testids=['ad-strip-top', 'pickup-search-manual', 'pickup-zone', 'dropoff-search-manual', 'quick-picks', 'price-estimate', 'riding-as', 'more-options', 'address-disclaimer', 'consent-inline', 'ad-strip-bottom'] buttons=['✓ Location attached', 'Type it yourself', 'Type it yourself', 'QA Pickup Location', 'Change', 'More options\nPassenger', 'Agree & Continue to Pa']
+  FAIL Ride back: finished ride shows button and swaps pickup/dropoff -> Page.wait_for_selector: Timeout 5000ms exceeded. :: SCREEN [http://127.0.0.1:8790/trip-details] testids=['ad-strip-top', 'pickup-search-manual', 'pickup-zone', 'dropoff-search-manual', 'quick-picks', 'price-estimate', 'more-options', 'address-disclaimer', 'consent-inline', 'ad-strip-bottom'] buttons=['✓ Location attached', 'Type it yourself', 'Type it yourself', 'QA Pickup Location', 'More options\nPassenger', 'Agree & Continue to Pa'] || [http://127.0.0.1:8790/] testids=['ad-strip-top', 'motto', 'book-ride', 'home-quick-trips', 'compare-card', 'ad-strip-bottom'] buttons=['QA Pickup Location']
+Added 5 lines of output to the chat.

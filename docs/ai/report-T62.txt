@@ -1,0 +1,12 @@
+task T62
+code_files_changed 1
+unit pass
+build pass
+build:demo pass
+qa round6 FAIL
+tests ok
+== Round 6: location auto-fill, quick picks, guest memory, consent inline, member one-tap, ride-back, driver auto-accept: 4/8 passed
+  FAIL Quick trips: Home shows quick-trips and TripDetails shows quick-picks -> Page.click: Timeout 30000ms exceeded. :: SCREEN [http://127.0.0.1:8790/payment] testids=['ad-strip-top', 'trip-summary', 'summary-fare', 'to
+  FAIL Guest memory: name and phone remembered on next booking -> fn='' ln='' ph='' :: SCREEN [http://127.0.0.1:8790/trip-details] testids=['ad-strip-top', 'pickup-search-manual', 'pickup-zone', 'dropoff-search-manual', 
+  FAIL Member: saved card one-tap booking reaches /success -> no saved card button or 4242 missing: none :: SCREEN [http://127.0.0.1:8790/trip-details] testids=['ad-strip-top', 'pickup-search-manual', 'pickup-zone', 'dro
+  FAIL Ride back: finished ride shows button and swaps pickup/dropoff -> Page.wait_for_selector: Timeout 5000ms exceeded. :: SCREEN [http://127.0.0.1:8790/trip-details] testids=['ad-strip-top', 'pickup-search-manual', 'p
