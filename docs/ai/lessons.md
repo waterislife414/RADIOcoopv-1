@@ -19,3 +19,4 @@ L17 Rules keys are exact: use rules['signals'] (plural) and read config/rules.ya
 L18 SQL MAX() on text sorts alphabetically; rank text enums with a CASE expression.
 L19 "Mailing address on file" means a contacts row of kind mail (a researched, sourced address), never owners.address from the portal (stale last-known). Queue, case sheet and readiness must agree.
 L20 Test inserts must satisfy NOT NULL and foreign keys in db/schema.sql (contacts need owner_id). When a rule makes an old assertion wrong, fix the assertion, not the rule.
+L21 (manager note) Free workers twice produced EMPTY or 11-line stubs for T12. If a retry with the exact failure still fails, the manager writes it. Check code_files_changed AND line counts in the report, not workflow success.
