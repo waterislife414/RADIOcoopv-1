@@ -18,11 +18,17 @@ const WAIT_RATE = Number.isFinite(FARE.WAIT_TIME_PER_MINUTE) ? `${dollars(FARE.W
 const CARD_FEE = Number.isFinite(FARE.CARD_APP_FEE) ? FARE.CARD_APP_FEE : 2;
 const CARD_FEE_MEMBER = Number.isFinite(FARE.CARD_APP_FEE_MEMBER) ? FARE.CARD_APP_FEE_MEMBER : CARD_FEE;
 const CARD_CFG = BRAND.pricing?.cardFee || { mode: "flat" };
+const CARD_COST = { percent: 2.9, fixedCents: 30, paidBy: "driver", ...(BRAND.pricing?.cardCost || {}) };
+const DEALS_CFG = { priceLock: true, welcomeCreditCents: 300, rewardEveryRides: 10, rewardMinFareCents: 500, ...(BRAND.pricing?.memberDeals || {}) };
+const DEALS_ON = !!DEALS_CFG.priceLock || DEALS_CFG.welcomeCreditCents > 0;
+const WELCOME = Number(DEALS_CFG.welcomeCreditCents) || 0;
+const EVERY = Number(DEALS_CFG.rewardEveryRides) || 10;
+const MIN_FARE = Number(DEALS_CFG.rewardMinFareCents) || 0;
 const CARD_FEE_TERMS =
   CARD_CFG.mode === "flat"
     ? `Card fee: card payments in the app include a card fee of ${dollars(CARD_FEE)} (${dollars(CARD_FEE_MEMBER)} with a free account), shown before you pay.`
     : CARD_CFG.mode === "none"
-      ? "Card fee: there is no extra fee for paying by card."
+      ? "Card fee: there is no extra fee for paying by card. Card and cash fares are the same."
       : `Card fee: if you pay with a credit card in the app, a card fee of up to ${Number(CARD_CFG.creditPercent) || 3}% of the amount charged is added. It is never more than our cost to accept the card. Debit and prepaid cards have no card fee. The fee is shown before you pay and on your receipt.`;
 const PASS_PRICE = BRAND.copy.dayPass?.price || dollars(5);
 // Placeholder settings (like "[INSERT_EMAIL]") are never shown to customers.
@@ -61,8 +67,13 @@ export const DOCUMENTS = {
         h: "4. Fares and payment",
         p: [
           "The fare is set by the meter or by the rate quoted for trips outside the local area. Any price shown in the app before the ride is an estimate only.",
-          "If you pay by card, a hold may be placed on your card when you book. The card is saved for that ride. At drop-off your driver enters the amount on the meter, and the final fare, fees and any tip you add are charged to that card after the ride. Your receipt shows in the app.",
+          "If you pay by card, a hold may be placed on your card when you book. The card is saved for that ride and, if you have an account, for booking later rides. At drop-off your driver enters the amount on the meter and shows you your fare on the driver's phone, where you approve it and choose any tip. If you have already left, the fare is charged without a tip and you can add one in the app. The fare, fees and any tip are charged to that card. Your receipt shows in the app.",
           CARD_FEE_TERMS,
+          ...(DEALS_ON
+            ? [
+                `Member deals (riders signed in to an account): Price Lock: when you pay by card for a trip booked in the app with a price shown, you are charged no more than the top of that price, plus waiting time after the free minutes. It does not apply to trips with stops or outside the local area. Ride credit (${dollars(WELCOME / 100)} off your first card ride, once per person, and plan rewards for every ${EVERY} rides of ${dollars(MIN_FARE / 100)} or more) comes off your next card ride automatically. Ride credit has no cash value, can't be transferred and ends when the account is closed. We may change or end these deals for future rides.`,
+              ]
+            : []),
           `Cancelling (rides booked in the app with an account): it's free until your driver is about ${RR.headsUpMinutes} minutes away. The app tells you on your ride screen, and with a phone alert if you allow alerts.`,
           `You can also always cancel free for ${RR.minFreeCancelMinutes} minute after a driver takes your ride.`,
           `After that, cancelling costs ${dollars(RR.lateCancelFee)}.`,
@@ -255,6 +266,9 @@ export const DOCUMENTS = {
           "You agree that we may collect, keep, use and share your information as described in the Privacy Policy, including your location while you are on the board, your license and driving record, and your lease, payment and ride records, for as long as we choose.",
           "While you are on a call, the rider may see your car's location on a map in the app until the ride ends.",
           "Calls with riders through the company's number may be recorded for quality, safety and to settle disputes, and you agree to that recording. Never give a rider a reason to call your own phone. Tap \u201cI'm here\u201d only when you are at the pickup: the app records how close you were, and a no-show fee is only charged to the rider when you were there. Cancel and no-show fees collected on your calls are credited to your lease. Card fees, memberships and the Priority Day Pass belong to the company.",
+          CARD_COST.paidBy === "driver"
+            ? `Card fares are credited to your lease less the card company's charge (${CARD_COST.percent}% of the meter plus ${CARD_COST.fixedCents} cents); tips are credited in full. Rider discounts (Price Lock and ride credit) are paid by the company: you are credited the full meter less that charge.`
+            : "Card fares and tips are credited to your lease in full. Rider discounts (Price Lock and ride credit) are paid by the company.",
           "You agree to receive calls, texts, emails and app alerts about calls, your lease and your account. These are part of the job and cannot be turned off while you drive for us. Promotional messages are sent only if you choose them, and you can stop those at any time by replying STOP.",
         ],
       },

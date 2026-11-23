@@ -125,8 +125,8 @@
       "HIGH_ESTIMATE_MULTIPLIER": 1.15
     },
     "cardFee": {
-      "_note": "Card fee as high as card rules and Georgia law allow: credit cards up to 3% (Visa cap), never more than the processing cost; debit and prepaid cards $0 (networks forbid it). mode flat = old $2/$1.80, only with a lawyer's OK. Turning a surcharge on needs 30 days' notice to Visa/Mastercard through Stripe, and the fee on receipts.",
-      "mode": "credit_surcharge",
+      "_note": "Card fee riders pay. 'none' (chosen Nov 23: same price cash or card), 'credit_surcharge' (credit up to creditPercent, never above processing cost; debit/prepaid $0; needs 30-day card-network notice) or 'flat' (old $2/$1.80).",
+      "mode": "none",
       "creditPercent": 3,
       "processorPercent": 2.9,
       "processorFixedCents": 30,
@@ -153,23 +153,15 @@
         "name": "Basic",
         "monthlyPrice": 9.99,
         "yearlyPrice": 109.89,
-        "ridesForFreeEntry": 10,
         "dayPassesPerMonth": 1,
-        "perks": {
-          "freeEntryPer10Rides": true,
-          "freeMilePer10Rides": false
-        }
+        "rewardCents": 500
       },
       "PREMIUM": {
         "name": "Premium",
         "monthlyPrice": 19.99,
         "yearlyPrice": 219.89,
-        "ridesForFreeEntry": 10,
-        "dayPassesPerMonth": 3,
-        "perks": {
-          "freeEntryPer10Rides": true,
-          "freeMilePer10Rides": true
-        }
+        "dayPassesPerMonth": 0,
+        "rewardCents": 1000
       }
     },
     "promo": {
@@ -179,6 +171,19 @@
       "FREE_ENTRY_ACTIVE": false,
       "_freeEntryNote": "Free entry fee every 10 rides: hidden everywhere until FREE_ENTRY_ACTIVE is true AND checkout actually takes it off (not built: who pays for it, driver or company, is the owner's call).",
       "_note": "FIRST_RIDE code is hidden at checkout until FIRST_RIDE_ACTIVE is true AND the discount is applied at checkout (not built yet: amount not decided)."
+    },
+    "cardCost": {
+      "_note": "What the card company takes per card charge (Stripe standard online: 2.9% + 30c). paidBy 'driver': taken from the driver's card-fare credit (tips stay 100% his); 'company': the company pays it.",
+      "percent": 2.9,
+      "fixedCents": 30,
+      "paidBy": "driver"
+    },
+    "memberDeals": {
+      "_note": "Deals for signed-in riders. priceLock: card rides never cost more than the top of the price shown (company covers the gap; driver gets the full meter). welcomeCreditCents: off the first card ride. Plan members earn tiers.X.rewardCents of ride credit every rewardEveryRides rides of rewardMinFareCents or more. Credit comes off the next card ride automatically.",
+      "priceLock": true,
+      "welcomeCreditCents": 300,
+      "rewardEveryRides": 10,
+      "rewardMinFareCents": 500
     }
   },
   "dispatch": {
@@ -326,7 +331,7 @@
   "policies": {
     "dataRetentionDays": 5,
     "mvrLookbackYears": 7,
-    "legalVersion": "2026-11-23.2"
+    "legalVersion": "2026-11-23.3"
   },
   "about": {
     "_note": "Confirm with Malcolm before going live. established: Yelp lists 'Established in 1980' and YellowPages '46 years in business'. owners: as given by Jared. community: leave null until confirmed (e.g. 'Proud supporters of our EMS, firefighters and police.').",

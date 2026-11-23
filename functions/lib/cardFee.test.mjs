@@ -4,11 +4,13 @@ import { readFileSync } from "node:fs";
 import * as F from "./cardFee.mjs";
 
 const brand = JSON.parse(readFileSync(new URL("../../branding.config.json", import.meta.url), "utf8"));
-const CFG = brand.pricing.cardFee;
+// The surcharge math stays tested even though the app ships with no card fee.
+const CFG = { ...brand.pricing.cardFee, mode: "credit_surcharge" };
 
-test("config: the app ships with the credit-only surcharge", () => {
-  assert.equal(CFG.mode, "credit_surcharge");
+test("config: no card fee (owner decision Nov 23: same price cash or card); surcharge stays within card rules", () => {
+  assert.equal(brand.pricing.cardFee.mode, "none");
   assert.ok(CFG.creditPercent <= 3, "Visa caps U.S. credit surcharges at 3%");
+  assert.equal(F.cardFeeRule(brand.pricing.cardFee), "No card fee. Same price as cash.");
 });
 
 test("credit: 3% of the fare, never more than the processing cost", () => {

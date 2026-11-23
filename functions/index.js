@@ -15,8 +15,6 @@ const STRIPE_WEBHOOK_SECRET = defineSecret("STRIPE_WEBHOOK_SECRET");
 const BRANDING = require("./branding.json");
 const COMPANY_NAME = BRANDING.companyName;
 const DATA_RETENTION_DAYS = BRANDING.dataRetentionDays;
-const CARD_APP_FEE_CENTS = BRANDING.cardAppFeeCents;
-const CARD_APP_FEE_MEMBER_CENTS = BRANDING.cardAppFeeMemberCents;
 const PRIORITY_PASS_FEE_CENTS = 500; // $5 Priority Day Pass, fixed server-side (company keeps it)
 const TIME_ZONE = (BRANDING.dispatch && BRANDING.dispatch.timeZone) || "America/New_York";
 const RIDE_RULES = BRANDING.rideRules || {};
@@ -25,6 +23,19 @@ let fareLibPromise = null;
 let feeLibPromise = null;
 const fareLib = () => (fareLibPromise ||= import("./lib/fareEstimate.mjs"));
 const feeLib = () => (feeLibPromise ||= import("./lib/cardFee.mjs"));
+let savingsLibPromise = null;
+const savingsLib = () => (savingsLibPromise ||= import("./lib/memberSavings.mjs"));
+
+/** $3 off a new member's first card ride: once per account and once per phone number. */
+async function welcomeCreditFor(user, uid, deals) {
+  const amount = Math.max(0, Math.round(Number(deals.welcomeCreditCents) || 0));
+  if (!amount || user.welcomeCreditAt || (Number(user.ridesDone) || 0) > 0) return 0;
+  if (user.phone) {
+    const same = await db.collection("users").where("phone", "==", user.phone).limit(10).get();
+    if (same.docs.some((d) => d.id !== uid && d.data().welcomeCreditAt)) return 0;
+  }
+  return amount;
+}
 
 /** "credit" | "debit" | "prepaid" | "unknown" for the card on this payment (no fee unless "credit"). */
 async function cardFunding(stripe, paymentMethodId, holdId) {
@@ -87,12 +98,18 @@ exports.createPaymentIntent = onCall(
       customer = (await stripe.customers.create({ metadata: { guest: "true" } })).id;
     }
 
+    // Members can book with the card they used before: one tap, no typing.
+    const saved = uid && request.data?.useSaved === true ? await savedCardFor(stripe, customer) : null;
+    if (uid && request.data?.useSaved === true && !saved) {
+      throw new HttpsError("failed-precondition", "No saved card. Type your card instead.");
+    }
+
     const intent = await stripe.paymentIntents.create({
       amount: preAuthAmount,
       currency: "usd",
       capture_method: "manual",
       customer,
-      setup_future_usage: "off_session",
+      ...(saved ? { payment_method: saved.id } : { setup_future_usage: "off_session" }),
       metadata: {
         uid: uid || "guest",
       },
@@ -101,6 +118,28 @@ exports.createPaymentIntent = onCall(
     return { clientSecret: intent.client_secret, paymentIntentId: intent.id };
   }
 );
+
+/** The member's most recent saved card, or null. */
+async function savedCardFor(stripe, customer) {
+  if (!customer) return null;
+  try {
+    const list = await stripe.paymentMethods.list({ customer, type: "card", limit: 1 });
+    const pm = list?.data?.[0];
+    return pm ? { id: pm.id, brand: pm.card?.brand || "card", last4: pm.card?.last4 || "" } : null;
+  } catch (e) {
+    console.warn("saved card lookup failed", e?.message);
+    return null;
+  }
+}
+
+// Booking screen: "Pay with Visa ending 4242" (brand and last 4 only).
+exports.mySavedCard = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) return null;
+  const customer = (await db.collection("users").doc(uid).get()).data()?.stripeCustomerId;
+  const card = await savedCardFor(getStripe(), customer);
+  return card ? { brand: card.brand, last4: card.last4 } : null;
+});
 
 // ---------- Real recurring subscriptions (trial + monthly/annual) ----------
 // Flow: client collects a card via a SetupIntent (no charge yet) ->
@@ -383,7 +422,7 @@ exports.stripeWebhook = onRequest(
 exports.captureFare = onCall(
   { secrets: [STRIPE_SECRET_KEY] },
   async (request) => {
-    const { rideId, meterFare, tipAmount, paymentMethodId } = request.data;
+    const { rideId, meterFare, tipAmount, paymentMethodId, preview, riderApproved } = request.data;
 
     if (!rideId || typeof meterFare !== "number" || meterFare <= 0) {
       throw new HttpsError("invalid-argument", "rideId and meterFare are required.");
@@ -422,9 +461,6 @@ exports.captureFare = onCall(
       if (paymentMethodId) throw new HttpsError("invalid-argument", "The driver charges the card on file only.");
     }
 
-    // Drivers never set the tip: the rider adds it on the receipt afterwards.
-    const tip = driverSettling ? 0 : tipIn;
-
     // A typed meter far above the trip estimate goes to the office, not onto the card.
     const F = await fareLib();
     const check = F.meterCheck({
@@ -449,23 +485,60 @@ exports.captureFare = onCall(
       effectiveMeterFare = OUT_OF_AREA_MINIMUM_FARE_CENTS / 100;
     }
 
-    // Card fee: as high as card rules and Georgia law allow (branding pricing.cardFee):
-    // credit cards up to 3%, never above processing cost; debit/prepaid $0.
+    const meterCents = Math.round(effectiveMeterFare * 100);
+
+    // Tip: the rider picks it, on their own phone or when they approve the charge on the
+    // driver's phone. A driver alone never adds one. At most $20 or the meter, whichever is more.
+    let tipCents = Math.round(tipIn * 100);
+    if (driverSettling && riderApproved !== true) tipCents = 0;
+    tipCents = Math.min(tipCents, Math.max(2000, meterCents));
+    const tip = tipCents / 100;
+
+    // Member deals: Price Lock and ride credit (the company pays both; the driver keeps
+    // the full meter less the card company's cut). Branding pricing.memberDeals / cardCost.
+    const SAV = await savingsLib();
+    const isCard = ride.paymentMethod === "card";
+    const deals = { ...SAV.MEMBER_DEALS_DEFAULTS, ...(BRANDING.memberDeals || {}) };
+    const member = isCard && SAV.isMember(ride);
+    const userRef = member ? db.collection("users").doc(ride.customerId) : null;
+    const userDoc = member ? (await userRef.get()).data() || {} : {};
+    const welcomeCents = member ? await welcomeCreditFor(userDoc, ride.customerId, deals) : 0;
+    const capCents = member
+      ? SAV.priceLockCapCents({
+          ride,
+          fare: BRANDING.fare,
+          estimateCfg: BRANDING.estimate || {},
+          waitPerMinuteCents: BRANDING.waitPerMinuteCents,
+          waitGraceMinutes: RIDE_RULES.waitGraceMinutes ?? 2,
+          deals,
+        })
+      : null;
+    const bd = SAV.fareBreakdown({
+      meterCents,
+      tipCents,
+      capCents,
+      creditCents: member ? Math.max(0, Math.round(Number(userDoc.rideCreditCents) || 0)) + welcomeCents : 0,
+      cost: BRANDING.cardCost || {},
+      card: isCard,
+    });
+
+    // Card fee: none (owner decision Nov 23: same price cash or card). The other modes in
+    // pricing.cardFee stay switchable: credit_surcharge (credit up to 3%, debit $0) or flat.
     const stripe = getStripe();
-    const FEE = await feeLib();
-    const funding = ride.paymentMethod === "card" ? await cardFunding(stripe, paymentMethodId, ride.paymentIntentId) : null;
+    const feeMode = BRANDING.cardFee?.mode || "none";
+    const funding = isCard && feeMode === "credit_surcharge" ? await cardFunding(stripe, paymentMethodId, ride.paymentIntentId) : null;
     const cardFeeCents =
-      ride.paymentMethod === "card"
-        ? FEE.cardFeeCents({
-            baseCents: Math.round(effectiveMeterFare * 100) + Math.round(tip * 100),
-            funding: funding || "unknown",
-            member: !!requesterIsRider,
-            cfg: BRANDING.cardFee || { mode: "flat", flatCents: CARD_APP_FEE_CENTS, flatMemberCents: CARD_APP_FEE_MEMBER_CENTS },
-          })
+      isCard && feeMode !== "none"
+        ? (await feeLib()).cardFeeCents({ baseCents: bd.chargeCents, funding: funding || "unknown", member: !!requesterIsRider, cfg: BRANDING.cardFee })
         : 0;
-    const memberDiscountApplied = (BRANDING.cardFee?.mode === "flat") && !!requesterIsRider;
+    const memberDiscountApplied = feeMode === "flat" && !!requesterIsRider;
     const priorityPassCents =
       ride.wantsPriorityPass && !(await fastPassPaid(ride, rideId)) ? PRIORITY_PASS_FEE_CENTS : 0;
+
+    // The driver's phone shows this to the rider before they approve: nothing is charged.
+    if (preview === true) {
+      return { preview: true, ...bd, cardFeeCents, priorityPassCents, welcomeCents, capCents, totalCents: bd.chargeCents + cardFeeCents + priorityPassCents };
+    }
 
     // Cancel/no-show fees the rider still owes from an earlier ride ride along
     // on their own card checkout (they were told in the terms and on screen).
@@ -477,24 +550,56 @@ exports.captureFare = onCall(
       owedCents = owed.reduce((n, f) => n + Math.max(0, Math.round(f.cents || 0)), 0);
     }
 
-    const totalCents =
-      Math.round(effectiveMeterFare * 100) + Math.round(tip * 100) + cardFeeCents + priorityPassCents + owedCents;
+    const totalCents = bd.chargeCents + cardFeeCents + priorityPassCents + owedCents;
 
     // Claim the fare before charging so two taps (or a retry) can't charge twice.
+    // Ride credit is taken in the same step and given back if the card fails.
+    const creditUsed = bd.creditUsedCents;
+    const welcomeUsed = Math.min(welcomeCents, creditUsed);
+    const balanceUsed = creditUsed - welcomeUsed;
     const claimedAt = Date.now();
     await db.runTransaction(async (tx) => {
       const r = (await tx.get(rideRef)).data() || {};
+      const u = balanceUsed > 0 ? (await tx.get(userRef)).data() || {} : null;
       if (r.finalFare != null) throw new HttpsError("already-exists", "This fare is already paid.");
       if (r.settlingAt && claimedAt - r.settlingAt < 120000) throw new HttpsError("aborted", "Payment is already going through. One moment.");
+      if (u && Math.round(Number(u.rideCreditCents) || 0) < balanceUsed) throw new HttpsError("aborted", "The ride credit changed. Try again.");
       tx.update(rideRef, { settlingAt: claimedAt });
+      if (creditUsed > 0) {
+        tx.set(
+          userRef,
+          {
+            ...(balanceUsed > 0 ? { rideCreditCents: admin.firestore.FieldValue.increment(-balanceUsed) } : {}),
+            ...(welcomeUsed > 0 ? { welcomeCreditAt: claimedAt } : {}),
+          },
+          { merge: true }
+        );
+      }
     });
-    const release = () => rideRef.update({ settlingAt: null }).catch(() => {});
+    const release = async () => {
+      await rideRef.update({ settlingAt: null }).catch(() => {});
+      if (creditUsed > 0) {
+        await userRef
+          .set(
+            {
+              ...(balanceUsed > 0 ? { rideCreditCents: admin.firestore.FieldValue.increment(balanceUsed) } : {}),
+              ...(welcomeUsed > 0 ? { welcomeCreditAt: admin.firestore.FieldValue.delete() } : {}),
+            },
+            { merge: true }
+          )
+          .catch(() => {});
+      }
+    };
 
     let stripeStatus = "manual_override";
     let balanceOwedCents = 0;
     try {
 
-    if (ride.paymentMethod === "card") {
+    if (isCard && totalCents === 0) {
+      // Ride credit covered it all: nothing to charge. Let go of the booking hold.
+      if (ride.paymentIntentId) await stripe.paymentIntents.cancel(ride.paymentIntentId).catch(() => {});
+      stripeStatus = "succeeded";
+    } else if (isCard) {
       if (requesterIsRider && paymentMethodId) {
         // Self-checkout: the rider confirms their own charge right now.
         const intent = await stripe.paymentIntents.create({
@@ -543,6 +648,13 @@ exports.captureFare = onCall(
       ...(balanceOwedCents > 0 ? { balanceOwedCents } : {}),
       memberDiscountApplied,
       cardFunding: funding,
+      // Member deals and the card company's cut (see functions/lib/memberSavings.mjs).
+      lockOffCents: bd.lockOffCents,
+      creditUsedCents: creditUsed,
+      fareChargedCents: bd.fareChargeCents,
+      driverCardCostCents: bd.driverCardCostCents,
+      ...(driverSettling && riderApproved === true ? { riderApproved: true, tipAddedAt: Date.now() } : {}),
+      ...(requesterIsRider && tipCents > 0 ? { tipAddedAt: Date.now() } : {}),
       // For learning prices from real meters (see suggestRoadFactor).
       meterCents: Math.round(effectiveMeterFare * 100),
       estFareCents: check.estFareCents,

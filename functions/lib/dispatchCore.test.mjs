@@ -289,6 +289,8 @@ test('cardCreditCents: card/wallet fares count, cash and unpaid overrides do not
   assert.deepEqual(c.cardCreditCents({ paymentMethod: 'card', finalFare: 10, stripeStatus: 'wallet_charge' }), { fareCents: 1000, tipCents: 0 });
   assert.deepEqual(c.cardCreditCents({ paymentMethod: 'cash', finalFare: 10, stripeStatus: 'succeeded' }), null);
   assert.deepEqual(c.cardCreditCents({ paymentMethod: 'card', finalFare: 10, stripeStatus: 'manual_override' }), null);
+  // The card company's cut comes off the fare credit, never the tip.
+  assert.deepEqual(c.cardCreditCents({ paymentMethod: 'card', finalFare: 11.73, tipAmount: 1.76, driverCardCostCents: 64, stripeStatus: 'succeeded' }), { fareCents: 1109, tipCents: 176 });
   assert.deepEqual(c.cardCreditCents({ paymentMethod: 'card', finalFare: null, stripeStatus: 'succeeded' }), null);
 });
 

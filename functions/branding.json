@@ -137,7 +137,7 @@
     "approvalRepeatSeconds": 120,
     "autoPlaceParkedMin": 2
   },
-  "legalVersion": "2026-11-23.2",
+  "legalVersion": "2026-11-23.3",
   "rideRules": {
     "_note": "Pickup timing for app rides. Call-in and guest-without-account rides never pay these fees.",
     "headsUpMinutes": 4,
@@ -191,13 +191,30 @@
     "fine": "Good until midnight. Same place in line as Premium members. Your driver may not pick up while driving and will call back when it’s safe."
   },
   "cardFee": {
-    "_note": "Card fee as high as card rules and Georgia law allow: credit cards up to 3% (Visa cap), never more than the processing cost; debit and prepaid cards $0 (networks forbid it). mode flat = old $2/$1.80, only with a lawyer's OK. Turning a surcharge on needs 30 days' notice to Visa/Mastercard through Stripe, and the fee on receipts.",
-    "mode": "credit_surcharge",
+    "_note": "Card fee riders pay. 'none' (chosen Nov 23: same price cash or card), 'credit_surcharge' (credit up to creditPercent, never above processing cost; debit/prepaid $0; needs 30-day card-network notice) or 'flat' (old $2/$1.80).",
+    "mode": "none",
     "creditPercent": 3,
     "processorPercent": 2.9,
     "processorFixedCents": 30,
     "flatCents": 200,
     "flatMemberCents": 180
+  },
+  "cardCost": {
+    "_note": "What the card company takes per card charge (Stripe standard online: 2.9% + 30c). paidBy 'driver': taken from the driver's card-fare credit (tips stay 100% his); 'company': the company pays it.",
+    "percent": 2.9,
+    "fixedCents": 30,
+    "paidBy": "driver"
+  },
+  "memberDeals": {
+    "_note": "Deals for signed-in riders. priceLock: card rides never cost more than the top of the price shown (company covers the gap; driver gets the full meter). welcomeCreditCents: off the first card ride. Plan members earn tiers.X.rewardCents of ride credit every rewardEveryRides rides of rewardMinFareCents or more. Credit comes off the next card ride automatically.",
+    "priceLock": true,
+    "welcomeCreditCents": 300,
+    "rewardEveryRides": 10,
+    "rewardMinFareCents": 500
+  },
+  "tierRewardCents": {
+    "BASIC": 500,
+    "PREMIUM": 1000
   },
   "driverMeter": {
     "_note": "Driver types the meter at drop-off and the rider's saved card is charged. A meter far above the trip estimate goes to the office instead.",
@@ -223,7 +240,7 @@
   },
   "memberDayPasses": {
     "BASIC": 1,
-    "PREMIUM": 3
+    "PREMIUM": 0
   },
   "support": {
     "_note": "Problem reports (Report a problem / Ask dispatch) are saved and emailed to these addresses. Fill in when handing over.",

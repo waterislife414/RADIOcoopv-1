@@ -27,7 +27,9 @@ service cloud.firestore {
     function userServerKeys() {
       return ['walletBalance', 'subscriptionTier', 'subscriptionStatus', 'stripeCustomerId',
               'stripeSubscriptionId', 'smsAddonStatus', 'birthdayCredits',
-              'dayPass', 'memberPasses', 'feesOwedCents', 'feesOwed', 'extraTime'];
+              'dayPass', 'memberPasses', 'feesOwedCents', 'feesOwed', 'extraTime',
+              // Ride credit and rewards: only Cloud Functions add or spend them.
+              'rideCreditCents', 'ridesDone', 'rewardRides', 'welcomeCreditAt', 'lastRewardAt'];
     }
 
     // Notes kept after an account is deleted (unpaid fees). Cloud Functions only.
@@ -71,7 +73,8 @@ service cloud.firestore {
               'appHandled', 'officeWhy', 'arrivedNear', 'settlingAt', 'extraTime', 'radioCall',
               // Card meter, fee and tip records (and the data prices are learned from).
               'cardFunding', 'meterCents', 'estFareCents', 'meterEnteredBy', 'tipAddedAt', 'tipChargedCents',
-              'balanceOwedCents'];
+              'balanceOwedCents', 'lockOffCents', 'creditUsedCents', 'fareChargedCents', 'driverCardCostCents',
+              'riderApproved', 'rewardCountedAt', 'rewardEarnedCents', 'chargeQuestionAt'];
     }
 
     match /rides/{rideId} {

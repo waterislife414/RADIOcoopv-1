@@ -45,6 +45,12 @@ const backend = {
   waitPerMinuteCents: Math.round(branding.pricing.fare.WAIT_TIME_PER_MINUTE * 100),
   dayPassCopy: branding.copy.dayPass,
   cardFee: branding.pricing.cardFee,
+  cardCost: branding.pricing.cardCost,
+  memberDeals: branding.pricing.memberDeals,
+  // Ride credit earned every memberDeals.rewardEveryRides rides, by plan.
+  tierRewardCents: Object.fromEntries(
+    Object.entries(branding.pricing.tiers).map(([k, t]) => [k, Number(t.rewardCents) || 0])
+  ),
   driverMeter: branding.pricing.driverMeter,
   estimate: branding.pricing.estimate,
   fare: branding.pricing.fare,

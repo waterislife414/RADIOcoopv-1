@@ -4,6 +4,32 @@ The app was built carefully, but none of this is legal advice. Each line says wh
 today and where to change it. Text lives in `src/legal/documents.js`; numbers live in
 `branding.config.json` (changing a fee there also bumps the terms version, so everyone agrees again).
 
+## Changed Nov 23, 2026, third time (legal version 2026-11-23.3; everyone agrees again)
+Owner delegated these decisions to the build team ("easy, quick, accurate, few steps, good deals for loyal members").
+- [ ] **No card fee (replaces the 3% credit surcharge).** Same price cash or card (`pricing.cardFee.mode` "none"). No
+  surcharge means no 30-day card-network notice and no surcharge signs. Terms §4 card-fee line updated.
+- [ ] **Driver agreement: card cost.** Card fares are credited to the driver's lease less the card company's charge
+  (2.9% of the meter + 30c, `pricing.cardCost`); tips in full. This changes driver pay on card rides: drivers must be told
+  before it starts, and the lease agreement should say it. Is a change to an existing lease allowed mid-term?
+- [ ] **Member deals (new Terms §4 paragraph).** Price Lock: card rides booked in the app with a price shown are charged
+  no more than the top of that price plus waiting time (not for stops or out-of-area); the company pays the difference,
+  the driver gets the full meter. Ride credit: $3 off a first card ride (once per account and phone number) and plan
+  rewards ($5 Basic / $10 Premium every 10 rides of $5+), no cash value, not transferable, ends when the account closes.
+  Columbus (2013 draft Sec. 21-9(b)) allows a fare at or under the meter with the meter running; confirm the current
+  text and Phenix City (rides that start in Alabama). Does a promotional credit need any state gift-card/escheat wording?
+- [ ] **Rider approves on the driver's phone.** At drop-off the driver types the meter; the rider sees the fare and taps a
+  tip or "No tip" on the driver's phone, which charges the saved card. If the rider already left, the driver charges the
+  fare with no tip (rider can tip in the app). Receipt in the app has "Something wrong with this charge?" (goes to the
+  office with the meter next to the estimate). Is this approval enough evidence in a chargeback?
+- [ ] **Rider agreement is now one box** (riders only; drivers unchanged): the four money rules in plain words, a link to
+  the full Terms and Privacy, one required box ("I agree to the Terms and Privacy Policy, and to calls, texts and emails
+  about my rides") and an optional deals box that starts unticked. Courts enforce a clearly linked checkbox (Meyer v. Uber;
+  Berman). The deals box is unticked because a pre-ticked box is weak consent for marketing texts (TCPA).
+- [ ] **One-tap booking with the saved card** (members): the card saved at an earlier booking is used for the new hold.
+  Terms §4 now says the card is saved for later rides when the rider has an account.
+- Premium no longer includes 3 Day Passes a month (it already has front of the line, map and calling); Premium gets $10 off
+  every 10th ride instead. No member had paid for Premium yet (nothing live).
+
 ## Changed Nov 23, 2026, second time (legal version 2026-11-23.2; everyone agrees again)
 - [ ] **Terms §4, card fee (now a credit-card surcharge).** Was a flat $2.00 ($1.80 with an account) on
   every card payment. Now: credit cards up to 3% of the amount charged, never more than our cost to

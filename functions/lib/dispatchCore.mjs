@@ -518,7 +518,9 @@ export function leaseLocked({ owedCents, owedPeriodKey, now }, cfg = DEFAULTS) {
 export function cardCreditCents(ride, leaseCfg = DEFAULTS.lease) {
   if (!ride || ride.paymentMethod === 'cash' || ride.finalFare == null) return null;
   if (!['succeeded', 'wallet_charge'].includes(ride.stripeStatus)) return null;
-  const fareCents = Math.round(Number(ride.finalFare) * 100);
+  // Card rides: the meter less the card company's cut when the driver pays it
+  // (pricing.cardCost, recorded on the ride as driverCardCostCents). Tips stay whole.
+  const fareCents = Math.round(Number(ride.finalFare) * 100) - Math.max(0, Math.round(Number(ride.driverCardCostCents) || 0));
   const tipCents = leaseCfg.includeTips ? Math.round(Number(ride.tipAmount || 0) * 100) : 0;
   if (!(fareCents > 0)) return null;
   return { fareCents, tipCents };

@@ -78,6 +78,8 @@ test("riders: book a ride, but never set dispatch or money fields", async () => 
     { tipAddedAt: 1 },
     { meterCents: 100 },
     { cardFunding: "debit" },
+    { driverCardCostCents: 0 },
+    { creditUsedCents: 500 },
   ]) {
     await assertFails(setDoc(doc(rider(), "rides/x"), ride({ customerId: "rider1", ...bad })));
   }
@@ -107,6 +109,10 @@ test("riders: no free wallet money or membership", async () => {
   // No free Day Pass, and no wiping out fees owed.
   await assertFails(updateDoc(doc(rider(), "users/rider1"), { dayPass: { id: "x", expiresAt: 9e15 } }));
   await assertFails(updateDoc(doc(rider(), "users/rider1"), { feesOwedCents: 0 }));
+  // No free ride credit, and no faking rides toward a reward or a second welcome credit.
+  await assertFails(updateDoc(doc(rider(), "users/rider1"), { rideCreditCents: 1000 }));
+  await assertFails(updateDoc(doc(rider(), "users/rider1"), { rewardRides: 9 }));
+  await assertFails(updateDoc(doc(rider(), "users/rider1"), { welcomeCreditAt: null }));
   const rider8 = env.authenticatedContext("rider8").firestore();
   await assertFails(setDoc(doc(rider8, "users/rider8"), { firstName: "X", walletBalance: 0, subscriptionTier: null, dayPass: { id: "x" } }));
   await assertFails(setDoc(doc(rider8, "users/rider8"), { firstName: "X", walletBalance: 0, subscriptionTier: null, idVerified: true }));

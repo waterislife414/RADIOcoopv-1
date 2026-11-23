@@ -46,7 +46,7 @@ export function maxCardFeeCents(baseCents, cfg = {}) {
 /** One plain line for the screens. */
 export function cardFeeRule(cfg = {}) {
   const c = { ...CARD_FEE_DEFAULTS, ...cfg };
-  if (c.mode === "none") return "No card fee.";
+  if (c.mode === "none") return "No card fee. Same price as cash.";
   if (c.mode === "flat") return `$${(c.flatCents / 100).toFixed(2)} card fee ($${(c.flatMemberCents / 100).toFixed(2)} with a free account).`;
   return `Credit cards: up to ${c.creditPercent}%. Debit cards: no fee.`;
 }
