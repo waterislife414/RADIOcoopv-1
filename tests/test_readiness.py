@@ -1,8 +1,9 @@
 import sqlite3
+
 import pytest
-from uprec.db import init_db
 from uprec.config import load_rules
-from uprec.readiness import outreach_blockers, is_outreach_ready
+from uprec.db import init_db
+from uprec.readiness import is_outreach_ready, outreach_blockers
 
 
 @pytest.fixture
