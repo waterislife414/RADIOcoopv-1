@@ -1,0 +1,40 @@
+  |
+
+Found 1 error.
+[*] 1 fixable with `--fix`.
+
+## See relevant line below marked with █.
+
+tests/test_gate.py:
+  1│"""Tests for gating logic."""
+  2█import sqlite3
+  3│import pytest
+  4│
+  5│from uprec.db import init_db
+...⋮...
+
+
+                                                                                
+tests/test_gate.py                                                              
+<<<<<<< SEARCH                                                                  
+import sqlite3                                                                  
+import pytest                                                                   
+=======                                                                         
+import sqlite3                                                                  
+                                                                                
+import pytest                                                                   
+>>>>>>> REPLACE                                                                 
+                                                                                
+
+                                                                                
+ruff check . --fix                                                              
+                                                                                
+
+Tokens: 14k sent, 42 received. Cost: $0.0049 message, $0.02 session.
+Applied edit to tests/test_gate.py
+Commit 4b4af4f style: Format imports in test_gate.py
+All checks passed!
+
+ruff check . --fix
+..........                                                               [100%]
+10 passed in 0.06s
