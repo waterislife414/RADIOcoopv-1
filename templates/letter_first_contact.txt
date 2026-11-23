@@ -1,0 +1,25 @@
+{date}
+
+{owner_name}
+{address}
+
+Re: Alabama State Treasury unclaimed property that may belong to you
+
+Dear {owner_name},
+
+My name is {finder_name}. I am a private property finder in Phenix City, Alabama. I am NOT the State of Alabama and I do not work for the State Treasurer's Office.
+
+The {treasury_office} lists unclaimed property that appears to belong to you:
+
+{properties_list}
+
+These amounts are as listed by the State. The exact amounts are confirmed when a claim is filed.
+
+YOU DO NOT HAVE TO PAY ANYONE TO GET THIS MONEY. You can claim it yourself, for free, from the {treasury_office}: {treasury_website} or {treasury_phone}.
+
+If you would like help, I offer a service. I gather the paperwork, prepare and file the claim for you, and follow it until it is paid. If the claim is paid, my fee is {fee_pct} percent of the amount recovered. If nothing is recovered, you owe me nothing. Alabama law caps this fee at 10 percent. You are never required to use my service, and you may still claim for free at any time.
+
+If you would like help, please call or write me: {finder_phone}, {finder_email}, {finder_address}. I will send a written agreement for you to read before you decide anything.
+
+{sign_off}
+{finder_name}

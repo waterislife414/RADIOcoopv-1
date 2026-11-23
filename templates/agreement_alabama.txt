@@ -1,0 +1,32 @@
+UNCLAIMED PROPERTY LOCATOR AGREEMENT (Alabama)
+
+1. PARTIES. Owner (or claimant): {owner_name}, {address}. Capacity: {capacity}.
+   Finder: {finder_name}, {finder_address}, {finder_phone}.
+
+2. THE PROPERTY. This agreement concerns the following property, which is held by the Alabama State Treasurer's Office ({treasury_office}; {treasury_website}; {treasury_phone}):
+{properties_list}
+   Property in the name of {deceased_name_line}
+
+3. YOU CAN GET THIS PROPERTY FOR FREE. The Owner can recover this property directly from the State Treasurer's Office at no cost, without signing this agreement and without paying the Finder.
+
+4. SERVICES. The Finder will gather the documents needed, prepare and file the claim with the State Treasurer's Office for the Owner, and follow the claim until it is paid or denied.
+
+5. FEE. The Owner will pay the Finder {fee_pct} percent of the value of the property actually recovered. This fee is the Finder's ONLY compensation. There are no other fees, costs or deductions. The fee will never exceed 10 percent of the value claimed. The Owner owes nothing if no property is recovered.
+
+6. WHEN THE FEE IS PAID. The State pays the Owner directly. The Owner will pay the fee within {fee_due_days} days after the Owner receives the money.
+
+7. WAITING PERIOD. By Alabama law this agreement is not valid if signed before {eligible_after}, which is 24 months after the property was delivered to the State Treasurer. The Owner signs on or after that date.
+
+8. FILING. The Finder will give the State Treasurer's Office a complete, unredacted copy of this signed agreement with the claim. The Owner agrees to this.
+
+9. NO PURCHASE OR ASSIGNMENT. The Finder is not buying this property and is not receiving any ownership of it.
+
+10. THE OWNER'S STATEMENTS. The Owner states that the Owner is the person named above (or the heir, beneficiary or personal representative of the person named, as shown above under Capacity), and will provide true documents. The State may require additional proof of ownership.
+
+11. [ATTORNEY TO CONFIRM BEFORE USE: cancellation/rescission rights, governing law and dispute terms, and any other terms Alabama requires.]
+
+Owner signature: ______________________________   Date: ______________
+Printed name: {owner_name}
+
+Finder signature: ______________________________   Date: ______________
+Printed name: {finder_name}

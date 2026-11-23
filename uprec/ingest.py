@@ -4,6 +4,8 @@ import re
 import sqlite3
 from pathlib import Path
 
+from uprec.columns import build_header_map, load_column_map, map_row
+
 
 def parse_amount(text: str, rules: dict) -> tuple[int | None, int | None]:
     if not text:
@@ -49,9 +51,12 @@ def ingest_csv(conn: sqlite3.Connection, path: str | Path, rules: dict) -> int:
         return 0
 
     count = 0
-    with open(path, encoding="utf-8") as f:
+    colmap = load_column_map()
+    with open(path, encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
-        for row in reader:
+        header_map = build_header_map(reader.fieldnames or [], colmap)
+        for raw_row in reader:
+            row = map_row(raw_row, header_map, colmap)
             owner_name = row.get("owner_name", "").strip()
             address = row.get("address", "").strip()
             city = row.get("city", "").strip()

@@ -1,0 +1,17 @@
+# Owner fills the TODO lines. The CLI refuses to render letters or agreements while any value
+# still says TODO or VERIFY (unless you pass --draft, which watermarks the output "DRAFT").
+# This file is gitignored-safe to keep generic, but do NOT commit your real address/phone to the public repo:
+# keep a local copy at data/business.yaml (it takes priority over this file and is never committed).
+finder:
+  name: "TODO your name or business name"
+  address: "TODO your mailing address"
+  phone: "TODO your phone"
+  email: "TODO your email"
+  sign_off: "God bless,"
+treasury:
+  office_name: "Alabama State Treasurer's Office, Unclaimed Property"
+  website: "VERIFY current unclaimed property website before first mailing"
+  phone: "VERIFY current unclaimed property phone before first mailing"
+fee_pct: 10          # may never exceed 10 (law); the schema enforces it too
+fee_due_days: 30     # owner pays the fee within this many days after the owner receives the money
+attorney_reviewed: false   # set true only after an attorney has reviewed templates/agreement_alabama.txt
