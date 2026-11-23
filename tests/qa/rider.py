@@ -50,20 +50,23 @@ with sync_playwright() as p:
     def passengers():
         pg.select_option("#passengers-select", "3"); return pg.locator("#passengers-select").input_value()=="3"
     check("Booking: passenger count can be changed", passengers)
-    # --- Guest books with cash, consent every time
+    # --- Guest books with cash, consent inline
     def guest_book():
         pg.goto(BASE+"/trip-details"); pg.wait_for_timeout(800)
         pg.fill("input[placeholder='Jane']","Guest"); pg.fill("input[placeholder='Doe']","Tester")
         pg.fill("#pickup","900 Broadway, Columbus GA"); pg.fill("#dropoff","3131 Manchester Expy, Columbus GA"); pg.fill("input[type=tel]","7065550100")
-        pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(400)
-        # Riders (Nov 23 decision): one box, Continue blocked until it's ticked.
-        blocked=pg.locator("button:has-text('Agree & Continue')").is_disabled() # Button should not be disabled before checking the box
-        pg.check("input[type=checkbox]").nth(0) # The main consent checkbox
-        agree_modal(pg,"Agree & Continue"); pg.wait_for_timeout(700)
+        box = pg.locator("[data-testid=consent-inline]")
+        assert box.count() == 1, "no plain-words agreement on the booking screen"
+        summary = box.inner_text()
+        assert box.locator("a[href='/terms']").count() and box.locator("a[href='/privacy']").count(), "Terms/Privacy links missing"
+        assert box.locator("input[type=checkbox]:checked").count() == 0, "something is pre-ticked"
+        btn = pg.locator("button:has-text('Agree & Continue to Payment'), button:has-text('Agree & Continue')")
+        assert btn.count() == 1 and btn.is_enabled(), "one-tap agree button missing or blocked"
+        btn.click(); pg.wait_for_timeout(1200)
         assert "/payment" in pg.url, pg.url
         pg.click("button:has-text('Cash')"); pg.wait_for_timeout(2000)
-        return ("/success" in pg.url and not blocked) or f"url={pg.url} blocked={blocked}" # Changed `blocked` expectation
-    check("Guest: book with cash (one-box agreement pops up, Continue blocked until ticked)", guest_book)
+        return ("/success" in pg.url and "Free to cancel" in summary and "you agree" in summary) or f"url={pg.url} summary={summary[:120]}"
+    check("Guest: book with cash (agreement on the booking screen, one tap)", guest_book)
     check("Guest: success page shows the booking and call-to-cancel", lambda: (len(pg.locator("#root").inner_text())>100 and pg.locator("text=Need to change or cancel? Call").count()==1) or "blank or missing")
     # --- Sign up
     email=f"qa{int(time.time())}@example.com"
