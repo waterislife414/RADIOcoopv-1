@@ -32,7 +32,6 @@ with sync_playwright() as p:
         g.goto(BASE + "/trip-details"); g.wait_for_timeout(500)
         pin_dropoff(g)
         g.fill("input[placeholder='Jane']", "Test"); g.fill("input[placeholder='Doe']", "User"); g.fill("input[type=tel]", "7065550199")
-        # Click Continue / payment to submit ride and trigger recent places storage
         g.click("button:has-text('Continue to Payment')"); g.wait_for_timeout(1000)
         g.goto(BASE + "/"); g.wait_for_timeout(1000)
         qt = g.locator("[data-testid=home-quick-trips]").count() > 0
@@ -63,7 +62,6 @@ with sync_playwright() as p:
     def member_one_tap():
         pg.goto(BASE + "/trip-details"); pg.wait_for_timeout(900)
         pin_dropoff(pg)
-        # Seed saved card in accounts / storage for demo-rider
         pg.evaluate("([k])=>{const s=JSON.parse(localStorage.getItem(k)||'{}'); s['rc-saved-card']={brand:'visa',last4:'4242'}; localStorage.setItem(k, JSON.stringify(s))}", [KEY])
         pg.reload(); pg.wait_for_timeout(1000)
         bn = pg.locator("[data-testid=book-now]")
