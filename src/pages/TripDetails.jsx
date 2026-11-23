@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { collection, getDocs, limit, orderBy, query, where } from "firebase/firestore";
+import { collection, getDocs, limit, orderBy, query, where, onSnapshot } from "firebase/firestore";
+import { zoneForPoint } from "../../functions/lib/dispatchCore.mjs";
 import { db } from "../config/firebase";
 import { useAuth } from "../context/AuthContext";
 import { memberDealsFor, DEALS } from "../lib/memberDeals";
@@ -67,6 +68,11 @@ export default function TripDetails() {
   const [passMsg, setPassMsg] = useState("");
   // Every rider reads and agrees to the terms on every booking.
   const [booking, setBooking] = useState(false);
+  const [zones, setZones] = useState([]);
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "zones"), (s) => setZones(s.docs.map((d) => ({ id: d.id, ...d.data() }))));
+    return () => unsub();
+  }, []);
   // Members: the card they used before, for one-tap booking right here.
   const [savedCard, setSavedCard] = useState(null);
   const [locBlocked, setLocBlocked] = useState(null);
@@ -297,6 +303,11 @@ export default function TripDetails() {
   }
 
   const recentList = recent;
+  // Which zone each address is in, shown under the box (team T48/T52).
+  const pickupZoneId = typeof ride.pickupLat === "number" ? zoneForPoint(zones, ride.pickupLng, ride.pickupLat) : null;
+  const pickupZoneObj = zones.find((z) => z.id === pickupZoneId);
+  const dropoffZoneId = typeof ride.dropoffLat === "number" ? zoneForPoint(zones, ride.dropoffLng, ride.dropoffLat) : null;
+  const dropoffZoneObj = zones.find((z) => z.id === dropoffZoneId);
   // Quick picks under the drop-off box: one tap fills it (with its map point).
   const quickPicks = recent.filter((p) => p.text !== ride.pickup).slice(0, 4);
   const needsConsent = !(currentUser && consentIsCurrent(userProfile?.legal, RIDER_DOCS));
@@ -349,6 +360,11 @@ export default function TripDetails() {
                 onPin={() => setPickerTarget("pickup")}
                 recents={recentList}
               />
+              {typeof ride.pickupLat === "number" && (
+                <p data-testid="pickup-zone" className="mt-1 text-sm font-semibold">
+                  {pickupZoneObj ? `\u2713 ${pickupZoneObj.label || pickupZoneObj.name || pickupZoneObj.id}` : "Outside our zones \u2014 we'll still try"}
+                </p>
+              )}
               {locateError && <p className="text-sm text-red-600 mt-1">{locateError}</p>}
             </div>
 
@@ -369,6 +385,11 @@ export default function TripDetails() {
                 onPin={() => setPickerTarget("dropoff")}
                 recents={recentList}
               />
+              {typeof ride.dropoffLat === "number" && (
+                <p data-testid="dropoff-zone" className="mt-1 text-sm font-semibold">
+                  {dropoffZoneObj ? `\u2713 ${dropoffZoneObj.label || dropoffZoneObj.name || dropoffZoneObj.id}` : "Outside our zones \u2014 we'll still try"}
+                </p>
+              )}
               {!ride.dropoff.trim() && quickPicks.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2" data-testid="quick-picks">
                   {quickPicks.map((p) => (
@@ -644,13 +665,20 @@ export default function TripDetails() {
             {showStops && (
               <div className="pl-2 space-y-2">
                 <div className="flex gap-2">
-                  <input
-                    type="text"
-                    className="flex-1 border-2 border-slate-300 rounded-xl px-4 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    placeholder="Suggested stop address"
-                    value={stopInput}
-                    onChange={(e) => setStopInput(e.target.value)}
-                  />
+                  <div className="flex-1">
+                    <AddressSearch
+                      id="stop"
+                      testid="stop-search"
+                      className="w-full border-2 border-slate-300 rounded-xl px-4 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600"
+                      value={stopInput}
+                      onChange={(t) => setStopInput(t)}
+                      onPick={(r) => {
+                        updateRide({ stops: [...ride.stops, r.text] });
+                        setStopInput("");
+                      }}
+                      placeholder="Stop address"
+                    />
+                  </div>
                   <button
                     type="button"
                     onClick={handleAddStop}
