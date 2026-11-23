@@ -174,6 +174,13 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // Numbers the app tunes by itself (e.g. publicConfig/pricing.roadFactor for the price
+    // estimate). Everyone reads; only Cloud Functions write.
+    match /publicConfig/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Driver asks for a certification (base pass, wheelchair van). Doc id is
     // "<uid>_<cert>" so each driver has one request per cert.
     match /certRequests/{reqId} {

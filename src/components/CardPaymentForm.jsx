@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import { CardElement, PaymentRequestButtonElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import { BRAND, COMPANY_NAME } from "../config/constants";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../config/firebase";
 
@@ -16,12 +17,58 @@ const cardElementOptions = {
 const mySavedCard = httpsCallable(functions, "mySavedCard");
 const brandName = (b) => ({ visa: "Visa", mastercard: "Mastercard", amex: "Amex", discover: "Discover" })[b] || "card";
 
+// Same hold the server places (createPaymentIntent): enough for the no-show fee.
+const HOLD_CENTS = Math.max(500, Math.round((Number(BRAND.rideRules?.noShowFee) || 10) * 100));
+
 export default function CardPaymentForm({ onAuthorized, submitting, allowSaved = false }) {
   const stripe = useStripe();
   const elements = useElements();
   const [cardholderName, setCardholderName] = useState("");
   const [processing, setProcessing] = useState(false);
   const [cardError, setCardError] = useState("");
+  // Google Pay / Apple Pay: one tap, nothing to type (shows only where the phone has one set up).
+  const [walletPay, setWalletPay] = useState(null);
+  useEffect(() => {
+    if (!stripe?.paymentRequest) return undefined;
+    const req = stripe.paymentRequest({
+      country: "US",
+      currency: "usd",
+      total: { label: `${COMPANY_NAME} ride (card check, not charged)`, amount: HOLD_CENTS },
+      requestPayerName: true,
+    });
+    let live = true;
+    req.canMakePayment().then((ok) => live && ok && setWalletPay(req)).catch(() => {});
+    req.on("paymentmethod", async (ev) => {
+      try {
+        const { data } = await httpsCallable(functions, "createPaymentIntent")({});
+        const first = await stripe.confirmCardPayment(data.clientSecret, { payment_method: ev.paymentMethod.id }, { handleActions: false });
+        if (first.error) {
+          ev.complete("fail");
+          setCardError(first.error.message);
+          return;
+        }
+        ev.complete("success");
+        let intent = first.paymentIntent;
+        if (intent.status === "requires_action") {
+          const again = await stripe.confirmCardPayment(data.clientSecret);
+          if (again.error) {
+            setCardError(again.error.message);
+            return;
+          }
+          intent = again.paymentIntent;
+        }
+        onAuthorized(intent.id, ev.payerName || "");
+      } catch {
+        ev.complete("fail");
+        setCardError("That didn't work. Type a card instead.");
+      }
+    });
+    return () => {
+      live = false;
+    };
+    // onAuthorized changes every render; the wallet sheet only needs to be set up once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stripe]);
   // Members: the card they used before, one tap (brand + last 4 only).
   const [saved, setSaved] = useState(null);
   const [typeNew, setTypeNew] = useState(false);
@@ -116,6 +163,12 @@ export default function CardPaymentForm({ onAuthorized, submitting, allowSaved =
 
   return (
     <div className="space-y-3">
+      {walletPay && (
+        <div data-testid="wallet-pay">
+          <PaymentRequestButtonElement options={{ paymentRequest: walletPay, style: { paymentRequestButton: { height: "52px" } } }} />
+          <p className="text-center text-sm text-slate-500 mt-2">or type a card</p>
+        </div>
+      )}
       <input
         type="text"
         placeholder="Cardholder Name"

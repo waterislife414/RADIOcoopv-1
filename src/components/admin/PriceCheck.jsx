@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { collection, getDocs, limit, query, where } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, limit, query, where } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import { BRAND, FARE_CONFIG } from "../../config/constants";
 import { suggestRoadFactor, dollars } from "../../../functions/lib/fareEstimate.mjs";
@@ -17,7 +17,16 @@ const HIGH_RATIO = 1.2; // a driver's meters average 20%+ over the estimates
 export default function PriceCheck() {
   const [rows, setRows] = useState(null);
   const [questions, setQuestions] = useState([]);
+  const [health, setHealth] = useState([]);
+  const [tuned, setTuned] = useState(null);
   useEffect(() => {
+    // The app's own hourly check (functions/selfCheck.js) and its self-tuned road factor.
+    getDocs(query(collection(db, "owner_inbox"), where("type", "==", "health"), where("open", "==", true), limit(20)))
+      .then((snap) => setHealth(snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (b.at || 0) - (a.at || 0))))
+      .catch(() => setHealth([]));
+    getDoc(doc(db, "publicConfig", "pricing"))
+      .then((s) => setTuned(s.data() || null))
+      .catch(() => {});
     getDocs(query(collection(db, "rides"), where("meterCents", ">", 0), limit(500)))
       .then((snap) => setRows(snap.docs.map((d) => d.data())))
       .catch(() => setRows([]));
@@ -26,7 +35,7 @@ export default function PriceCheck() {
       .catch(() => setQuestions([]));
   }, []);
   if (!rows) return null;
-  const current = Number(BRAND.pricing?.estimate?.roadFactor) || 1.35;
+  const current = Number(tuned?.roadFactor) || Number(BRAND.pricing?.estimate?.roadFactor) || 1.35;
   const samples = rows.filter((r) => Number(r.estMiles) > 0).map((r) => ({ estMiles: r.estMiles, meterCents: r.meterCents, passengers: r.passengers || 1 }));
   const s = suggestRoadFactor(samples, FARE_CONFIG, current, MIN_RIDES);
   const withEst = rows.filter((r) => r.estFareCents > 0);
@@ -69,10 +78,27 @@ export default function PriceCheck() {
         <p className="text-sm text-emerald-700 font-semibold">Estimates are on target (road factor {current}).</p>
       ) : (
         <p className="text-sm text-amber-800 font-semibold">
-          Suggest road factor {s.factor} (now {current}), from {s.rides} rides. Change <code>pricing.estimate.roadFactor</code> in
-          branding.config.json, then run the branding sync.
+          Real meters say road factor {s.factor} (now {current}, from {s.rides} rides). The app moves it a little every Monday by itself.
         </p>
       )}
+      {tuned?.updatedAt && (
+        <p className="text-xs text-slate-500">
+          Last self-adjusted {new Date(tuned.updatedAt).toLocaleDateString()}: {tuned.previous} &rarr; {tuned.roadFactor}.
+        </p>
+      )}
+      <div className="pt-2 border-t border-slate-200" data-testid="app-health">
+        <p className="font-semibold">App health</p>
+        {health.length === 0 ? (
+          <p className="text-sm text-emerald-700">No problems found in the last check.</p>
+        ) : (
+          health.map((h) => (
+            <p key={h.id} className="text-sm text-red-700">
+              {h.text} {h.carNumber ? `Car ${h.carNumber}. ` : ""}
+              {h.pickup ? `Pickup: ${h.pickup}.` : ""}
+            </p>
+          ))
+        )}
+      </div>
       {high.map(([car, d]) => (
         <p key={car} className="text-sm text-red-700 font-semibold" data-testid="meter-high">
           Car {car}: meters average {Math.round((d.meter / d.est - 1) * 100)}% over the estimate ({d.n} rides). Worth a look.

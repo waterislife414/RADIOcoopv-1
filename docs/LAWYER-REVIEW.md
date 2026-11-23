@@ -4,6 +4,11 @@ The app was built carefully, but none of this is legal advice. Each line says wh
 today and where to change it. Text lives in `src/legal/documents.js`; numbers live in
 `branding.config.json` (changing a fee there also bumps the terms version, so everyone agrees again).
 
+## Setup for the owner (not legal, needs his accounts)
+- Google Pay / Apple Pay button on the card screen (one tap for guests): Apple Pay needs the site's domain added in
+  Stripe (Settings > Payment methods > Apple Pay > domains); Google Pay works on Android Chrome once Stripe is live.
+- Google sign-in: turn on Google in Firebase Console > Authentication > Sign-in method.
+
 ## Changed Nov 23, 2026, fifth time (legal version 2026-11-23.5; everyone agrees again)
 Owner asked for fewer taps and more automatic steps.
 - [ ] **Agreeing by tapping Book (riders).** The one-box pop-up is gone from booking. Right above the button: the money

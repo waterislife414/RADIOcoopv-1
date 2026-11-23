@@ -236,6 +236,12 @@ test("call logs are server-only", async () => {
   await assertFails(setDoc(doc(rider(), "ride_calls/c1"), { rideId: "mine" }));
 });
 
+test("self-tuned prices: everyone reads, nobody writes from the app", async () => {
+  await assertSucceeds(getDoc(doc(guest(), "publicConfig/pricing")));
+  await assertFails(setDoc(doc(rider(), "publicConfig/pricing"), { roadFactor: 1 }));
+  await assertFails(setDoc(doc(office(), "publicConfig/pricing"), { roadFactor: 1 }));
+});
+
 test("alerts: office reads them; nobody writes them from the app", async () => {
   await env.withSecurityRulesDisabled(async (ctx) => {
     await setDoc(doc(ctx.firestore(), "alerts/a1"), { type: "emergency", driverId: "d1", status: "open" });

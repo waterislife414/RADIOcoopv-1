@@ -19,3 +19,5 @@ export function CardElement() {
   );
 }
 export const PaymentElement = CardElement;
+// Google Pay / Apple Pay: the demo has no wallet, so the button never shows.
+export const PaymentRequestButtonElement = () => null;

@@ -1082,6 +1082,7 @@ const featureModules = [
   require("./support"),
   require("./account"),
   require("./member"),
+  require("./selfCheck"),
 ];
 for (const mod of featureModules) {
   for (const [name, fn] of Object.entries(mod)) if (!name.startsWith("_")) exports[name] = fn;
