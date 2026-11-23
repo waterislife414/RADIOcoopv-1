@@ -14,6 +14,8 @@ import ApprovalAnswer from "./ApprovalAnswer";
 import AccuracyCircle from "./AccuracyCircle";
 import MeterCharge from "./MeterCharge";
 import StopWait from "./StopWait";
+import { useAutoSteps } from "./useAutoSteps";
+import AutoAcceptToggle from "./AutoAcceptToggle";
 
 const OUT_OF_ZONE_MIN = BRAND.dispatch?.gps?.outOfZoneMin ?? 3;
 const MAX_WARNINGS = BRAND.dispatch?.maxWarnings ?? 3;
@@ -121,6 +123,18 @@ export default function DriverStatusPanel({ driver, board, drivers, zones, rideS
   const zoneLabel = (id) => zoneById[id]?.label || null;
   const gpsZone = zoneById[gps.gpsZoneId] || null;
   const certNeeded = gpsZone?.requiresCert && !hasCert(driver, gpsZone.requiresCert) ? gpsZone.requiresCert : null;
+  // Routine taps done by GPS (each button stays as a backup).
+  const [atDropoff, setAtDropoff] = useState(false);
+  const { appMeterCents } = useAutoSteps({
+    status,
+    board,
+    current,
+    fix: gps.fix,
+    gpsZoneId: gps.gpsZoneId,
+    canReady: !!gpsZone && !certNeeded && !busy,
+    onReady: () => run(checkReady),
+    onAtDropoff: () => (cardRide ? setMeterOpen(true) : setAtDropoff(true)),
+  });
 
   async function run(fn, { withFix = true } = {}) {
     setBusy(true);
@@ -303,7 +317,8 @@ export default function DriverStatusPanel({ driver, board, drivers, zones, rideS
             {board?.rideId && current?.rideId === board.rideId && (
               <StopWait rideId={current.rideId} wait={current.stopWait} onEndTrip={() => (cardRide ? setMeterOpen(true) : run(dropOff))} />
             )}
-            <button className={PRIMARY} disabled={busy} onClick={() => (cardRide ? setMeterOpen(true) : run(dropOff))}>
+            {atDropoff && !cardRide && <p className="text-center font-bold text-emerald-300">You&rsquo;re at the drop-off.</p>}
+            <button className={`${PRIMARY} ${atDropoff && !cardRide ? "animate-pulse" : ""}`} disabled={busy} onClick={() => (cardRide ? setMeterOpen(true) : run(dropOff))}>
               {cardRide ? "Drop Off & Charge Card" : "Drop Off"}
             </button>
             {meterOpen && (
@@ -311,6 +326,7 @@ export default function DriverStatusPanel({ driver, board, drivers, zones, rideS
                 rideId={current.rideId}
                 estMiles={current.estMiles}
                 passengers={current.passengers || 1}
+                appMeterCents={appMeterCents}
                 onCancel={() => setMeterOpen(false)}
                 onDone={() => {
                   setMeterOpen(false);
@@ -336,6 +352,10 @@ export default function DriverStatusPanel({ driver, board, drivers, zones, rideS
           </button>
         )}
 
+        {(status === "moving" || status === "ready") && <AutoAcceptToggle />}
+        {status === "moving" && gpsZone && !certNeeded && (
+          <p className="text-sm text-slate-400 text-center">Park in {gpsZone.label} and you&rsquo;re checked ready by yourself.</p>
+        )}
         {(status === "moving" || status === "ready") && (
           <button
             className="w-full min-h-[48px] py-2 text-base font-semibold text-slate-400 hover:text-white"

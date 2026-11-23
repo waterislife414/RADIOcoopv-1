@@ -4,6 +4,29 @@ The app was built carefully, but none of this is legal advice. Each line says wh
 today and where to change it. Text lives in `src/legal/documents.js`; numbers live in
 `branding.config.json` (changing a fee there also bumps the terms version, so everyone agrees again).
 
+## Changed Nov 23, 2026, fifth time (legal version 2026-11-23.5; everyone agrees again)
+Owner asked for fewer taps and more automatic steps.
+- [ ] **Agreeing by tapping Book (riders).** The one-box pop-up is gone from booking. Right above the button: the money
+  rules in plain words and "When you tap below, you agree to the Terms and Privacy Policy, and to calls and texts about
+  your rides" with both links; the button says "Agree & book" / "Agree & Continue to Payment". Same record is saved
+  with the ride. This is the "sign-in wrap" style upheld in Meyer v. Uber (2d Cir. 2017) when notice is clear and next
+  to the button; Berman (9th Cir. 2022) wants the notice to say what action means agreeing (it does). OK, or keep a box?
+  Sign-up still uses the one box.
+- [ ] **Who the app sends (Terms §4).** Guests paying by card and members paying cash now go to drivers automatically
+  (`rideRules.appHandles`: requireAccount false, memberCash true). Office keeps: cash without an account, location off,
+  phone bookings. Cancel/no-show fees now apply to guests' card rides (their card hold); guests cancel by calling.
+- [ ] **Automatic steps on the driver's phone.** "I'm here" is sent when his GPS is within about 80 m of the pickup;
+  "Picked up" when he leaves the pickup and the rider said "I'm at the car" or their phone is in the car. The rider's
+  phone sends "I'm at the car" when it's within about 30 m of the car. These feed the wait clock and no-show fee rules
+  (no-show fee still needs the driver's GPS near the pickup). Fine as evidence?
+- [ ] **App meter reading.** The driver's phone measures the trip by GPS and offers it as a hint in the meter box; the
+  driver still types or confirms what the cab's meter says. The reading is saved next to the meter (`appMeterCents`),
+  never charged by itself. Columbus requires a sealed meter for fares (confirm) before the app could ever replace it.
+- [ ] **Privacy §1, things kept on the phone and cookies.** Recent places, a guest's name and number, last way of paying;
+  no ad or tracking cookies; Stripe's fraud-prevention cookies on the payment screen. No cookie banner (no GA/AL law
+  requires one, and no tracking is used). Add a banner if analytics or ad pixels are ever added.
+- Sign-up: home address and birthday are now optional (birthday only gives the birthday credit).
+
 ## Changed Nov 23, 2026, fourth time (legal version 2026-11-23.4; everyone agrees again)
 - [ ] **Terms §4, changing your trip.** During the ride a rider can change the drop-off in the app (the driver's phone
   shows it and rings) or tell the driver; stops on request. The meter keeps running, also while waiting at a stop

@@ -108,8 +108,7 @@ export default function SignUp() {
             </p>
             <input
               type="text"
-              placeholder="Home Address"
-              required
+              placeholder="Home address (optional)"
               className="w-full border-2 border-slate-300 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600"
               value={form.address}
               onChange={(e) => update("address", e.target.value)}
@@ -141,12 +140,11 @@ export default function SignUp() {
             />
             <div>
               <label htmlFor="dob" className="block text-base font-semibold text-slate-700 mb-1.5">
-                Date of Birth
+                Birthday <span className="font-normal text-slate-500">(optional: a ride credit on your birthday)</span>
               </label>
               <input
                 id="dob"
                 type="date"
-                required
                 className="w-full border-2 border-slate-300 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.dob}
                 onChange={(e) => update("dob", e.target.value)}

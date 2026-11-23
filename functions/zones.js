@@ -32,7 +32,11 @@ exports.assignRideZone = onDocumentCreated("rides/{rideId}", async (event) => {
       : ride.outOfArea
         ? null
         : await geocode(ride.pickup);
-  const drop = await geocode(ride.dropoff);
+  // The point the rider picked or pinned beats looking the text up ("Pin dropped" has no address).
+  const drop =
+    typeof ride.dropoffLat === "number" && typeof ride.dropoffLng === "number"
+      ? { lat: ride.dropoffLat, lng: ride.dropoffLng }
+      : await geocode(ride.dropoff);
 
   const zoneId = preset || (pickup ? zoneForPoint(zones, pickup.lng, pickup.lat) : null);
   const dropZoneId = drop ? zoneForPoint(zones, drop.lng, drop.lat) : null;

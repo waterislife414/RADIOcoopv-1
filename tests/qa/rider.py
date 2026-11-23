@@ -69,7 +69,7 @@ with sync_playwright() as p:
     def signup():
         pg.goto(BASE+"/sign-up"); pg.wait_for_timeout(800)
         pg.fill("input[placeholder='First Name']","Quinn"); pg.fill("input[placeholder='Last Name']","Tester")
-        pg.fill("input[placeholder='Home Address']","100 Main St, Columbus GA"); pg.fill("input[placeholder='Phone']","7065550199")
+        pg.fill("input[placeholder='Home address (optional)']","100 Main St, Columbus GA"); pg.fill("input[placeholder='Phone']","7065550199")
         pg.fill("input[placeholder='Email']",email); pg.fill("input[placeholder='Password']","secret123")
         pg.fill("#dob","1980-05-05")
         pg.click("form button[type=submit]"); pg.wait_for_timeout(500)

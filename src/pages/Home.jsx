@@ -1,4 +1,6 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useRide } from "../context/RideContext";
+import { recentPlacesFull } from "../utils/recentPlaces";
 import CurrentRideStatus from "../components/CurrentRideStatus";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -124,6 +126,7 @@ export default function Home() {
             Book a Ride &rarr;
             <span className="block text-sm font-bold text-navy-900/80">See your price first. No account needed.</span>
           </Link>
+          <QuickTrips />
           {needsProfile && (
             <Link to="/finish-account" data-testid="finish-account-banner" className="block rounded-2xl bg-gold-400 text-navy-950 font-bold text-center px-4 py-3">
               Finish setting up your account (one step)
@@ -203,6 +206,34 @@ export default function Home() {
             {COPY.dispatcherFooterLabel}
           </Link>
         </footer>
+      </div>
+    </div>
+  );
+}
+
+/** Places this phone went before: one tap starts a booking to there (pickup = where you are). */
+function QuickTrips() {
+  const { updateRide } = useRide();
+  const navigate = useNavigate();
+  const places = recentPlacesFull().slice(0, 3);
+  if (!places.length) return null;
+  return (
+    <div data-testid="home-quick-trips" className="space-y-2">
+      <p className="text-sm font-semibold text-slate-200 text-center">Go again</p>
+      <div className="flex flex-wrap justify-center gap-2">
+        {places.map((p) => (
+          <button
+            key={p.text}
+            type="button"
+            onClick={() => {
+              updateRide({ dropoff: p.text, dropoffLat: p.lat, dropoffLng: p.lng });
+              navigate("/trip-details");
+            }}
+            className="max-w-full truncate rounded-full bg-white/10 border-2 border-white/25 px-4 py-2 text-base font-semibold text-white"
+          >
+            {p.text}
+          </button>
+        ))}
       </div>
     </div>
   );

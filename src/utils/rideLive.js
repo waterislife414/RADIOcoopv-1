@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../config/firebase";
 import { BRAND } from "../config/constants";
@@ -24,8 +24,10 @@ export function useNow(ms = 1000) {
  * driver can find them. Only while this screen is open: phones don't let a
  * web app track in the background.
  */
-export function useShareLocation(rideId, on) {
+export function useShareLocation(rideId, on, onFix = null) {
   const [state, setState] = useState("off");
+  const fixRef = useRef(onFix);
+  fixRef.current = onFix;
   useEffect(() => {
     if (!on || !rideId || !navigator.geolocation) {
       setState(on && !navigator.geolocation ? "unavailable" : "off");
@@ -36,6 +38,7 @@ export function useShareLocation(rideId, on) {
     const id = navigator.geolocation.watchPosition(
       (p) => {
         setState("on");
+        fixRef.current?.({ lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy });
         const now = Date.now();
         if (now - last < 15000) return;
         last = now;

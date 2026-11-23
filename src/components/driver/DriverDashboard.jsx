@@ -136,7 +136,7 @@ export default function DriverDashboard() {
           </div>
         )}
 
-        {offer && <OfferAlert offer={offer} warnings={driver.warnings ?? 0} />}
+        {offer && <OfferAlert key={offer.rideId} offer={offer} warnings={driver.warnings ?? 0} />}
 
         <DriverStatusPanel driver={driver} board={board} drivers={drivers} zones={zones} rideStatus={inbox.current?.status ?? null} current={inbox.current || null} />
 

@@ -19,7 +19,8 @@ export default function AddressSearch({
 
   const trimmed = String(value || "").trim();
   const showRecents = open && trimmed.length < 3 && recents.length > 0;
-  const activeResults = showRecents ? recents.map((p) => ({ address: p })) : results;
+  // Recents are strings, or { text, lat, lng } when the map point was saved too.
+  const activeResults = showRecents ? recents.map((p) => (typeof p === "string" ? { address: p } : { address: p.text, lat: p.lat, lng: p.lng })) : results;
 
   useEffect(() => {
     const query = trimmed;
@@ -86,8 +87,9 @@ export default function AddressSearch({
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => {
                 if (showRecents) {
-                  // For recents, call onChange with the plain text address
-                  onChange(r.address);
+                  // A recent with its map point is a full pick; otherwise just the text.
+                  if (typeof r.lat === "number") onPick({ text: r.address, address: r.address, lat: r.lat, lng: r.lng });
+                  else onChange(r.address);
                 } else {
                   // For search results, call onPick with the result object
                   onPick(r);

@@ -423,6 +423,8 @@ exports.captureFare = onCall(
   { secrets: [STRIPE_SECRET_KEY] },
   async (request) => {
     const { rideId, meterFare, tipAmount, paymentMethodId, preview, riderApproved } = request.data;
+    // The driver's phone measured the trip too (GPS): kept next to the meter to compare, never charged.
+    const appMeterCents = Number.isFinite(request.data?.appMeterCents) && request.data.appMeterCents > 0 ? Math.min(Math.round(request.data.appMeterCents), 100000) : null;
 
     if (!rideId || typeof meterFare !== "number" || meterFare <= 0) {
       throw new HttpsError("invalid-argument", "rideId and meterFare are required.");
@@ -668,6 +670,7 @@ exports.captureFare = onCall(
       cardFunding: funding,
       // Member deals and the card company's cut (see functions/lib/memberSavings.mjs).
       lockOffCents: bd.lockOffCents,
+      ...(appMeterCents != null ? { appMeterCents } : {}),
       creditUsedCents: creditUsed,
       fareChargedCents: bd.fareChargeCents,
       driverCardCostCents: bd.driverCardCostCents,

@@ -15,7 +15,7 @@ const TIPS = [5, 10, 15];
  *     button: a tip choice or "No tip". That one tap pays. If the rider already left,
  *     the driver charges the fare with no tip and the rider can tip later in the app.
  */
-export default function MeterCharge({ rideId, estMiles, passengers = 1, onDone, onCancel }) {
+export default function MeterCharge({ rideId, estMiles, passengers = 1, appMeterCents = null, onDone, onCancel }) {
   const [meter, setMeter] = useState("");
   const [quote, setQuote] = useState(null);
   const [other, setOther] = useState("");
@@ -34,7 +34,7 @@ export default function MeterCharge({ rideId, estMiles, passengers = 1, onDone, 
     setBusy(true);
     setError("");
     try {
-      const { data } = await captureFare({ rideId, meterFare, preview: true });
+      const { data } = await captureFare({ rideId, meterFare, preview: true, appMeterCents });
       setQuote(data);
       setBusy(false);
     } catch (e) {
@@ -46,7 +46,7 @@ export default function MeterCharge({ rideId, estMiles, passengers = 1, onDone, 
     setBusy(true);
     setError("");
     try {
-      await captureFare({ rideId, meterFare, tipAmount: tipCents / 100, riderApproved });
+      await captureFare({ rideId, meterFare, tipAmount: tipCents / 100, riderApproved, appMeterCents });
       onDone({ charged: true });
     } catch (e) {
       fail(e);
@@ -76,7 +76,17 @@ export default function MeterCharge({ rideId, estMiles, passengers = 1, onDone, 
               className="w-full py-4 text-4xl font-bold bg-transparent outline-none"
             />
           </label>
-          {est && <p className="text-sm text-slate-300">Trip estimate: about {dollars(est.fareCents)}.</p>}
+          {appMeterCents > 0 && (
+            <button
+              type="button"
+              data-testid="use-app-meter"
+              onClick={() => setMeter((appMeterCents / 100).toFixed(2))}
+              className="w-full rounded-full border-2 border-gold-400 text-gold-200 font-bold py-2"
+            >
+              App measured about {dollars(appMeterCents)}: tap to use it
+            </button>
+          )}
+          {est && <p className="text-sm text-slate-300">Trip estimate: about {dollars(est.fareCents)}. Type what your meter says.</p>}
           {error && <p className="rounded-xl bg-red-500/20 text-red-200 p-3 text-sm font-semibold">{error}</p>}
           <button
             type="button"

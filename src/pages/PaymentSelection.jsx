@@ -2,14 +2,12 @@ import { useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "../config/firebase";
+import { submitRide as saveRide } from "../lib/submitRide";
 import { useAuth } from "../context/AuthContext";
 import { useRide } from "../context/RideContext";
 import CardPaymentForm from "../components/CardPaymentForm";
 import BrandHeader from "../components/BrandHeader";
 import { BRAND, PROMO_CODES, STRIPE_PUBLISHABLE_KEY } from "../config/constants";
-import { normalizePhone } from "../utils/phone";
 import { estimateFromMiles } from "../lib/tripEstimate";
 import { cardFeeRule } from "../../functions/lib/cardFee.mjs";
 import { memberDealsFor } from "../lib/memberDeals";
@@ -48,40 +46,8 @@ export default function PaymentSelection() {
     setSubmitting(true);
     setError("");
     try {
-      const docRef = await addDoc(collection(db, "rides"), {
-        customerId: currentUser ? currentUser.uid : "guest",
-        firstName: ride.guestFirstName || null,
-        lastName: ride.guestLastName || null,
-        phone: normalizePhone(ride.phone),
-        cardholderName: cardholderName || null,
-        pickup: ride.pickup,
-        pickupLat: typeof ride.pickupLat === "number" ? ride.pickupLat : null,
-        pickupLng: typeof ride.pickupLng === "number" ? ride.pickupLng : null,
-        dropoff: ride.dropoff,
-        outOfArea: !!ride.outOfArea,
-        outOfAreaCity: ride.outOfArea ? ride.outOfAreaCity || null : null,
-        passengers: ride.passengers,
-        stops: ride.stops,
-        needsAccessibleVehicle: ride.needsAccessibleVehicle,
-        wantsPriorityPass: ride.wantsPriorityPass,
-        fastPassId: ride.wantsPriorityPass ? ride.fastPassId || null : null,
-        roundTrip: ride.roundTrip,
-        estMiles: ride.estMiles,
-        scheduleType: ride.scheduleType,
-        scheduledFor: ride.scheduledFor,
-        recurring: ride.recurring,
-        paymentMethod,
-        paymentIntentId,
-        promoCode: ride.promoCode || null,
-        consent: ride.consent || null,
-        shareLocation: ride.shareLocation !== false,
-        callIn: !!ride.callIn,
-        bookedFrom: ride.bookedFrom || null,
-        status: "pending",
-        finalFare: null,
-        timestamp: serverTimestamp(),
-      });
-      updateRide({ lastRideId: docRef.id });
+      const id = await saveRide(ride, { uid: currentUser?.uid || null, paymentMethod, paymentIntentId, cardholderName });
+      updateRide({ lastRideId: id });
       navigate("/success");
     } catch (err) {
       setError(

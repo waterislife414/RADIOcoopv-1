@@ -4,11 +4,13 @@ import { functions } from "../../config/firebase";
 import { BRAND } from "../../config/constants";
 import { ring } from "../../utils/alertSound";
 import TripSize from "./TripSize";
+import { autoAcceptOn } from "./autoAccept";
 
 const OFFER = { pings: 3, pingIntervalSec: 15, ...(BRAND.dispatch?.offer || {}) };
 const MAX_WARNINGS = BRAND.dispatch?.maxWarnings ?? 3;
 const accept = httpsCallable(functions, "acceptOffer");
 const decline = httpsCallable(functions, "declineOffer");
+const AUTO_SECONDS = 3;
 
 /** Full-screen incoming call. Rings on each of the 3 pings. */
 export default function OfferAlert({ offer, warnings = 0 }) {
@@ -29,6 +31,14 @@ export default function OfferAlert({ offer, warnings = 0 }) {
 
   const left = Math.max(0, Math.ceil((offer.expiresAt - now) / 1000));
   const requested = offer.kind === "requested";
+  // Auto-accept: counts down, then takes the call (Decline stops it).
+  const [auto, setAuto] = useState(autoAcceptOn);
+  const [shownAt] = useState(() => Date.now());
+  const autoLeft = Math.max(0, AUTO_SECONDS - Math.floor((now - shownAt) / 1000));
+  useEffect(() => {
+    if (auto && autoLeft === 0 && !busy) answer(accept);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auto, autoLeft]);
 
   async function answer(fn) {
     setBusy(true);
@@ -74,6 +84,11 @@ export default function OfferAlert({ offer, warnings = 0 }) {
 
         <div className="mt-auto space-y-3 pt-8">
           {msg && <p className="text-red-300">{msg}</p>}
+          {auto && !confirming && (
+            <p className="text-center text-xl font-bold text-emerald-300" data-testid="auto-accept-count">
+              {busy ? "Taking this call\u2026" : `Taking this call in ${autoLeft}\u2026`}
+            </p>
+          )}
           {!confirming ? (
             <>
               <button
@@ -85,7 +100,11 @@ export default function OfferAlert({ offer, warnings = 0 }) {
               </button>
               <button
                 disabled={busy}
-                onClick={() => (requested ? answer(decline) : setConfirming(true))}
+                onClick={() => {
+                  setAuto(false);
+                  if (requested) answer(decline);
+                  else setConfirming(true);
+                }}
                 className="w-full rounded-2xl py-4 text-lg font-bold bg-white/10 hover:bg-white/15 disabled:opacity-50"
               >
                 Decline

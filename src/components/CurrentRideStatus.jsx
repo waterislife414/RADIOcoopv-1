@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useRide } from "../context/RideContext";
 import { collection, doc, onSnapshot, query, where, orderBy, limit, updateDoc } from "firebase/firestore";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
@@ -103,6 +104,35 @@ function StopNotice({ ride }) {
       </p>
       {ride.paymentMethod === "cash" && <p className="text-xs text-amber-800 mt-1">Paying cash? Your driver may ask for what&rsquo;s on the meter before a long stop.</p>}
     </div>
+  );
+}
+
+/** One tap: the same trip the other way (pickup = where you were dropped off). */
+function RideBack({ ride }) {
+  const { updateRide } = useRide();
+  const navigate = useNavigate();
+  if (!ride.pickup || !ride.dropoff) return null;
+  const num = (v) => (typeof v === "number" ? v : null);
+  return (
+    <button
+      type="button"
+      data-testid="ride-back"
+      onClick={() => {
+        updateRide({
+          pickup: ride.dropoff,
+          pickupLat: num(ride.dropLat),
+          pickupLng: num(ride.dropLng),
+          dropoff: ride.pickup,
+          dropoffLat: num(ride.pickupLat),
+          dropoffLng: num(ride.pickupLng),
+          passengers: ride.passengers || 1,
+        });
+        navigate("/trip-details");
+      }}
+      className="w-full mt-3 min-h-[48px] rounded-full border-2 border-blue-300 bg-white font-bold text-blue-800"
+    >
+      Ride back to {ride.pickup.split(",")[0]}
+    </button>
   );
 }
 
@@ -605,6 +635,7 @@ function Receipt({ ride, rideId }) {
         </div>
       )}
       {!canTip && tipCents > 0 && <p className="text-sm text-emerald-700 text-center mt-2">Thanks for tipping your driver.</p>}
+      <RideBack ride={ride} />
       {card && <ChargeQuestion ride={ride} rideId={rideId} />}
     </div>
   );
@@ -680,6 +711,7 @@ function RideStatusCard({ ride, rideId, onCancelled, many }) {
           {ride.paymentMethod === "wallet" ? "Your fare comes out of your account balance." : "Pay your driver in cash when you arrive."}
         </p>
       )}
+      {ride.status === "finished" && !isPaid && ride.paymentMethod !== "card" && <RideBack ride={ride} />}
       {["in_transit", "finished"].includes(ride.status) && !isPaid && ride.paymentMethod === "card" && (
         <CardPayment ride={ride} rideId={rideId} />
       )}

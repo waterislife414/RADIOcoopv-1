@@ -331,7 +331,7 @@
   "policies": {
     "dataRetentionDays": 5,
     "mvrLookbackYears": 7,
-    "legalVersion": "2026-11-23.4"
+    "legalVersion": "2026-11-23.5"
   },
   "about": {
     "_note": "Confirm with Malcolm before going live. established: Yelp lists 'Established in 1980' and YellowPages '46 years in business'. owners: as given by Jared. community: leave null until confirmed (e.g. 'Proud supporters of our EMS, firefighters and police.').",
@@ -359,11 +359,12 @@
     "feesGoToDriver": true,
     "upsellAgainAfterMinutes": 4,
     "appHandles": {
-      "_note": "Rides the app runs on its own (driver and rider work it out). Everything else goes to the dispatcher to send by radio: phone calls, guests, cash, no GPS, ID not verified yet.",
-      "requireAccount": true,
+      "_note": "Rides the app runs on its own (driver and rider work it out). Nov 23: guests paying by card and members paying cash run in the app too (fewer office rides). Still to the office: cash without an account, location off, phone bookings.",
+      "requireAccount": false,
       "requireVerifiedId": false,
       "requireLocation": true,
-      "requireCardOrWallet": true
+      "requireCardOrWallet": true,
+      "memberCash": true
     },
     "stopEndTripMinutes": 15,
     "stillWaitingCheckMinutes": 30,

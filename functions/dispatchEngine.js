@@ -89,7 +89,9 @@ function officeReasons(ride, user, termsOk) {
   if (APP_HANDLES.requireVerifiedId && member && user?.idVerified !== true) why.push("id");
   if (APP_HANDLES.requireLocation && (ride.callIn || ride.shareLocation === false)) why.push("location");
   const paid = (ride.paymentMethod === "card" && !!ride.paymentIntentId) || ride.paymentMethod === "wallet";
-  if (APP_HANDLES.requireCardOrWallet && !paid) why.push("cash");
+  // Members paying cash are known riders: the app can send those too (appHandles.memberCash).
+  const knownCash = APP_HANDLES.memberCash === true && member && ride.paymentMethod === "cash";
+  if (APP_HANDLES.requireCardOrWallet && !paid && !knownCash) why.push("cash");
   if (!termsOk) why.push("terms");
   return why;
 }

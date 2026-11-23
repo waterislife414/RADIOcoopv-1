@@ -73,7 +73,8 @@ exports.riderArrivalReply = onCall(async (request) => {
     const ride = (await tx.get(rideRef(rideId))).data();
     if (!ride || ride.customerId !== uid) throw new HttpsError("not-found", "Ride not found.");
     if (ride.status !== "dispatched") return { ok: false };
-    const riderReply = { reply, at: nowMs };
+    // auto: the rider's phone was next to the car (no tap).
+    const riderReply = { reply, at: nowMs, ...(request.data?.auto === true ? { auto: true } : {}) };
     tx.update(rideRef(rideId), { riderReply });
     if (ride.driverId) tx.set(inboxRef(ride.driverId), { current: { riderReply } }, { merge: true });
     return { ok: true };

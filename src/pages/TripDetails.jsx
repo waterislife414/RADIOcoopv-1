@@ -4,17 +4,24 @@ import { collection, getDocs, limit, orderBy, query, where } from "firebase/fire
 import { db } from "../config/firebase";
 import { useAuth } from "../context/AuthContext";
 import { memberDealsFor, DEALS } from "../lib/memberDeals";
-import ConsentModal from "../components/legal/ConsentModal";
+import { loadStripe } from "@stripe/stripe-js";
+import { submitRide, lastPayMethod, rememberedGuest } from "../lib/submitRide";
 import PinPicker from "../components/PinPicker";
 import AddressSearch from "../components/AddressSearch";
 import { readLocationOnce } from "../utils/rideLive";
-import { BRAND, COMPANY_EMAIL, COMPANY_PHONE_DISPLAY } from "../config/constants";
+import { BRAND, COMPANY_EMAIL, COMPANY_PHONE_DISPLAY, STRIPE_PUBLISHABLE_KEY } from "../config/constants";
 
-import { consentIsCurrent } from "../legal/documents";
+import { consentIsCurrent, consentRecord } from "../legal/documents";
 const RIDER_DOCS = ["rider-terms", "privacy"];
+const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
+const mySavedCard = httpsCallable(functions, "mySavedCard");
+const createPaymentIntent = httpsCallable(functions, "createPaymentIntent");
+const RR = { headsUpMinutes: 4, lateCancelFee: 5, waitGraceMinutes: 2, noShowFee: 10, ...(BRAND.rideRules || {}) };
+const WAIT = Number(BRAND.pricing?.fare?.WAIT_TIME_PER_MINUTE) || 0.35;
+const brandName = (b) => ({ visa: "Visa", mastercard: "Mastercard", amex: "Amex", discover: "Discover" })[b] || "card";
 import { useRide } from "../context/RideContext";
 import BrandHeader from "../components/BrandHeader";
-import { recentPlaces, rememberPlaces } from "../utils/recentPlaces";
+import { recentPlacesFull, rememberPlaces } from "../utils/recentPlaces";
 import { useTripEstimate } from "../lib/tripEstimate";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../config/firebase";
@@ -59,11 +66,13 @@ export default function TripDetails() {
   const [passBusy, setPassBusy] = useState(false);
   const [passMsg, setPassMsg] = useState("");
   // Every rider reads and agrees to the terms on every booking.
-  const [askConsent, setAskConsent] = useState(false);
+  const [booking, setBooking] = useState(false);
+  // Members: the card they used before, for one-tap booking right here.
+  const [savedCard, setSavedCard] = useState(null);
   const [locBlocked, setLocBlocked] = useState(null);
   const [going, setGoing] = useState(false);
   const [secondOk, setSecondOk] = useState(false);
-  const [recent] = useState(recentPlaces);
+  const [recent] = useState(recentPlacesFull);
   const { ride, updateRide, addStop, removeStop } = useRide();
   const navigate = useNavigate();
 
@@ -144,6 +153,36 @@ export default function TripDetails() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, userProfile]);
 
+  // Pickup fills itself from the phone's location when the rider already allowed it (no tap).
+  useEffect(() => {
+    if (typeof ride.pickupLat === "number" || ride.pickup.trim() || !navigator.permissions?.query) return;
+    navigator.permissions
+      .query({ name: "geolocation" })
+      .then((s) => s.state === "granted" && shareLocation())
+      .catch(() => {});
+    // Once, when the screen opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Guests: name and number from their last booking on this phone.
+  useEffect(() => {
+    if (currentUser || ride.guestFirstName || ride.phone) return;
+    const g = rememberedGuest();
+    if (g) updateRide({ guestFirstName: g.first || "", guestLastName: g.last || "", phone: g.phone || "" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (!currentUser) return undefined;
+    let live = true;
+    mySavedCard()
+      .then(({ data }) => live && setSavedCard(data || null))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [currentUser]);
+
   function handleAddStop() {
     if (stopInput.trim()) {
       addStop(stopInput.trim());
@@ -151,7 +190,8 @@ export default function TripDetails() {
     }
   }
 
-  async function handleContinue() {
+  // mode: "pay" (payment screen), "card" (saved card, book now) or "cash" (book now).
+  async function handleContinue(mode = "pay") {
     if (!ride.guestFirstName.trim() || !ride.guestLastName.trim()) {
       setError("First and last name are required.");
       return;
@@ -194,44 +234,75 @@ export default function TripDetails() {
         );
         if (!(await getDocs(q)).empty) {
           setSecondOk(true);
-          setError("You already have a ride on the way (see Home). To book another one, for someone else, tap Continue again.");
+          setError("You already have a ride on the way (see Home). To book another one, for someone else, tap the button again.");
           return;
         }
       } catch {
         // Can't check right now: let them book.
       }
     }
-    if (currentUser && consentIsCurrent(userProfile?.legal, RIDER_DOCS)) {
-      proceed(userProfile.legal);
-      return;
-    }
-    setAskConsent(true);
+    // The button the rider taps says "Agree & ..." with the rules and links right above it:
+    // that tap is the agreement (no extra pop-up). Members agree once per terms version.
+    proceed(needsConsent ? { ...consentRecord(RIDER_DOCS, false), contactOptIn: true } : userProfile.legal, mode);
   }
 
   // App rides share the rider's location so the driver can find them.
   // Location turned off on purpose = a call-in ride the office dispatches.
-  async function proceed(consent) {
-    if (!sharing) return finish(consent, { callIn: true, bookedFrom: null });
-    if (scheduleType === "later") return finish(consent, { callIn: false, bookedFrom: null });
+  async function proceed(consent, mode = "pay") {
+    if (!sharing) return finish(consent, { callIn: true, bookedFrom: null }, mode);
+    if (scheduleType === "later") return finish(consent, { callIn: false, bookedFrom: null }, mode);
     setGoing(true);
     const r = await readLocationOnce();
     setGoing(false);
-    if (r.denied) return setLocBlocked({ consent });
-    finish(consent, { callIn: false, bookedFrom: r.fix || null });
+    if (r.denied) return setLocBlocked({ consent, mode });
+    finish(consent, { callIn: false, bookedFrom: r.fix || null }, mode);
   }
 
-  function finish(consent, extra) {
+  async function finish(consent, extra, mode = "pay") {
     setLocBlocked(null);
-    rememberPlaces(ride.pickup, ride.dropoff);
-    if (currentUser) saveLegalConsent(consent).catch(() => {});
+    rememberPlaces(
+      { text: ride.pickup, lat: ride.pickupLat, lng: ride.pickupLng },
+      { text: ride.dropoff, lat: ride.dropoffLat, lng: ride.dropoffLng }
+    );
+    if (currentUser && consent !== userProfile?.legal) saveLegalConsent(consent).catch(() => {});
     const pass = dayPass ? { wantsPriorityPass: true, fastPassId: dayPass.id } : {};
     // Road miles from the estimate ride along so the office, driver and receipt see the same number.
     const est = estimate ? { estMiles: estimate.miles } : {};
-    updateRide({ scheduleType, consent, shareLocation: !extra.callIn, ...extra, ...pass, ...est });
-    navigate(dayPass || !ride.wantsPriorityPass ? "/payment" : "/fast-pass");
+    const fields = { scheduleType, consent, shareLocation: !extra.callIn, ...extra, ...pass, ...est };
+    updateRide(fields);
+    if (mode === "pay") return navigate(dayPass || !ride.wantsPriorityPass ? "/payment" : "/fast-pass");
+
+    // One-tap booking: no payment screen.
+    setBooking(true);
+    setError("");
+    try {
+      const next = { ...ride, ...fields };
+      let paymentIntentId = null;
+      if (mode === "card") {
+        const { data } = await createPaymentIntent({ useSaved: true });
+        const stripe = await stripePromise;
+        // Confirms with the saved card; the bank may ask the rider to approve (handled here).
+        const result = await stripe.confirmCardPayment(data.clientSecret);
+        if (result.error) throw new Error(result.error.message);
+        paymentIntentId = result.paymentIntent.id;
+      }
+      const id = await submitRide(next, { uid: currentUser.uid, paymentMethod: mode, paymentIntentId });
+      updateRide({ paymentMethod: mode, lastRideId: id });
+      navigate("/success");
+    } catch (e) {
+      setError(e?.code === "permission-denied" ? "This phone number can't book rides right now. Please call the office." : e?.message || "Couldn't book. Try again, or tap Other ways to pay.");
+    } finally {
+      setBooking(false);
+    }
   }
 
-  const recentList = recent.map((p) => p);
+  const recentList = recent;
+  // Quick picks under the drop-off box: one tap fills it (with its map point).
+  const quickPicks = recent.filter((p) => p.text !== ride.pickup).slice(0, 4);
+  const needsConsent = !(currentUser && consentIsCurrent(userProfile?.legal, RIDER_DOCS));
+  // One-tap booking: a member with a saved card (or who paid cash last time) books from this screen.
+  const lastPay = lastPayMethod();
+  const fastPay = !currentUser || (ride.wantsPriorityPass && !dayPass) ? null : savedCard && lastPay !== "cash" ? "card" : lastPay === "cash" ? "cash" : null;
 
   return (
     <div className="min-h-screen bg-white">
@@ -292,12 +363,26 @@ export default function TripDetails() {
                 testid="dropoff-search"
                 className="w-full border-2 border-slate-300 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
                 value={ride.dropoff}
-                onChange={(t) => updateRide({ dropoff: t })}
+                onChange={(t) => updateRide({ dropoff: t, dropoffLat: null, dropoffLng: null })}
                 onPick={(r) => updateRide({ dropoff: r.text || r.address, dropoffLat: r.lat, dropoffLng: r.lng })}
                 placeholder={COPY.dropoffPlaceholder}
                 onPin={() => setPickerTarget("dropoff")}
                 recents={recentList}
               />
+              {!ride.dropoff.trim() && quickPicks.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2" data-testid="quick-picks">
+                  {quickPicks.map((p) => (
+                    <button
+                      key={p.text}
+                      type="button"
+                      onClick={() => updateRide({ dropoff: p.text, dropoffLat: p.lat, dropoffLng: p.lng })}
+                      className="max-w-full truncate rounded-full border-2 border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-800"
+                    >
+                      {p.text}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div data-testid="price-estimate" aria-live="polite" className="rounded-2xl border-2 border-emerald-500 bg-emerald-50 px-4 py-4">
@@ -712,13 +797,46 @@ export default function TripDetails() {
             Check your addresses before you book. You are responsible for the pickup and drop-off information you enter. If it is wrong, the company is not responsible, and the normal cancellation fee still applies. Anything about the trip is between you and your driver.
           </p>
 
+          {needsConsent && (
+            <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 text-sm text-slate-700 space-y-1" data-testid="consent-inline">
+              <p>
+                Free to cancel until your driver is about {RR.headsUpMinutes} minutes away, then ${RR.lateCancelFee}. No-show: up to ${RR.noShowFee}. First{" "}
+                {RR.waitGraceMinutes} minutes of waiting are free, then ${WAIT.toFixed(2)} a minute. Same price cash or card.
+              </p>
+              <p>
+                When you tap below, you agree to the{" "}
+                <Link to="/terms" target="_blank" className="font-semibold text-blue-700 underline">Terms</Link> and{" "}
+                <Link to="/privacy" target="_blank" className="font-semibold text-blue-700 underline">Privacy Policy</Link>, and to calls and texts about your rides.
+              </p>
+            </div>
+          )}
+
+          {fastPay && (
+            <button
+              type="button"
+              data-testid="book-now"
+              onClick={() => handleContinue(fastPay)}
+              className="w-full mt-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4 min-h-[56px] rounded-full shadow-luxury transition disabled:opacity-60"
+              disabled={going || booking}
+            >
+              {booking
+                ? "Booking\u2026"
+                : `${needsConsent ? "Agree & book" : "Book"} \u00b7 ${fastPay === "card" ? `${brandName(savedCard.brand)} \u2022\u2022${savedCard.last4}` : "pay cash"}`}
+              {!booking && estimate && <span className="block text-sm font-semibold text-blue-100">About {dollars(estimate.fareCents)}</span>}
+            </button>
+          )}
           <button
-            onClick={handleContinue}
-            className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4 min-h-[56px] rounded-full shadow-luxury transition hover:-translate-y-0.5 duration-200"
-            disabled={going}
+            type="button"
+            onClick={() => handleContinue("pay")}
+            className={
+              fastPay
+                ? "w-full mt-2 border-2 border-slate-300 text-slate-700 font-semibold text-base py-3 rounded-full"
+                : "w-full mt-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4 min-h-[56px] rounded-full shadow-luxury transition hover:-translate-y-0.5 duration-200"
+            }
+            disabled={going || booking}
           >
-            {going ? "Checking your location\u2026" : "Continue to Payment"}
-            {!going && estimate && (
+            {going ? "Checking your location\u2026" : fastPay ? "Other ways to pay" : `${needsConsent ? "Agree & " : ""}Continue to Payment`}
+            {!going && !fastPay && estimate && (
               <span className="block text-sm font-semibold text-blue-100">About {dollars(estimate.fareCents)}</span>
             )}
           </button>
@@ -742,12 +860,12 @@ export default function TripDetails() {
                 <p className="text-slate-600 text-sm">
                   Turn on Location for this site so your driver can find you.
                 </p>
-                <button type="button" onClick={() => proceed(locBlocked.consent)} className="w-full min-h-[48px] rounded-xl bg-blue-600 text-white font-bold text-base">
+                <button type="button" onClick={() => proceed(locBlocked.consent, locBlocked.mode)} className="w-full min-h-[48px] rounded-xl bg-blue-600 text-white font-bold text-base">
                   Try again
                 </button>
                 <button
                   type="button"
-                  onClick={() => finish(locBlocked.consent, { callIn: true, bookedFrom: null })}
+                  onClick={() => finish(locBlocked.consent, { callIn: true, bookedFrom: null }, locBlocked.mode)}
                   className="w-full min-h-[48px] rounded-xl border-2 border-slate-300 font-bold text-slate-700 text-base"
                 >
                   Call-in ride
@@ -780,17 +898,6 @@ export default function TripDetails() {
             />
           )}
 
-          <ConsentModal
-            open={askConsent}
-            docIds={RIDER_DOCS}
-            confirmLabel="Agree & Continue"
-            quick
-            onClose={() => setAskConsent(false)}
-            onAccept={(record) => {
-              setAskConsent(false);
-              proceed(record);
-            }}
-          />
         </div>
       </div>
     </div>

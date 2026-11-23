@@ -76,7 +76,7 @@ service cloud.firestore {
               'balanceOwedCents', 'lockOffCents', 'creditUsedCents', 'fareChargedCents', 'driverCardCostCents',
               'riderApproved', 'rewardCountedAt', 'rewardEarnedCents', 'chargeQuestionAt',
               // Trip changes during the ride: only Cloud Functions record them.
-              'routeChangedAt', 'routeChanges', 'stopWait', 'stopCount', 'stopWaitMs'];
+              'routeChangedAt', 'routeChanges', 'stopWait', 'stopCount', 'stopWaitMs', 'appMeterCents'];
     }
 
     match /rides/{rideId} {

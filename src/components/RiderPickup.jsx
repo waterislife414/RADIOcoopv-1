@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../config/firebase";
@@ -7,9 +7,10 @@ import RideMap from "./RideMap";
 import CallButton from "./CallButton";
 import { ring } from "../utils/alertSound";
 import { RIDE_RULES, useNow, useShareLocation, phoneAlert, money } from "../utils/rideLive";
-import { waitClock, clockText, isAppRide, pickupPoint } from "../../functions/lib/rideTiming.mjs";
+import { waitClock, clockText, isAppRide, pickupPoint, distanceMeters } from "../../functions/lib/rideTiming.mjs";
 
 const riderArrivalReply = httpsCallable(functions, "riderArrivalReply");
+const AUTO_HERE_METERS = 30;
 const PASS = BRAND.copy.dayPass;
 
 function once(key, fn) {
@@ -29,7 +30,18 @@ export default function RiderPickup({ ride, rideId }) {
   const [busy, setBusy] = useState(false);
   const [alertsAsk, setAlertsAsk] = useState(() => "Notification" in window && Notification.permission === "default");
   const waiting = ride.status === "dispatched";
-  const sharing = useShareLocation(rideId, waiting && ride.shareLocation !== false && !paused);
+  // At the car? Tell the driver by itself: the rider's phone within about 30 m of the car
+  // after the driver arrived counts as "I'm at the car" (the button stays as a backup).
+  const autoHere = useRef(false);
+  const sharing = useShareLocation(rideId, waiting && ride.shareLocation !== false && !paused, (fix) => {
+    if (autoHere.current || ride.arrivedAt == null || ride.riderReply || !ride.driverPos || !(fix.acc <= 40)) return;
+    if (distanceMeters(fix, ride.driverPos) <= AUTO_HERE_METERS) {
+      autoHere.current = true;
+      riderArrivalReply({ rideId, reply: "here", auto: true }).catch(() => {
+        autoHere.current = false;
+      });
+    }
+  });
   const car = ride.carNumber ? `Car ${ride.carNumber}` : "Your driver";
   const app = isAppRide(ride);
 

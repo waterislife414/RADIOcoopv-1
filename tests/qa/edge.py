@@ -27,7 +27,7 @@ with sync_playwright() as p:
     def signup_then_book_no_repeat():
         pg.goto(BASE+"/sign-up"); pg.wait_for_timeout(800)
         pg.fill("input[placeholder='First Name']","Edge"); pg.fill("input[placeholder='Last Name']","Case")
-        pg.fill("input[placeholder='Home Address']","1 Main St"); pg.fill("input[placeholder='Phone']","706.555.0102")
+        pg.fill("input[placeholder='Home address (optional)']","1 Main St"); pg.fill("input[placeholder='Phone']","706.555.0102")
         pg.fill("input[placeholder='Email']",email); pg.fill("input[placeholder='Password']","secret123"); pg.fill("#dob","1970-01-01")
         pg.click("form button[type=submit]"); pg.wait_for_timeout(500); agree_modal(pg,"Agree & Create Account"); pg.wait_for_timeout(2000)
         pg.goto(BASE+"/trip-details"); pg.wait_for_timeout(1000)
