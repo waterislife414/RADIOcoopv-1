@@ -18,7 +18,7 @@ def db_conn():
 def test_render_case_sheet(db_conn):
     db_conn.execute(
         "INSERT INTO owners (id, kind, name, city, state, county, life_status, business_status, tier, status) "
-        "VALUES (1, 'person', 'John Doe', 'Phenix City', 'AL', 'Russell', 'unknown', 'n/a', 'A', 'new')"
+        "VALUES (1, 'person', 'John Doe', 'Phenix City', 'AL', 'Russell', 'deceased', 'n/a', 'A', 'new')"
     )
     db_conn.execute(
         "INSERT INTO properties (owner_id, holder, property_type, amount_text, reported_date, eligible_after, signal) "
