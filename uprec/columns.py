@@ -1,6 +1,6 @@
 """Portal header mapping to canonical fields."""
-from pathlib import Path
 import re
+from pathlib import Path
 
 import yaml
 
