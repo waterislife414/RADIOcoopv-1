@@ -1,7 +1,10 @@
 import sqlite3
+
 import pytest
+
 from uprec.db import init_db
 from uprec.work_queue import next_cases
+
 
 @pytest.fixture
 def db_conn():

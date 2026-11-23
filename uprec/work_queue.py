@@ -1,5 +1,6 @@
 import sqlite3
 
+
 def next_cases(conn: sqlite3.Connection, limit: int = 10) -> list[dict]:
     """
     Return next cases to research: owners with status in ('gated', 'researching')
