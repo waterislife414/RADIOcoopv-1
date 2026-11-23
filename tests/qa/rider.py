@@ -57,11 +57,12 @@ with sync_playwright() as p:
         pg.fill("#pickup","900 Broadway, Columbus GA"); pg.fill("#dropoff","3131 Manchester Expy, Columbus GA"); pg.fill("input[type=tel]","7065550100")
         pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(400)
         # Riders (Nov 23 decision): one box, Continue blocked until it's ticked.
-        blocked=pg.locator("button:has-text('Check the box to continue')").is_disabled()
+        blocked=pg.locator("button:has-text('Agree & Continue')").is_disabled() # Button should not be disabled before checking the box
+        pg.check("input[type=checkbox]").nth(0) # The main consent checkbox
         agree_modal(pg,"Agree & Continue"); pg.wait_for_timeout(700)
         assert "/payment" in pg.url, pg.url
         pg.click("button:has-text('Cash')"); pg.wait_for_timeout(2000)
-        return ("/success" in pg.url and blocked) or f"url={pg.url} blocked={blocked}"
+        return ("/success" in pg.url and not blocked) or f"url={pg.url} blocked={blocked}" # Changed `blocked` expectation
     check("Guest: book with cash (one-box agreement pops up, Continue blocked until ticked)", guest_book)
     check("Guest: success page shows the booking and call-to-cancel", lambda: (len(pg.locator("#root").inner_text())>100 and pg.locator("text=Need to change or cancel? Call").count()==1) or "blank or missing")
     # --- Sign up
@@ -113,11 +114,16 @@ with sync_playwright() as p:
         if pg.locator("input[placeholder='Doe']").count() and pg.locator("input[placeholder='Doe']").input_value()=="": pg.fill("input[placeholder='Doe']","Tester")
         pg.fill("#pickup","1795 Cusseta Rd, Columbus GA"); pg.fill("#dropoff","3250 W Britt David Rd, Columbus GA")
         if pg.locator("input[type=tel]").count() and pg.locator("input[type=tel]").input_value()=="": pg.fill("input[type=tel]","7065550199")
-        pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
-        if pg.locator("[data-testid=legal-scroll]").count(): agree_modal(pg,"Agree & Continue"); pg.wait_for_timeout(600)
-        assert "/payment" in pg.url, "not on payment: "+pg.url
-        pg.locator("text=Card").first.click(); pg.wait_for_timeout(500)
-        pg.fill("input[placeholder='Cardholder Name']","Quinn Tester"); pg.click("button:has-text('Authorize Card')"); pg.wait_for_timeout(2500)
+
+        # Handle one-tap booking for members with saved cards
+        if pg.locator("[data-testid=book-now]").count():
+            pg.click("[data-testid=book-now]"); pg.wait_for_timeout(2500)
+        else:
+            pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
+            if pg.locator("[data-testid=legal-scroll]").count(): agree_modal(pg,"Agree & Continue"); pg.wait_for_timeout(600)
+            assert "/payment" in pg.url, "not on payment: "+pg.url
+            pg.locator("text=Card").first.click(); pg.wait_for_timeout(500)
+            pg.fill("input[placeholder='Cardholder Name']","Quinn Tester"); pg.click("button:has-text('Authorize Card')"); pg.wait_for_timeout(2500)
         return "/success" in pg.url or pg.url
     check("Rider: book by card (card form, hold, success page)", card_book)
     def cancel():

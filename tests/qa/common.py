@@ -39,7 +39,7 @@ def accept_gate(pg):
         pg.locator("text=I have read and agree").click(); pg.click("button:has-text('Agree and continue')"); pg.wait_for_timeout(1500)
 def agree_modal(pg, confirm):
     pg.wait_for_selector("[data-testid=legal-scroll]", timeout=4000)
-    if pg.locator("[data-testid=consent-quick]").count():
+    if pg.locator("[data-testid=consent-inline]").count():
         # Riders: one box, no scrolling (Nov 23 decision).
         pg.check("[data-testid=consent-agree]"); pg.click(f"button:has-text('{confirm}')"); return
     pg.evaluate("document.querySelector('[data-testid=legal-scroll]').scrollTo(0,1e6)"); pg.wait_for_timeout(300)
@@ -53,11 +53,12 @@ def more_options(pg):
     b=pg.locator("[data-testid=more-options]")
     if b.count() and b.get_attribute("aria-expanded")!="true": b.click(); pg.wait_for_timeout(200)
 def use_location(pg):
-    if pg.locator("text=Use my location").count():
-        pg.click("text=Use my location")
+    # Clicks "Use my location" if visible, otherwise waits for "Location attached".
+    if pg.locator("button:has-text('Use my location')").count():
+        pg.click("button:has-text('Use my location')")
         pg.wait_for_timeout(1200)
     else:
-        for _ in range(30):
+        for _ in range(30): # Wait up to 3 seconds for location to attach
             if pg.locator("text=✓ Location attached").count():
                 break
             pg.wait_for_timeout(100)

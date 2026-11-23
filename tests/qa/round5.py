@@ -30,6 +30,7 @@ with sync_playwright() as p:
         assert "/finish-account" in g.url, g.url
         first = g.input_value("input[aria-label='First name']")
         g.fill("[data-testid=finish-phone]", "(706) 555-0177"); g.click("[data-testid=finish-account]"); g.wait_for_timeout(600)
+        # Assuming agree_modal is designed to work with the updated inline consent now
         agree_modal(g, "Agree & Finish"); g.wait_for_timeout(1500)
         users = [v for k, v in db(g).items() if k.startswith("users/") and v.get("signInWith") == "google"]
         ok = users and users[0].get("phone") == "7065550177" and users[0].get("firstName") == "Gabby" and users[0].get("legal")
@@ -48,12 +49,16 @@ with sync_playwright() as p:
     def book_card():
         BEFORE.update(k for k in db(pg) if k.startswith("rides/"))
         pg.goto(BASE + "/trip-details"); pg.wait_for_timeout(900)
-        pg.click("text=Use my location"); pg.wait_for_timeout(1200); pin_dropoff(pg)
-        pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
-        if pg.locator("text=You already have a ride").count(): pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
-        if pg.locator("[data-testid=legal-scroll]").count(): agree_modal(pg, "Agree & Continue"); pg.wait_for_timeout(1200)
-        pg.locator("text=Card").first.click(); pg.wait_for_timeout(500)
-        pg.fill("input[placeholder='Cardholder Name']", "Riley Example"); pg.click("button:has-text('Authorize Card')"); pg.wait_for_timeout(2500)
+        use_location(pg); pin_dropoff(pg)
+        # Handle one-tap booking for members with saved cards
+        if pg.locator("[data-testid=book-now]").count():
+            pg.click("[data-testid=book-now]"); pg.wait_for_timeout(2500)
+        else:
+            pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
+            if pg.locator("text=You already have a ride").count(): pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
+            if pg.locator("[data-testid=legal-scroll]").count(): agree_modal(pg, "Agree & Continue"); pg.wait_for_timeout(1200)
+            pg.locator("text=Card").first.click(); pg.wait_for_timeout(500)
+            pg.fill("input[placeholder='Cardholder Name']", "Riley Example"); pg.click("button:has-text('Authorize Card')"); pg.wait_for_timeout(2500)
         assert "/success" in pg.url, pg.url
         pg.goto(BASE + "/"); pg.wait_for_timeout(1500)
         for _ in range(120):

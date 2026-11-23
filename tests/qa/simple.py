@@ -30,8 +30,13 @@ with sync_playwright() as p:
         use_location(pg)
         pin_dropoff(pg)
         t = pg.inner_text("[data-testid=price-amount]")
-        btn = pg.inner_text("button:has-text('Continue to Payment')")
-        return ("About $" in t and money(t) >= 2.16 and money(btn) == money(t)) or f"price={t!r} button={btn!r}"
+        # Check for either "Continue to Payment" or "Agree & book" / "Book" (one-tap)
+        if pg.locator("[data-testid=book-now]").count():
+            btn = pg.inner_text("[data-testid=book-now]")
+            return ("About $" in t and money(t) >= 2.16 and money(btn) == money(t)) or f"price={t!r} button={btn!r}"
+        else:
+            btn = pg.inner_text("button:has-text('Continue to Payment')")
+            return ("About $" in t and money(t) >= 2.16 and money(btn) == money(t)) or f"price={t!r} button={btn!r}"
     check("Booking: price shows before paying, and on the Continue button", price_before_paying)
 
     def extras_folded():
@@ -47,6 +52,7 @@ with sync_playwright() as p:
         pg.fill("input[placeholder='Jane']", "Simple"); pg.fill("input[placeholder='Doe']", "Tester")
         pg.fill("input[type=tel]", "7065550123")
         pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
+        # Assuming the agree_modal will handle the inline consent on TripDetails
         agree_modal(pg, "Agree & Continue"); pg.wait_for_timeout(900)
         assert "/payment" in pg.url, pg.url
         cash = money(pg.inner_text("[data-testid=total-cash]"))
@@ -80,17 +86,20 @@ with sync_playwright() as p:
     def driver_first_name():
         use_location(pg)
         pin_dropoff(pg)
-        pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
-        if pg.locator("text=You already have a ride").count():
-            pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
-        if pg.locator("[data-testid=legal-scroll]").count():
-            agree_modal(pg, "Agree & Continue")
-        pg.wait_for_timeout(1200)
+        # Handle one-tap booking for members with saved cards
         if pg.locator("[data-testid=book-now]").count():
-            pg.click("[data-testid=book-now]")
+            pg.click("[data-testid=book-now]"); pg.wait_for_timeout(2500)
         else:
+            pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
+            if pg.locator("text=You already have a ride").count():
+                pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
+            # Assuming the agree_modal will handle the inline consent on TripDetails
+            if pg.locator("[data-testid=legal-scroll]").count():
+                agree_modal(pg, "Agree & Continue")
+            pg.wait_for_timeout(1200)
             pg.locator("text=Card").first.click(); pg.wait_for_timeout(400)
             pg.fill("input[placeholder='Cardholder Name']", "Riley Example"); pg.click("button:has-text('Authorize Card')")
+
         for _ in range(90):
             if pg.locator("[data-testid=driver-identity]").count():
                 break

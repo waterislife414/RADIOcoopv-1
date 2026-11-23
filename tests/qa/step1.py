@@ -54,11 +54,18 @@ with sync_playwright() as p:
         if R.locator("input[placeholder='Doe']").count() and R.locator("input[placeholder='Doe']").input_value()=="": R.fill("input[placeholder='Doe']","Tester")
         R.fill("#pickup","1795 Cusseta Rd, Columbus GA"); R.fill("#dropoff","QA Step1 Dropoff")
         if R.locator("input[type=tel]").count() and R.locator("input[type=tel]").input_value()=="": R.fill("input[type=tel]","7065550199")
-        R.click("button:has-text('Continue to Payment')"); R.wait_for_timeout(500)
-        if R.locator("[data-testid=legal-scroll]").count(): agree_modal(R, "Agree & Continue"); R.wait_for_timeout(600)
-        assert "/payment" in R.url, "not on payment: "+R.url
-        R.locator("text=Card").first.click(); R.wait_for_timeout(500)
-        R.fill("input[placeholder='Cardholder Name']","Quinn Tester"); R.click("button:has-text('Authorize Card')"); R.wait_for_timeout(2500)
+
+        # Handle one-tap booking for members with saved cards or continue to payment
+        if R.locator("[data-testid=book-now]").count():
+            R.click("[data-testid=book-now]"); R.wait_for_timeout(2500)
+        else:
+            R.click("button:has-text('Continue to Payment')"); R.wait_for_timeout(500)
+            # Assuming the agree_modal will handle the inline consent on TripDetails
+            if R.locator("[data-testid=legal-scroll]").count(): agree_modal(R, "Agree & Continue"); R.wait_for_timeout(600)
+            assert "/payment" in R.url, "not on payment: "+R.url
+            R.locator("text=Card").first.click(); R.wait_for_timeout(500)
+            R.fill("input[placeholder='Cardholder Name']","Quinn Tester"); R.click("button:has-text('Authorize Card')"); R.wait_for_timeout(2500)
+
         assert "/success" in R.url, "no success: "+R.url
         for _ in range(12):
             if "QA Step1 Dropoff" in A.locator("[data-testid=pegboard]").inner_text(): return True

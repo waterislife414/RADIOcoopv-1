@@ -27,16 +27,24 @@ with sync_playwright() as p:
     def fee_rule_shown():
         BEFORE.update(k for k in db(pg) if k.startswith("rides/"))
         pg.goto(BASE + "/trip-details"); pg.wait_for_timeout(900)
-        pg.click("text=Use my location"); pg.wait_for_timeout(1200)
+        use_location(pg)
         pin_dropoff(pg)
         for _ in range(20):
             if pg.locator("[data-testid=price-fees]").count(): break
             pg.wait_for_timeout(300)
         t = pg.inner_text("[data-testid=price-fees]")
         assert "Same price cash or card" in t, t
-        pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
+        # If book-now is present, click "Other ways to pay" to reach payment screen
+        if pg.locator("[data-testid=book-now]").count():
+            pg.click("button:has-text('Other ways to pay')"); pg.wait_for_timeout(500)
+        else:
+            pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
+
         if pg.locator("text=You already have a ride").count(): pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
-        agree_modal(pg, "Agree & Continue"); pg.wait_for_timeout(1500)
+        # Note: The new consent is inline on TripDetails, not a modal on Payment.
+        # This will only be called if a legacy modal appears.
+        if pg.locator("[data-testid=legal-scroll]").count():
+            agree_modal(pg, "Agree & Continue"); pg.wait_for_timeout(1500)
         rule = pg.inner_text("[data-testid=card-fee-rule]")
         return ("No card fee" in rule) or rule
     check("Booking: price card and payment screen say no card fee, same price as cash", fee_rule_shown)
