@@ -4,7 +4,10 @@ import sqlite3
 from pathlib import Path
 
 def ranked_rows(conn: sqlite3.Connection) -> list[dict]:
-    """Return ranked owners with aggregated property metrics, sorted by tier (A, B, C, X) and total value desc."""
+    """
+    Return ranked owners with aggregated property metrics,
+    sorted by tier (A, B, C, X, unscored) and then by total_min_cents descending.
+    """
     query = """
         SELECT 
             o.id as owner_id,
@@ -27,7 +30,7 @@ def ranked_rows(conn: sqlite3.Connection) -> list[dict]:
 
     def sort_key(r):
         t = r.get('tier', 'unscored')
-        t_val = tier_order.get(t, 5)
+        t_val = tier_order.get(t, len(tier_order)) # Default to highest value for unknown tiers
         # Sort by tier ascending, then total_min_cents descending
         return (t_val, -r.get('total_min_cents', 0))
 

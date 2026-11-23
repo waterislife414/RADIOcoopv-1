@@ -60,3 +60,23 @@ def test_ranked_rows_and_export(memory_db, tmp_path):
     content = csv_path.read_text(encoding="utf-8")
     assert "Alice Smith" in content
     assert "Bob Jones" in content
+
+    # Test that unscored owners are sorted last
+    cursor = memory_db.execute(
+        "INSERT INTO owners (name, tier, life_status, status) VALUES (?, ?, ?, ?)",
+        ("Charlie Brown", "unscored", "unknown", "new")
+    )
+    owner_c_id = cursor.lastrowid
+    memory_db.execute(
+        "INSERT INTO properties (owner_id, amount_min_cents, signal) VALUES (?, ?, ?)",
+        (owner_c_id, 30000, "low")
+    )
+    memory_db.commit()
+
+    rows_with_unscored = ranked_rows(memory_db)
+    assert len(rows_with_unscored) == 3
+    assert rows_with_unscored[0]["owner"] == "Alice Smith"
+    assert rows_with_unscored[1]["owner"] == "Bob Jones"
+    assert rows_with_unscored[2]["owner"] == "Charlie Brown"
+    assert rows_with_unscored[2]["tier"] == "unscored"
+    assert rows_with_unscored[2]["total_min_cents"] == 30000
