@@ -1,0 +1,40 @@
+1 | / import pytest
+2 | | import sqlite3
+3 | |
+4 | | from uprec.config import load_rules
+5 | | from uprec.db import init_db
+6 | | from uprec.score import score_owner
+  | |___________________________________^
+7 |
+8 |   @pytest.fixture
+  |
+help: Organize imports
+   |
+1  + import sqlite3
+2  +
+3  | import pytest
+   - import sqlite3
+4  |
+--------------------------------------------------------------------------------
+8  |
+9  +
+10 | @pytest.fixture
+   |
+
+Found 1 error.
+[*] 1 fixable with `--fix`.
+
+## See relevant line below marked with █.
+
+tests/test_score.py:
+  1█import pytest
+  2│import sqlite3
+  3│
+  4│from uprec.config import load_rules
+...⋮...
+
+
+Only 3 reflections allowed, stopping.
+Summarization failed for model gemini/gemini-3.5-flash-lite: cannot schedule new futures after shutdown
+Summarization failed for model gemini/gemini-3.5-flash-lite: cannot schedule new futures after shutdown
+summarizer unexpectedly failed for all models
