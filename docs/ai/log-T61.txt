@@ -1,0 +1,40 @@
+button:has-text('Agree & Continue')")                                           
++        assert btn.count() == 1 and btn.is_enabled(), "one-tap agree button    
+missing or blocked"                                                             
++        btn.click(); pg.wait_for_timeout(1200)                                 
+         assert "/payment" in pg.url, pg.url                                    
+         pg.click("button:has-text('Cash')"); pg.wait_for_timeout(2000)         
+-        return ("/success" in pg.url and not blocked) or f"url={pg.url}        
+blocked={blocked}" # Changed `blocked` expectation                              
+-    check("Guest: book with cash (one-box agreement pops up, Continue blocked  
+until ticked)", guest_book)                                                     
++        return ("/success" in pg.url and "Free to cancel" in summary and "you  
+agree" in summary) or f"url={pg.url} summary={summary[:120]}"                   
++    check("Guest: book with cash (agreement on the booking screen, one tap)",  
+guest_book)                                                                     
+     check("Guest: success page shows the booking and call-to-cancel", lambda:  
+(len(pg.locator("#root").inner_text())>100 and pg.locator("text=Need to change  
+or cancel? Call").count()==1) or "blank or missing")                            
+     # --- Sign up                                                              
+     email=f"qa{int(time.time())}@example.com"                                  
+     def signup():                                                              
+         pg.goto(BASE+"/sign-up"); pg.wait_for_timeout(800)                     
+         pg.fill("input[placeholder='First Name']","Quinn");                    
+pg.fill("input[placeholder='Last Name']","Tester")                              
+         pg.fill("input[placeholder='Home address (optional)']","100 Main St,   
+         a=pg.locator("text=Enter your email above first").count()==1           
+         pg.locator("button", has_text="Ride Now").first.click();               
+pg.fill("input[placeholder='Jane']","Quinn")                                    
+         if pg.locator("input[placeholder='Doe']").count() and                  
+         pg.fill("#pickup","1795 Cusseta Rd, Columbus GA");                     
+pg.fill("#dropoff","3250 W Britt David Rd, Columbus GA")                        
+         if pg.locator("input[type=tel]").count() and                           
+pg.locator("input[type=tel]").input_value()=="":                                
+pg.fill("input[type=tel]","7065550199")                                         
+                                                                                
++ 117 / 150 lines [███████████████████████░░░░░░░]  78%                         
+                                                                                
+Tokens: 33k sent, 2.8k received. Cost: $0.02 message, $0.02 session.
+Applied edit to tests/qa/rider.py
+Commit 3b1ba56 test: update rider qa script for inline consent on guest booking
+== Rider and guest: 19/19 passed

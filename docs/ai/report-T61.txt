@@ -1,0 +1,8 @@
+task T61
+code_files_changed 1
+unit pass
+build pass
+build:demo pass
+qa rider pass
+tests WEAKENED tests/qa/rider.py 20->19
+== Rider and guest: 19/19 passed
