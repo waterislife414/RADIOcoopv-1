@@ -1,6 +1,7 @@
 """Portal header mapping to canonical fields."""
-import re
 from pathlib import Path
+import re
+
 import yaml
 
 COLUMNS_PATH = Path(__file__).resolve().parent.parent / "config" / "portal_columns.yaml"

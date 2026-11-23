@@ -1,5 +1,4 @@
-import pytest
-from uprec.columns import load_column_map, norm_header, build_header_map, map_row
+from uprec.columns import build_header_map, load_column_map, map_row, norm_header
 
 
 def test_norm_header():
