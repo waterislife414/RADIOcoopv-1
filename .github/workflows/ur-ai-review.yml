@@ -1,8 +1,8 @@
-name: ai-review
-# Push branch ai-review/<task>: a DIFFERENT model than the author reviews ai/<task>, attacks the diff, fixes problems, re-runs checks.
+name: ur-ai-review
+# Push branch ur-review/<task>: a DIFFERENT model than the author reviews ur/<task>, attacks the diff, fixes problems, re-runs checks.
 on:
   push:
-    branches: ['ai-review/**']
+    branches: ['ur-review/**']
 permissions:
   contents: write
 jobs:
@@ -22,11 +22,11 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           BR: ${{ github.ref_name }}
         run: |
-          T="${BR#ai-review/}"
+          T="${BR#ur-review/}"
           git config user.name "ai-reviewer"; git config user.email "ai-bot@users.noreply.github.com"
-          git checkout -B "ai/$T" "origin/ai/$T"
+          git checkout -B "ur/$T" "origin/ur/$T"
           MODEL=gemini/gemini-3.5-flash-lite
-          git diff origin/main --stat -- . ':!docs' ':!.gitignore' | awk '{print $1}' | grep -E '^(uprec|tests)/' > /tmp/files.txt || true
+          git diff origin/unclaimed-recovery --stat -- . ':!docs' ':!.gitignore' | awk '{print $1}' | grep -E '^(uprec|tests)/' > /tmp/files.txt || true
           { cat AGENTS.md; echo; echo "You are the REVIEWER, not the author. Another AI made this change for task: $(grep -E "^$T " AI_PROMPT.md)"; echo "Attack it: wrong column names vs db/schema.sql, thresholds hard-coded instead of read from config/rules.yaml, off-by-one on cents and dates, missing edge cases, real-looking personal data, anything outside the task. Fix real problems with minimal edits; if nothing is wrong change nothing. End by listing each issue found and fixed."; } > /tmp/review.txt
           for M in "$MODEL" openrouter/cohere/north-mini-code:free openrouter/google/gemma-4-31b-it:free groq/llama-3.3-70b-versatile; do
             echo "trying $M" >> /tmp/models.txt
@@ -39,4 +39,4 @@ jobs:
           pytest -q > /dev/null 2>&1 && U=pass || U=FAIL
           printf "review %s\nlint %s\ntests %s\n" "$T" $L $U >> "docs/ai/report-$T.txt"
           git add -A && git commit -qm "AI review $T (lint $L, tests $U)" || true
-          git push -f origin "ai/$T"
+          git push -f origin "ur/$T"

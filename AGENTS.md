@@ -2,7 +2,7 @@
 Read first: docs/ai/KNOWLEDGE.md, docs/ai/lessons.md, config/rules.yaml, db/schema.sql.
 Stack: plain Python 3.12, SQLite (stdlib sqlite3), PyYAML, pytest, ruff. NOT a web app. NOT Node. No external paid APIs. No network calls in code you write unless a task says so.
 ## Rules
-1. One task per branch `ai/<task>`. Never push to main.
+1. One task per branch `ur/<task>`. Never push to main.
 2. Before saying done run: `ruff check .` and `pytest -q`. Say plainly what you did NOT run.
 3. Every threshold, percentage, keyword list and date window lives in config/rules.yaml. Never hard-code them.
 4. Money is integer cents. Dates are ISO strings (YYYY-MM-DD). Never guess a column name: read db/schema.sql.

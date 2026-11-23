@@ -1,9 +1,9 @@
-name: integrate
+name: ur-integrate
 # Push branch integrate/<x>. Waits for running ai-task runs, then scores each worker branch alone and all together
 # by the pytest result line (the scorecard). Merge a change only if the score holds or improves.
 on:
   push:
-    branches: ['integrate/**']
+    branches: ['ur-integrate/**']
 permissions:
   contents: write
   actions: read
@@ -13,7 +13,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-        with: { ref: main, fetch-depth: 0 }
+        with: { ref: unclaimed-recovery, fetch-depth: 0 }
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       - run: pip install -r requirements.txt
@@ -21,8 +21,8 @@ jobs:
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
           for i in $(seq 1 30); do
-            N=$(gh run list --workflow ai-task --status in_progress --json databaseId -q 'length')
-            Q=$(gh run list --workflow ai-task --status queued --json databaseId -q 'length')
+            N=$(gh run list --workflow ur-ai-task --status in_progress --json databaseId -q 'length')
+            Q=$(gh run list --workflow ur-ai-task --status queued --json databaseId -q 'length')
             [ "$N" = "0" ] && [ "$Q" = "0" ] && break
             sleep 60
           done
@@ -32,11 +32,11 @@ jobs:
           score(){ pytest -q 2>&1 | tail -1; }
           git config user.name integrate-bot; git config user.email integrate-bot@users.noreply.github.com
           git checkout -q -B base; echo "baseline (main): $(score)" >> $OUT
-          TASKS=$(git ls-remote --heads origin 'ai/T*' | sed 's#.*refs/heads/ai/##')
+          TASKS=$(git ls-remote --heads origin 'ur/T*' | sed 's#.*refs/heads/ur/##')
           for T in $TASKS; do
-            git fetch -q origin ai/$T || { echo "$T: no branch" >> $OUT; continue; }
-            MB=$(git merge-base base origin/ai/$T)
-            git diff $MB origin/ai/$T -- uprec tests > /tmp/$T.patch
+            git fetch -q origin ur/$T || { echo "$T: no branch" >> $OUT; continue; }
+            MB=$(git merge-base base origin/ur/$T)
+            git diff $MB origin/ur/$T -- uprec tests > /tmp/$T.patch
             if [ ! -s /tmp/$T.patch ]; then echo "$T: no code changes" >> $OUT; continue; fi
             git checkout -q -B try base
             if git apply --3way /tmp/$T.patch 2>/dev/null; then echo "$T alone: $(score)  ($(git diff --stat | tail -1))" >> $OUT; else echo "$T: patch does not apply" >> $OUT; fi
@@ -48,4 +48,4 @@ jobs:
           ruff check . > /dev/null 2>&1 && echo "lint ok" >> $OUT || echo "lint FAIL" >> $OUT
           mkdir -p docs/ai; cp $OUT docs/ai/integrate.txt
           git add -A; git commit -qm "integrated wave (candidate)" || true
-          git push -f origin all:integrate-result
+          git push -f origin all:ur-integrate-result

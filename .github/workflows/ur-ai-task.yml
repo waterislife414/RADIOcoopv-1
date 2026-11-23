@@ -1,9 +1,9 @@
-name: ai-task
-# Push a branch named ai-go/<T1..T6> and this runs Aider (free models) on that task from AI_PROMPT.md,
-# then pushes the result to branch ai/<task>. Needs repo secrets GEMINI_API_KEY, OPENROUTER_API_KEY, GROQ_API_KEY.
+name: ur-ai-task
+# Push a branch named ur-go/<T1..T6> and this runs Aider (free models) on that task from AI_PROMPT.md,
+# then pushes the result to branch ur/<task>. Needs repo secrets GEMINI_API_KEY, OPENROUTER_API_KEY, GROQ_API_KEY.
 on:
   push:
-    branches: ['ai-go/**']
+    branches: ['ur-go/**']
   workflow_dispatch:
     inputs:
       task: { description: 'Task id, e.g. T1', required: true }
@@ -16,7 +16,7 @@ jobs:
     timeout-minutes: 24
     steps:
       - uses: actions/checkout@v4
-        with: { ref: main, fetch-depth: 0 }
+        with: { ref: unclaimed-recovery, fetch-depth: 0 }
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       - run: pip install aider-chat -r requirements.txt
@@ -28,10 +28,10 @@ jobs:
           BR: ${{ github.ref_name }}
           INPUT_TASK: ${{ inputs.task }}
         run: |
-          T="${INPUT_TASK:-${BR#ai-go/}}"
+          T="${INPUT_TASK:-${BR#ur-go/}}"
           MODEL=gemini/gemini-2.5-flash
           git config user.name "ai-bot"; git config user.email "ai-bot@users.noreply.github.com"
-          git checkout -b "ai/$T"
+          git checkout -b "ur/$T"
           { cat docs/ai/style-$(echo $MODEL|cut -d/ -f1).txt; cat AGENTS.md; echo; echo "TASK:"; grep -E "^$T " AI_PROMPT.md; echo "Rules: small diff; touch only the named FILES; synthetic fixtures only; no keys, no network."; } > /tmp/task.txt
           for ATTEMPT in 1 2; do
           for M in gemini/gemini-3.5-flash-lite openrouter/cohere/north-mini-code:free openrouter/google/gemma-4-31b-it:free groq/llama-3.3-70b-versatile "$MODEL"; do
@@ -41,14 +41,14 @@ jobs:
             [ "$RC" = "124" ] || grep -qiE "rate.?limit|NotFoundError|quota|RESOURCE_EXHAUSTED|is unavailable|overloaded" /tmp/aider.log || break
             sleep 40
           done
-            [ "$(git diff --name-only origin/main -- uprec tests | wc -l)" != "0" ] && break
+            [ "$(git diff --name-only origin/unclaimed-recovery -- uprec tests | wc -l)" != "0" ] && break
             echo "NUDGE: no code change after attempt $ATTEMPT" >> /tmp/models.txt
             printf "\nYOU MADE NO CODE CHANGE LAST TIME. The task requires creating or editing the named FILES. Read them, then make the edit now. Do not ask questions.\n" >> /tmp/task.txt
           done
           mkdir -p docs/ai; tail -40 /tmp/aider.log > "docs/ai/log-$T.txt"
           ruff check . > /tmp/lint.txt 2>&1 && L=pass || L=FAIL
           pytest -q > /tmp/unit.txt 2>&1 && U=pass || U=FAIL
-          CH=$(git diff --name-only origin/main -- uprec tests | wc -l)
+          CH=$(git diff --name-only origin/unclaimed-recovery -- uprec tests | wc -l)
           printf "task %s\ncode_files_changed %s\nlint %s\ntests %s\n" "$T" $CH $L $U > "docs/ai/report-$T.txt"
           git add -A && git commit -qm "AI task $T (lint $L, tests $U)" || true
-          git push -f origin "ai/$T"
+          git push -f origin "ur/$T"
