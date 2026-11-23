@@ -1,7 +1,8 @@
-import sqlite3
 import pytest
+
 from uprec.db import connect, init_db
-from uprec.research import record_fact, add_heir, add_contact
+from uprec.research import add_contact, add_heir, record_fact
+
 
 @pytest.fixture
 def db():

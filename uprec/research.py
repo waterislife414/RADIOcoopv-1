@@ -1,6 +1,7 @@
 """Research facts, heirs, and contacts store."""
 import sqlite3
 
+
 def record_fact(
     conn: sqlite3.Connection,
     owner_id: int,
