@@ -71,12 +71,10 @@ def gate_owner(conn, owner_id: int, today_str: str, rules: dict) -> str:
         history_reason = "unknown_date"
     elif len(properties) == 1:
         p = properties[0]
-        max_c = p["amount_max_cents"]
-        min_c = p["amount_min_cents"]
         is_below = False
         # A single property is below floor if its known maximum amount is $100 or less (i.e., not strictly above $100.00).
         # `single_claim_min_cents: 10001` in rules.yaml means "strictly above $100".
-        # So, if max_c is known and max_c < 10001 (i.e., <= 10000), it's below floor.
+        # So, if p["amount_max_cents"] is known and p["amount_max_cents"] < 10001 (i.e., <= 10000), it's below floor.
         if p["amount_max_cents"] is not None and p["amount_max_cents"] < single_floor:
             is_below = True
 

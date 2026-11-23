@@ -1,6 +1,6 @@
 """Tests for gating logic."""
-import sqlite3
 import pytest
+import sqlite3
 
 from uprec.db import init_db
 from uprec.gate import eligible_after, gate_owner
