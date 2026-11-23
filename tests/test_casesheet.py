@@ -1,5 +1,6 @@
-import sqlite3
+sqlite3
 import pytest
+
 from uprec.casesheet import render_case_sheet
 from uprec.db import init_db
 
