@@ -103,7 +103,15 @@ const PICKUP_RESET = Object.freeze({
   riderReply: null,
   driverPos: null,
   waitedMs: null,
+  // Shown to the rider so they can check the car: cleared when the driver changes.
+  driverFirstName: null,
 });
+
+/** First name only: enough for the rider to check "Is this Jordan?" without sharing more. */
+function firstNameOf(name) {
+  const first = String(name || "").trim().split(/\s+/)[0] || "";
+  return first.slice(0, 30) || null;
+}
 
 /** Fields set on a new ride: when to dispatch it and its priority. */
 async function dispatchFieldsFor(ride, nowMs = Date.now(), rideId = null) {
@@ -364,6 +372,7 @@ function assignInTx(tx, c, { rideId, ride, uid, board, driver, customer, how, zo
     assignedAt: nowMs,
     // A new driver starts his own pickup clock.
     ...PICKUP_RESET,
+    driverFirstName: firstNameOf(driver?.name),
     assignedHow: how,
     offer: null,
     offerDriverId: null,

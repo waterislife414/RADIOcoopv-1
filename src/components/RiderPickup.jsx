@@ -71,6 +71,15 @@ export default function RiderPickup({ ride, rideId }) {
 
   return (
     <div className="space-y-3 mt-3" data-testid="rider-pickup">
+      {waiting && ride.carNumber && (
+        <p data-testid="driver-identity" className="rounded-xl bg-white border-2 border-slate-200 px-4 py-3 text-base text-slate-700">
+          <b className="text-slate-900">{car}</b>
+          {ride.driverFirstName ? <> &middot; Driver {ride.driverFirstName}</> : null}
+          <span className="block text-sm text-slate-500">
+            Check the car number{ride.driverFirstName ? " and ask your driver's name" : ""} before you get in.
+          </span>
+        </p>
+      )}
       {waiting && ride.arrivedAt == null && ride.headsUpAt == null && (
         <p className="text-lg font-bold text-slate-800">
           {"\u{1F695}"} {car} is on the way{eta ? ` · about ${eta} min` : ""}
