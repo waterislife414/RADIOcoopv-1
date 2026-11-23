@@ -1,9 +1,9 @@
 from uprec.queries import (
+    facebook_queries,
     obituary_queries,
     probate_queries,
-    sos_business_queries,
     property_record_queries,
-    facebook_queries,
+    sos_business_queries,
 )
 
 def test_obituary_queries():
