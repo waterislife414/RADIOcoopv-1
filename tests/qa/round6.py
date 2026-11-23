@@ -43,6 +43,8 @@ with sync_playwright() as p:
     # c) a guest's first name, last name and phone are filled in on the next booking
     def guest_memory():
         g.goto(BASE + "/trip-details"); g.wait_for_timeout(1000)
+        if g.locator("button:has-text('Change')").count():
+            g.click("button:has-text('Change')"); g.wait_for_timeout(300)
         fn = g.input_value("input[placeholder='Jane']")
         ln = g.input_value("input[placeholder='Doe']")
         ph = g.input_value("input[type=tel]")
