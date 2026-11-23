@@ -11,6 +11,9 @@ function userFor(uid) {
     get email() {
       return accounts.get(uid)?.email || u.email;
     },
+    get displayName() {
+      return accounts.get(uid)?.displayName || null;
+    },
     getIdTokenResult: async () => ({ claims: { ...(accounts.get(uid)?.claims || {}) } }),
     getIdToken: async () => "demo-token",
     reload: async () => {},
@@ -55,4 +58,22 @@ export async function updateEmail(user, email) {
 }
 export async function updatePassword(user, password) {
   accounts.update(user.uid, { password });
+}
+
+// "Continue with Google" in the demo: signs in an example Google account (no Google is contacted).
+export class GoogleAuthProvider {
+  setCustomParameters() {}
+  addScope() {}
+}
+export async function signInWithPopup() {
+  const email = "google.rider@example.com";
+  const found = accounts.byEmail(email);
+  const uid = found ? found.uid : accounts.create(email, null, `demo-google-${Date.now().toString(36)}`);
+  accounts.update(uid, { displayName: "Gabby Example", provider: "google" });
+  accounts.signIn(uid);
+  return { user: userFor(uid) };
+}
+export const signInWithRedirect = signInWithPopup;
+export async function getRedirectResult() {
+  return null;
 }

@@ -181,6 +181,10 @@ export default function CurrentRide({ ride }) {
       ring(3);
     }
   }, [ride?.rideId, ride?.how, ride?.assignedAt]);
+  // Ring when the rider changes the drop-off from their phone.
+  useEffect(() => {
+    if (ride?.routeChangedAt && Date.now() - ride.routeChangedAt < 120_000 && !ringOnce(`route-${ride.rideId}-${ride.routeChangedAt}`)) ring(2);
+  }, [ride?.rideId, ride?.routeChangedAt]);
   if (!ride) return null;
   const going = ride.status === "dispatched";
   const arrived = ride.arrivedAt != null;
@@ -243,6 +247,11 @@ export default function CurrentRide({ ride }) {
           </a>
         )}
       </div>
+      {ride.routeChangedAt && (
+        <p className="rounded-xl bg-amber-400 text-navy-950 font-extrabold px-3 py-2" data-testid="route-changed">
+          {"\u{1F504}"} Rider changed the drop-off
+        </p>
+      )}
       {ride.dropoff && (
         <div>
           <p className="text-sm text-slate-500">To</p>

@@ -13,6 +13,7 @@ import AskDispatch from "./AskDispatch";
 import ApprovalAnswer from "./ApprovalAnswer";
 import AccuracyCircle from "./AccuracyCircle";
 import MeterCharge from "./MeterCharge";
+import StopWait from "./StopWait";
 
 const OUT_OF_ZONE_MIN = BRAND.dispatch?.gps?.outOfZoneMin ?? 3;
 const MAX_WARNINGS = BRAND.dispatch?.maxWarnings ?? 3;
@@ -299,6 +300,9 @@ export default function DriverStatusPanel({ driver, board, drivers, zones, rideS
 
         {status === "on_call" && (!board?.rideId || rideStatus === "in_transit") && (
           <>
+            {board?.rideId && current?.rideId === board.rideId && (
+              <StopWait rideId={current.rideId} wait={current.stopWait} onEndTrip={() => (cardRide ? setMeterOpen(true) : run(dropOff))} />
+            )}
             <button className={PRIMARY} disabled={busy} onClick={() => (cardRide ? setMeterOpen(true) : run(dropOff))}>
               {cardRide ? "Drop Off & Charge Card" : "Drop Off"}
             </button>

@@ -332,7 +332,7 @@ export default function TripDetails() {
                       )}
                     </>
                   ) : (
-                    <Link to="/sign-up" className="block text-sm font-semibold text-blue-700 underline mt-1.5" data-testid="deals-pitch">
+                    <Link to="/sign-up?next=/trip-details" className="block text-sm font-semibold text-blue-700 underline mt-1.5" data-testid="deals-pitch">
                       Sign up free: lock your price and get {dollars(DEALS.welcomeCreditCents)} off your first card ride.
                     </Link>
                   )}

@@ -24,6 +24,7 @@ import PaymentSelection from "./pages/PaymentSelection";
 import Success from "./pages/Success";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
+import FinishAccount from "./pages/FinishAccount";
 import QRCode from "./pages/QRCode";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
@@ -94,6 +95,7 @@ export default function App() {
             <Route path="/driver-agreement" element={<DriverAgreement />} />
             <Route path="/sign-in" element={<SignIn />} />
             <Route path="/sign-up" element={<SignUp />} />
+            <Route path="/finish-account" element={<FinishAccount />} />
             <Route path="/careers" element={<Careers />} />
             <Route path="/become-a-driver" element={<Careers />} />
             <Route

@@ -5,6 +5,9 @@ import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
   signOut,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithRedirect,
 } from "firebase/auth";
 import {
   doc,
@@ -96,6 +99,59 @@ export function AuthProvider({ children }) {
     return cred.user;
   }
 
+  /**
+   * "Continue with Google": one tap for most Android riders. New Google users then
+   * finish their account (phone number + agreement) on /finish-account.
+   * Returns { isNew, firstName, lastName, email } or { redirecting: true }.
+   */
+  async function signInWithGoogle() {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    let cred;
+    try {
+      cred = await signInWithPopup(auth, provider);
+    } catch (e) {
+      // Installed apps and some phones block pop-ups: go to Google and come back.
+      if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment", "auth/cancelled-popup-request"].includes(e?.code)) {
+        await signInWithRedirect(auth, provider);
+        return { redirecting: true };
+      }
+      throw e;
+    }
+    const snap = await getDoc(doc(db, "users", cred.user.uid));
+    if (snap.exists()) {
+      setUserProfile(snap.data());
+      return { isNew: false };
+    }
+    const [firstName = "", ...rest] = String(cred.user.displayName || "").trim().split(/\s+/);
+    return { isNew: true, firstName, lastName: rest.join(" "), email: cred.user.email || "" };
+  }
+
+  /** Creates the profile for someone who signed in with Google (same fields as sign-up). */
+  async function finishAccount({ firstName, lastName, phone, referredBy, legal }) {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Not signed in.");
+    await setDoc(doc(db, "users", user.uid), {
+      uid: user.uid,
+      firstName,
+      lastName,
+      phone,
+      email: user.email || "",
+      address: "",
+      dob: "",
+      subscriptionTier: null,
+      walletBalance: 0,
+      active: true,
+      referralCode: user.uid.slice(0, 8).toUpperCase(),
+      referredBy: referredBy || null,
+      legal: legal || null,
+      marketingOptIn: !!legal?.marketingOptIn,
+      signInWith: "google",
+      createdAt: serverTimestamp(),
+    });
+    await refreshProfile(user.uid);
+  }
+
   async function login(email, password) {
     const cred = await signInWithEmailAndPassword(auth, email, password);
     await refreshProfile(cred.user.uid);
@@ -157,7 +213,13 @@ export function AuthProvider({ children }) {
     };
   }
 
+  // Signed in (e.g. with Google) but no rider profile yet: Home offers to finish it.
+  const needsProfile = !!currentUser && !loading && !userProfile && !isAdmin && !isDriver && !isShop;
+
   const value = {
+    signInWithGoogle,
+    finishAccount,
+    needsProfile,
     currentUser,
     userProfile,
     isAdmin,

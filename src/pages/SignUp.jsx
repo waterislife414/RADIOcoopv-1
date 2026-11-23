@@ -3,6 +3,7 @@ import ConsentModal from "../components/legal/ConsentModal";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import BrandHeader from "../components/BrandHeader";
+import GoogleButton from "../components/auth/GoogleButton";
 import { SUBSCRIPTION_TIERS } from "../config/constants";
 
 export default function SignUp() {
@@ -10,6 +11,8 @@ export default function SignUp() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const chosenTier = searchParams.get("tier");
+  // Came from the booking screen: go back there after signing up.
+  const next = /^\/[a-z-]*$/.test(searchParams.get("next") || "") ? searchParams.get("next") : "";
   const tierInfo = chosenTier ? SUBSCRIPTION_TIERS[chosenTier] : null;
 
   const [form, setForm] = useState({
@@ -44,7 +47,7 @@ export default function SignUp() {
       if (tierInfo) {
         navigate(`/subscribe/${chosenTier}`);
       } else {
-        navigate("/welcome");
+        navigate(next || "/welcome");
       }
     } catch {
       setAskConsent(false);
@@ -72,6 +75,8 @@ export default function SignUp() {
               </p>
             </div>
           )}
+
+          {!tierInfo && <GoogleButton next={next} />}
 
           {error && (
             <div className="bg-red-50 text-red-700 text-base rounded-lg p-3 mb-4">

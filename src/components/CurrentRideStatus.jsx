@@ -14,11 +14,97 @@ import { cancelQuote } from "../../functions/lib/rideTiming.mjs";
 import { maxCardFeeCents, cardFeeRule } from "../../functions/lib/cardFee.mjs";
 import { BRAND } from "../config/constants";
 import { memberDealsFor } from "../lib/memberDeals";
+import { tripChanged } from "../../functions/lib/memberSavings.mjs";
+import AddressSearch from "./AddressSearch";
 import { estimateFromMiles } from "../lib/tripEstimate";
 
 const CARD_FEE_CFG = BRAND.pricing?.cardFee || {};
 const addTipFn = httpsCallable(functions, "addTip");
 const reportChargeFn = httpsCallable(functions, "reportCharge");
+const changeDropoffFn = httpsCallable(functions, "changeDropoff");
+const WAIT_RATE = Number(BRAND.pricing?.fare?.WAIT_TIME_PER_MINUTE) || 0.35;
+const clockTime = (ms) => new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+
+/** Going somewhere else? Pick the new address; the driver's phone shows it. Stops: just tell the driver. */
+function ChangeTrip({ ride, rideId }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const [pick, setPick] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const { userProfile } = useAuth();
+  const locked = ride.paymentMethod === "card" && !tripChanged(ride) && !!memberDealsFor(userProfile)?.priceLock;
+
+  async function send() {
+    setBusy(true);
+    setMsg("");
+    try {
+      await changeDropoffFn({ rideId, dropoff: pick.text || pick.address || text, lat: pick.lat, lng: pick.lng });
+      setOpen(false);
+      setText("");
+      setPick(null);
+    } catch (e) {
+      setMsg(e?.message || "Couldn't change it. Tell your driver.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <div className="mt-3">
+        <button type="button" data-testid="change-dropoff" onClick={() => setOpen(true)} className="w-full min-h-[48px] rounded-xl border-2 border-blue-300 bg-white font-semibold text-blue-800">
+          Change where you&rsquo;re going
+        </button>
+        <p className="text-xs text-slate-500 mt-1 text-center">Need a quick stop? Just tell your driver. The meter keeps running.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-3 rounded-xl border-2 border-blue-300 bg-white p-3 space-y-2" data-testid="change-dropoff-box">
+      <p className="font-semibold text-slate-800">Where to now?</p>
+      <AddressSearch
+        id="new-dropoff"
+        testid="new-dropoff"
+        value={text}
+        onChange={(t) => {
+          setText(t);
+          setPick(null);
+        }}
+        onPick={(r) => {
+          setText(r.text || r.address);
+          setPick(r);
+        }}
+        placeholder="Type the new address"
+        className="w-full border-2 border-slate-300 rounded-xl px-4 py-3 text-base"
+      />
+      <p className="text-sm text-slate-600">The meter keeps running.{locked ? " Price Lock turns off: you pay what the meter says." : ""}</p>
+      {msg && <p className="text-sm text-red-700">{msg}</p>}
+      <button type="button" data-testid="change-dropoff-send" disabled={!pick || busy} onClick={send} className="w-full min-h-[48px] rounded-full bg-blue-600 text-white font-bold disabled:opacity-50">
+        {busy ? "Sending\u2026" : "Send to my driver"}
+      </button>
+      <button type="button" onClick={() => setOpen(false)} className="block mx-auto text-sm text-slate-500 underline">
+        Cancel
+      </button>
+    </div>
+  );
+}
+
+/** The driver tapped "Rider stepped out": what it costs and when he may end the trip. */
+function StopNotice({ ride }) {
+  const w = ride.stopWait;
+  if (ride.status !== "in_transit" || !w?.startedAt) return null;
+  return (
+    <div className="mt-3 rounded-xl bg-amber-50 border-2 border-amber-300 p-3" data-testid="rider-stop-wait">
+      <p className="font-bold text-amber-900">Your driver is waiting for you</p>
+      <p className="text-sm text-amber-900">
+        The meter keeps running while you&rsquo;re stopped (${WAIT_RATE.toFixed(2)} a minute). If you&rsquo;re not back by {clockTime(w.endTripAt)}, your driver may end
+        the trip{ride.paymentMethod === "card" ? " and charge what's on the meter to your card" : ""}.
+      </p>
+      {ride.paymentMethod === "cash" && <p className="text-xs text-amber-800 mt-1">Paying cash? Your driver may ask for what&rsquo;s on the meter before a long stop.</p>}
+    </div>
+  );
+}
 
 /** One tap: the office sees this ride's meter next to its estimate and calls the rider. */
 function ChargeQuestion({ ride, rideId }) {
@@ -386,7 +472,7 @@ function CardPayment({ ride, rideId }) {
   const onFile = !!ride.paymentIntentId;
   const { userProfile } = useAuth();
   const deals = memberDealsFor(userProfile);
-  const est = !ride.stops?.length && !ride.outOfArea ? estimateFromMiles(ride.estMiles, ride, { signedIn: true }) : null;
+  const est = !ride.stops?.length && !ride.outOfArea && !tripChanged(ride) ? estimateFromMiles(ride.estMiles, ride, { signedIn: true }) : null;
   const lockCents = deals?.priceLock && est ? est.highCents : null;
   const waitNote = ride.arrivedAt != null;
   const [self, setSelf] = useState(!onFile);
@@ -559,6 +645,13 @@ function RideStatusCard({ ride, rideId, onCancelled, many }) {
           )}
           {ride.status === "pending" && !ride.driverId && <LineStatus rideId={rideId} />}
           {["dispatched", "in_transit"].includes(ride.status) && <RiderPickup ride={ride} rideId={rideId} />}
+          <StopNotice ride={ride} />
+          {ride.routeChangedAt && ["dispatched", "in_transit"].includes(ride.status) && (
+            <p className="mt-2 text-sm font-semibold text-blue-800" data-testid="rider-route-changed">
+              New drop-off sent to your driver: {ride.dropoff}
+            </p>
+          )}
+          {["dispatched", "in_transit"].includes(ride.status) && ride.driverId && !office && <ChangeTrip ride={ride} rideId={rideId} />}
           {userProfile?.feesOwedCents > 0 && (
             <p className="text-sm text-red-700 mt-2">
               {money(userProfile.feesOwedCents)} in fees from an earlier ride may be added to your next card payment in the app.

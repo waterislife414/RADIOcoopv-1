@@ -73,7 +73,7 @@ function CompareCard() {
 }
 
 export default function Home() {
-  const { currentUser, userProfile } = useAuth();
+  const { currentUser, userProfile, needsProfile } = useAuth();
   const signedIn = !!(currentUser && userProfile);
   const big = "shine-sweep block text-center font-extrabold rounded-full shadow-luxury transition hover:-translate-y-0.5";
 
@@ -124,6 +124,11 @@ export default function Home() {
             Book a Ride &rarr;
             <span className="block text-sm font-bold text-navy-900/80">See your price first. No account needed.</span>
           </Link>
+          {needsProfile && (
+            <Link to="/finish-account" data-testid="finish-account-banner" className="block rounded-2xl bg-gold-400 text-navy-950 font-bold text-center px-4 py-3">
+              Finish setting up your account (one step)
+            </Link>
+          )}
           {!signedIn && (
             <p className="text-center text-base text-slate-200" data-testid="account-links">
               <Link to="/sign-in" className="font-bold text-gold-200 underline underline-offset-4">Log in</Link>

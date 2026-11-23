@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import BrandHeader from "../components/BrandHeader";
+import GoogleButton from "../components/auth/GoogleButton";
 
 export default function SignIn() {
   const { login, resetPassword } = useAuth();
@@ -58,6 +59,8 @@ export default function SignIn() {
           <h1 className="text-3xl font-display font-semibold text-slate-800 mb-6">
             Sign In
           </h1>
+
+          <GoogleButton />
 
           {error && (
             <div className="bg-red-50 text-red-700 text-base rounded-lg p-3 mb-4">

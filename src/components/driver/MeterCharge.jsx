@@ -118,6 +118,12 @@ export default function MeterCharge({ rideId, estMiles, passengers = 1, onDone, 
               <span>You pay</span><span>{dollars(quote.totalCents)}</span>
             </p>
           </div>
+          {quote.overEstimate && (
+            <p className="rounded-xl bg-amber-50 text-amber-900 p-3 text-sm font-semibold" data-testid="over-estimate">
+              This is more than the trip estimate ({dollars(quote.estFareCents)}). Pay only if it looks right.
+            </p>
+          )}
+          {quote.tripChanged && <p className="text-sm text-slate-500">The trip changed on the way, so the meter sets the fare.</p>}
           <p className="font-bold text-lg pt-1">Add a tip for your driver?</p>
           <div className="grid grid-cols-3 gap-2">
             {TIPS.map((pct) => (
