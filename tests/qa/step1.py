@@ -125,7 +125,7 @@ with sync_playwright() as p:
         D.locator("[data-testid=approval-answer] button").first.click(); D.wait_for_timeout(500)
         pegtxt = A.locator("[data-testid=pegboard]").inner_text()
         st = board(A,"demo-driver-44")
-        assert st.get("status") == "ready" and st.get("zoneId"] == zone["id"], f"board={st.get('status')},{st.get('zoneId')}"
+        assert st.get("status") == "ready" and st.get("zoneId") == zone["id"], f"board={st.get('status')},{st.get('zoneId')}"
         return True
     check("4b Ask-dispatch Check Ready -> approval popup -> approve -> driver answer, car 44 in zone", c4b)
 
