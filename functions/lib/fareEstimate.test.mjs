@@ -81,3 +81,44 @@ test("dollars: formats cents", () => {
   assert.equal(E.dollars(777), "$7.77");
   assert.equal(E.dollars(0), "$0.00");
 });
+
+test("meterCheck: normal meters pass, a wild one goes to the office", () => {
+  const ok = E.meterCheck({ meterCents: 1100, estMiles: 4.5, fare: FARE });
+  assert.equal(ok.ok, true);
+  assert.equal(ok.estFareCents, E.meterCents(4.5, FARE));
+  const wild = E.meterCheck({ meterCents: 9000, estMiles: 4.5, fare: FARE });
+  assert.equal(wild.ok, false);
+  assert.ok(wild.limitCents < 9000);
+  // No estimate: only the hard cap.
+  assert.equal(E.meterCheck({ meterCents: 9000, estMiles: 0, fare: FARE }).ok, true);
+  assert.equal(E.meterCheck({ meterCents: 30000, estMiles: 0, fare: FARE }).ok, false);
+  assert.equal(E.meterCheck({ meterCents: 0, estMiles: 3, fare: FARE }).ok, false);
+});
+
+test("impliedMiles: the inverse of the meter", () => {
+  for (const miles of [1, 3, 7.5, 12]) {
+    const back = E.impliedMiles(E.meterCents(miles, FARE), FARE);
+    assert.ok(Math.abs(back - miles) < 1 / 6 + 1e-9, `${miles} -> ${back}`);
+  }
+  assert.ok(Math.abs(E.impliedMiles(E.meterCents(3, FARE, 2), FARE, 2) - 3) < 1 / 6 + 1e-9);
+});
+
+test("suggestRoadFactor: learns from real meters, needs enough rides", () => {
+  // Real trips ran 10% longer than estimated.
+  const samples = Array.from({ length: 25 }, (_, i) => {
+    const est = 2 + i * 0.3;
+    return { estMiles: est, meterCents: E.meterCents(est * 1.1, FARE) };
+  });
+  const s = E.suggestRoadFactor(samples, FARE, 1.35);
+  assert.equal(s.rides, 25);
+  assert.ok(s.factor >= 1.45 && s.factor <= 1.5, `factor ${s.factor}`);
+  assert.equal(E.suggestRoadFactor(samples.slice(0, 5), FARE, 1.35).factor, null);
+});
+
+test("card fee can be a percent of the fare (credit card surcharge)", () => {
+  const pct = (c) => Math.floor(c * 0.03);
+  const p = E.priceMiles({ miles: 5, fare: FARE, cardFeeCents: pct });
+  assert.equal(p.cardFeeCents, Math.floor(p.fareCents * 0.03));
+  assert.equal(p.totalCents, p.fareCents + p.cardFeeCents);
+  assert.equal(p.highTotalCents, p.highCents + Math.floor(p.highCents * 0.03));
+});

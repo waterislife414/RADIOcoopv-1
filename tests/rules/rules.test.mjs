@@ -74,6 +74,10 @@ test("riders: book a ride, but never set dispatch or money fields", async () => 
     { headsUpAt: 1 },
     { arrivedAt: 1 },
     { termsRead: true },
+    // Card meter, fee and tip records are the server's (a rider can't block a tip or fake price data).
+    { tipAddedAt: 1 },
+    { meterCents: 100 },
+    { cardFunding: "debit" },
   ]) {
     await assertFails(setDoc(doc(rider(), "rides/x"), ride({ customerId: "rider1", ...bad })));
   }

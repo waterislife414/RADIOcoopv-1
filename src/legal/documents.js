@@ -17,6 +17,13 @@ const FARE = BRAND.pricing?.fare || {};
 const WAIT_RATE = Number.isFinite(FARE.WAIT_TIME_PER_MINUTE) ? `${dollars(FARE.WAIT_TIME_PER_MINUTE)} a minute` : "the posted waiting rate";
 const CARD_FEE = Number.isFinite(FARE.CARD_APP_FEE) ? FARE.CARD_APP_FEE : 2;
 const CARD_FEE_MEMBER = Number.isFinite(FARE.CARD_APP_FEE_MEMBER) ? FARE.CARD_APP_FEE_MEMBER : CARD_FEE;
+const CARD_CFG = BRAND.pricing?.cardFee || { mode: "flat" };
+const CARD_FEE_TERMS =
+  CARD_CFG.mode === "flat"
+    ? `Card fee: card payments in the app include a card fee of ${dollars(CARD_FEE)} (${dollars(CARD_FEE_MEMBER)} with a free account), shown before you pay.`
+    : CARD_CFG.mode === "none"
+      ? "Card fee: there is no extra fee for paying by card."
+      : `Card fee: if you pay with a credit card in the app, a card fee of up to ${Number(CARD_CFG.creditPercent) || 3}% of the amount charged is added. It is never more than our cost to accept the card. Debit and prepaid cards have no card fee. The fee is shown before you pay and on your receipt.`;
 const PASS_PRICE = BRAND.copy.dayPass?.price || dollars(5);
 // Placeholder settings (like "[INSERT_EMAIL]") are never shown to customers.
 const isPlaceholder = (v) => !v || String(v).startsWith("[INSERT");
@@ -54,8 +61,8 @@ export const DOCUMENTS = {
         h: "4. Fares and payment",
         p: [
           "The fare is set by the meter or by the rate quoted for trips outside the local area. Any price shown in the app before the ride is an estimate only.",
-          "If you pay by card, a hold may be placed on your card when you book. The card is saved for that ride, and the final fare, fees and any tip are charged to it after the ride.",
-          `Card fee: card payments in the app include a card fee of ${dollars(CARD_FEE)} (${dollars(CARD_FEE_MEMBER)} with a free account), shown before you pay.`,
+          "If you pay by card, a hold may be placed on your card when you book. The card is saved for that ride. At drop-off your driver enters the amount on the meter, and the final fare, fees and any tip you add are charged to that card after the ride. Your receipt shows in the app.",
+          CARD_FEE_TERMS,
           `Cancelling (rides booked in the app with an account): it's free until your driver is about ${RR.headsUpMinutes} minutes away. The app tells you on your ride screen, and with a phone alert if you allow alerts.`,
           `You can also always cancel free for ${RR.minFreeCancelMinutes} minute after a driver takes your ride.`,
           `After that, cancelling costs ${dollars(RR.lateCancelFee)}.`,

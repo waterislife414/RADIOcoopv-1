@@ -137,7 +137,7 @@
     "approvalRepeatSeconds": 120,
     "autoPlaceParkedMin": 2
   },
-  "legalVersion": "2026-11-23.1",
+  "legalVersion": "2026-11-23.2",
   "rideRules": {
     "_note": "Pickup timing for app rides. Call-in and guest-without-account rides never pay these fees.",
     "headsUpMinutes": 4,
@@ -189,6 +189,37 @@
       "Call your driver directly. It’s private, and no numbers are shared."
     ],
     "fine": "Good until midnight. Same place in line as Premium members. Your driver may not pick up while driving and will call back when it’s safe."
+  },
+  "cardFee": {
+    "_note": "Card fee as high as card rules and Georgia law allow: credit cards up to 3% (Visa cap), never more than the processing cost; debit and prepaid cards $0 (networks forbid it). mode flat = old $2/$1.80, only with a lawyer's OK. Turning a surcharge on needs 30 days' notice to Visa/Mastercard through Stripe, and the fee on receipts.",
+    "mode": "credit_surcharge",
+    "creditPercent": 3,
+    "processorPercent": 2.9,
+    "processorFixedCents": 30,
+    "flatCents": 200,
+    "flatMemberCents": 180
+  },
+  "driverMeter": {
+    "_note": "Driver types the meter at drop-off and the rider's saved card is charged. A meter far above the trip estimate goes to the office instead.",
+    "maxCents": 25000,
+    "maxTimesEstimate": 2.5,
+    "slackCents": 1500
+  },
+  "estimate": {
+    "_note": "Price shown before booking. roadFactor turns straight-line miles into road miles; highMultiplier sets the top of the range; past maxMiles the rider is asked to call.",
+    "roadFactor": 1.35,
+    "highMultiplier": 1.15,
+    "maxMiles": 60
+  },
+  "fare": {
+    "BASE_FARE": 2.16,
+    "PER_MILE": 1.98,
+    "FIRST_INCREMENT_MILES": 0.1667,
+    "EXTRA_PAX_FEE": 2,
+    "WAIT_TIME_PER_MINUTE": 0.35,
+    "CARD_APP_FEE": 2,
+    "CARD_APP_FEE_MEMBER": 1.8,
+    "HIGH_ESTIMATE_MULTIPLIER": 1.15
   },
   "memberDayPasses": {
     "BASIC": 1,

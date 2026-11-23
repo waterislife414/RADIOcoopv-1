@@ -4,6 +4,25 @@ The app was built carefully, but none of this is legal advice. Each line says wh
 today and where to change it. Text lives in `src/legal/documents.js`; numbers live in
 `branding.config.json` (changing a fee there also bumps the terms version, so everyone agrees again).
 
+## Changed Nov 23, 2026, second time (legal version 2026-11-23.2; everyone agrees again)
+- [ ] **Terms §4, card fee (now a credit-card surcharge).** Was a flat $2.00 ($1.80 with an account) on
+  every card payment. Now: credit cards up to 3% of the amount charged, never more than our cost to
+  accept the card; debit and prepaid cards: no fee (`pricing.cardFee` in `branding.config.json`,
+  `functions/lib/cardFee.mjs`). Why: Visa and Mastercard do not allow a surcharge on debit or prepaid
+  cards, Visa caps credit-card surcharges at 3%, and Georgia law limits a surcharge to the merchant's
+  cost of accepting the card. Before turning it on with real money:
+  1. Stripe must tell the card networks 30 days ahead (Stripe surcharging setup / network notice).
+  2. Signs: a surcharge notice at the point of sale (the app shows it on the payment screen and
+     receipt; ask if the cab needs a decal, and what Alabama/Phenix City requires for rides that
+     start in Alabama).
+  3. The receipt must show the fee as its own line (the app does: "Card fee (credit card)").
+  To go back to a flat fee: set `pricing.cardFee.mode` to "flat" (or "none" for no fee).
+- [ ] **Terms §4, who enters the meter.** Card rides: at drop-off the driver types the amount on the
+  meter and the saved card is charged. A typed amount more than 2.5x the trip estimate (+$15) or over
+  $250 is refused and goes to the office (`pricing.driverMeter`). The rider sees the receipt and can
+  add a tip once. Is the driver's typed amount enough, or does the lawyer want a meter photo or the
+  rider's tap to approve before the charge?
+
 ## Changed Nov 23, 2026 (legal version 2026-11-23.1; everyone agrees again)
 - [ ] **Terms §4, Priority Day Pass.** Now: the pass moves rides "to the same place in line as Premium
   members" (owner decision Nov 18). Before: Premium went first. Code: `functions/lib/dispatchCore.mjs`,

@@ -181,6 +181,28 @@ exports.creditCardFare = onDocumentUpdated("rides/{rideId}", async (event) => {
   });
 });
 
+/**
+ * A tip the rider added after the fare was charged → his ledger, once per ride.
+ * Same rule as card fares: into today's lick day, or straight to credit if that day is closed.
+ */
+async function creditLateTip(uid, rideId, tipCents) {
+  if (!uid || !(tipCents > 0) || !LEASE_CFG.lease.includeTips) return false;
+  const c = await core();
+  const key = c.leasePeriodKey(Date.now(), LEASE_CFG);
+  return db().runTransaction(async (tx) => {
+    const [ds, es, ps] = await Promise.all([tx.get(driverRef(uid)), tx.get(entryRef(uid, `tip_${rideId}`)), tx.get(dayRef(uid, key))]);
+    if (!ds.exists || es.exists) return false;
+    tx.set(entryRef(uid, `tip_${rideId}`), { type: "card_tip", rideId, tipCents, periodKey: key, at: Date.now() });
+    if (ps.data()?.settledAt) {
+      tx.update(driverRef(uid), { leaseCreditCents: FieldValue.increment(tipCents) });
+    } else {
+      tx.set(dayRef(uid, key), { periodKey: key, open: true, cardTipsCents: FieldValue.increment(tipCents) }, { merge: true });
+    }
+    return true;
+  });
+}
+exports._creditLateTip = creditLateTip;
+
 // Driver: "I dropped my envelope" — logs exactly what he owes.
 exports.logEnvelope = onCall(async (request) => {
   const uid = requireDriver(request);

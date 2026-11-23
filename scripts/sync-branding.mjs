@@ -44,6 +44,10 @@ const backend = {
   calling: branding.calling,
   waitPerMinuteCents: Math.round(branding.pricing.fare.WAIT_TIME_PER_MINUTE * 100),
   dayPassCopy: branding.copy.dayPass,
+  cardFee: branding.pricing.cardFee,
+  driverMeter: branding.pricing.driverMeter,
+  estimate: branding.pricing.estimate,
+  fare: branding.pricing.fare,
   // Free Priority Day Passes each calendar month, by plan (owner decision Nov 18, 2026).
   memberDayPasses: Object.fromEntries(
     Object.entries(branding.pricing.tiers).map(([k, t]) => [k, Number(t.dayPassesPerMonth) || 0])

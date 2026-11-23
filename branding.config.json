@@ -124,6 +124,21 @@
       "CARD_APP_FEE_MEMBER": 1.8,
       "HIGH_ESTIMATE_MULTIPLIER": 1.15
     },
+    "cardFee": {
+      "_note": "Card fee as high as card rules and Georgia law allow: credit cards up to 3% (Visa cap), never more than the processing cost; debit and prepaid cards $0 (networks forbid it). mode flat = old $2/$1.80, only with a lawyer's OK. Turning a surcharge on needs 30 days' notice to Visa/Mastercard through Stripe, and the fee on receipts.",
+      "mode": "credit_surcharge",
+      "creditPercent": 3,
+      "processorPercent": 2.9,
+      "processorFixedCents": 30,
+      "flatCents": 200,
+      "flatMemberCents": 180
+    },
+    "driverMeter": {
+      "_note": "Driver types the meter at drop-off and the rider's saved card is charged. A meter far above the trip estimate goes to the office instead.",
+      "maxCents": 25000,
+      "maxTimesEstimate": 2.5,
+      "slackCents": 1500
+    },
     "estimate": {
       "_note": "Price shown before booking. roadFactor turns straight-line miles into road miles; highMultiplier sets the top of the range; past maxMiles the rider is asked to call.",
       "roadFactor": 1.35,
@@ -311,7 +326,7 @@
   "policies": {
     "dataRetentionDays": 5,
     "mvrLookbackYears": 7,
-    "legalVersion": "2026-11-23.1"
+    "legalVersion": "2026-11-23.2"
   },
   "about": {
     "_note": "Confirm with Malcolm before going live. established: Yelp lists 'Established in 1980' and YellowPages '46 years in business'. owners: as given by Jared. community: leave null until confirmed (e.g. 'Proud supporters of our EMS, firefighters and police.').",

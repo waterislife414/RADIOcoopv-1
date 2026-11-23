@@ -68,7 +68,10 @@ service cloud.firestore {
               'perks', 'termsMissing', 'eta', 'headsUpAt', 'driverPos', 'riderPos', 'riderReply',
               'arrivedAt', 'arrivedDistM', 'arrivedFix', 'waitedMs', 'fee', 'calls',
               'cancelFeeCents', 'cancelledBy', 'cancelledAt', 'earlierFeesCents', 'termsRead',
-              'appHandled', 'officeWhy', 'arrivedNear', 'settlingAt', 'extraTime', 'radioCall'];
+              'appHandled', 'officeWhy', 'arrivedNear', 'settlingAt', 'extraTime', 'radioCall',
+              // Card meter, fee and tip records (and the data prices are learned from).
+              'cardFunding', 'meterCents', 'estFareCents', 'meterEnteredBy', 'tipAddedAt', 'tipChargedCents',
+              'balanceOwedCents'];
     }
 
     match /rides/{rideId} {

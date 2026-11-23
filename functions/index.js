@@ -21,6 +21,24 @@ const PRIORITY_PASS_FEE_CENTS = 500; // $5 Priority Day Pass, fixed server-side 
 const TIME_ZONE = (BRANDING.dispatch && BRANDING.dispatch.timeZone) || "America/New_York";
 const RIDE_RULES = BRANDING.rideRules || {};
 const fees = require("./rideFees");
+let fareLibPromise = null;
+let feeLibPromise = null;
+const fareLib = () => (fareLibPromise ||= import("./lib/fareEstimate.mjs"));
+const feeLib = () => (feeLibPromise ||= import("./lib/cardFee.mjs"));
+
+/** "credit" | "debit" | "prepaid" | "unknown" for the card on this payment (no fee unless "credit"). */
+async function cardFunding(stripe, paymentMethodId, holdId) {
+  try {
+    let pm = paymentMethodId || null;
+    if (!pm && holdId) pm = (await stripe.paymentIntents.retrieve(holdId))?.payment_method || null;
+    if (!pm) return "unknown";
+    const obj = typeof pm === "string" ? await stripe.paymentMethods.retrieve(pm) : pm;
+    return obj?.card?.funding || "unknown";
+  } catch (e) {
+    console.warn("card funding lookup failed", e?.message);
+    return "unknown";
+  }
+}
 let timingPromise;
 const timing = () => (timingPromise ||= import("./lib/rideTiming.mjs"));
 const OUT_OF_AREA_MINIMUM_FARE_CENTS = BRANDING.outOfAreaMinimumFareCents;
@@ -370,7 +388,7 @@ exports.captureFare = onCall(
     if (!rideId || typeof meterFare !== "number" || meterFare <= 0) {
       throw new HttpsError("invalid-argument", "rideId and meterFare are required.");
     }
-    const tip = typeof tipAmount === "number" && tipAmount >= 0 ? tipAmount : 0;
+    const tipIn = typeof tipAmount === "number" && tipAmount >= 0 ? tipAmount : 0;
 
     const rideRef = db.collection("rides").doc(rideId);
     const rideSnap = await rideRef.get();
@@ -385,10 +403,42 @@ exports.captureFare = onCall(
 
     const requesterIsRider = request.auth && request.auth.uid === ride.customerId;
     const requesterIsAdmin = isAdmin(request);
-    if (!requesterIsRider && !requesterIsAdmin) {
+    // The driver on the trip types the meter at drop-off; the card the booking saved is charged.
+    const requesterIsDriver = !!request.auth?.uid && request.auth.token?.driver === true && ride.driverId === request.auth.uid;
+    if (!requesterIsRider && !requesterIsAdmin && !requesterIsDriver) {
       throw new HttpsError(
         "permission-denied",
-        "Only the rider on this trip or a dispatcher can settle this fare."
+        "Only the rider, the driver on this trip, or a dispatcher can settle this fare."
+      );
+    }
+    const driverSettling = requesterIsDriver && !requesterIsAdmin && !requesterIsRider;
+    if (driverSettling) {
+      if (ride.paymentMethod !== "card" || !ride.paymentIntentId) {
+        throw new HttpsError("failed-precondition", "Only card rides with a card on file are charged from the driver's phone.");
+      }
+      if (!["in_transit", "finished"].includes(ride.status)) {
+        throw new HttpsError("failed-precondition", "Pick up the rider first.");
+      }
+      if (paymentMethodId) throw new HttpsError("invalid-argument", "The driver charges the card on file only.");
+    }
+
+    // Drivers never set the tip: the rider adds it on the receipt afterwards.
+    const tip = driverSettling ? 0 : tipIn;
+
+    // A typed meter far above the trip estimate goes to the office, not onto the card.
+    const F = await fareLib();
+    const check = F.meterCheck({
+      meterCents: Math.round(meterFare * 100),
+      estMiles: ride.estMiles,
+      fare: BRANDING.fare,
+      passengers: ride.passengers || 1,
+      cfg: BRANDING.driverMeter || {},
+      estimateCfg: BRANDING.estimate || {},
+    });
+    if (!requesterIsAdmin && !check.ok) {
+      throw new HttpsError(
+        "failed-precondition",
+        `That's more than this trip should cost (limit $${(check.limitCents / 100).toFixed(2)}). Check the meter, or call the office to settle it.`
       );
     }
 
@@ -399,10 +449,21 @@ exports.captureFare = onCall(
       effectiveMeterFare = OUT_OF_AREA_MINIMUM_FARE_CENTS / 100;
     }
 
-    // Member discount: a real signed-in account holder pays $1.80 instead
-    // of $2.00 on the card fee - guests and dispatcher overrides pay full price.
-    const cardFeeCents = requesterIsRider ? CARD_APP_FEE_MEMBER_CENTS : CARD_APP_FEE_CENTS;
-    const memberDiscountApplied = requesterIsRider;
+    // Card fee: as high as card rules and Georgia law allow (branding pricing.cardFee):
+    // credit cards up to 3%, never above processing cost; debit/prepaid $0.
+    const stripe = getStripe();
+    const FEE = await feeLib();
+    const funding = ride.paymentMethod === "card" ? await cardFunding(stripe, paymentMethodId, ride.paymentIntentId) : null;
+    const cardFeeCents =
+      ride.paymentMethod === "card"
+        ? FEE.cardFeeCents({
+            baseCents: Math.round(effectiveMeterFare * 100) + Math.round(tip * 100),
+            funding: funding || "unknown",
+            member: !!requesterIsRider,
+            cfg: BRANDING.cardFee || { mode: "flat", flatCents: CARD_APP_FEE_CENTS, flatMemberCents: CARD_APP_FEE_MEMBER_CENTS },
+          })
+        : 0;
+    const memberDiscountApplied = (BRANDING.cardFee?.mode === "flat") && !!requesterIsRider;
     const priorityPassCents =
       ride.wantsPriorityPass && !(await fastPassPaid(ride, rideId)) ? PRIORITY_PASS_FEE_CENTS : 0;
 
@@ -429,7 +490,6 @@ exports.captureFare = onCall(
     });
     const release = () => rideRef.update({ settlingAt: null }).catch(() => {});
 
-    const stripe = getStripe();
     let stripeStatus = "manual_override";
     let balanceOwedCents = 0;
     try {
@@ -482,13 +542,55 @@ exports.captureFare = onCall(
       ...(owedCents > 0 && stripeStatus === "succeeded" ? { earlierFeesCents: owedCents } : {}),
       ...(balanceOwedCents > 0 ? { balanceOwedCents } : {}),
       memberDiscountApplied,
+      cardFunding: funding,
+      // For learning prices from real meters (see suggestRoadFactor).
+      meterCents: Math.round(effectiveMeterFare * 100),
+      estFareCents: check.estFareCents,
+      meterEnteredBy: driverSettling ? "driver" : requesterIsRider ? "rider" : "office",
       settlingAt: null,
-      settledBy: requesterIsAdmin && !requesterIsRider ? "dispatcher_override" : "customer",
+      settledBy: driverSettling ? "driver" : requesterIsAdmin && !requesterIsRider ? "dispatcher_override" : "customer",
     });
 
     return { success: true, status: stripeStatus, memberDiscountApplied };
   }
 );
+
+// Rider adds a tip on the receipt after the driver charged the meter: once per
+// ride, to the card the booking saved, credited to the driver's lick ledger.
+exports.addTip = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "Sign in first.");
+  const rideId = String(request.data?.rideId || "");
+  const tipCents = Math.round(Number(request.data?.tipCents));
+  if (!/^[A-Za-z0-9_-]{1,80}$/.test(rideId) || !Number.isFinite(tipCents) || tipCents < 0) {
+    throw new HttpsError("invalid-argument", "Pick a tip.");
+  }
+  const rideRef = db.collection("rides").doc(rideId);
+  const ride = await db.runTransaction(async (tx) => {
+    const r = (await tx.get(rideRef)).data();
+    if (!r || r.customerId !== uid) throw new HttpsError("not-found", "Ride not found.");
+    if (r.paymentMethod !== "card" || r.finalFare == null || r.stripeStatus !== "succeeded") {
+      throw new HttpsError("failed-precondition", "Tips are added after a card fare is paid.");
+    }
+    if (r.tipAddedAt != null || Number(r.tipAmount) > 0) throw new HttpsError("already-exists", "You already chose a tip for this ride.");
+    const cap = Math.max(10000, Math.round(Number(r.finalFare) * 100));
+    if (tipCents > cap) throw new HttpsError("invalid-argument", `Tips up to $${(cap / 100).toFixed(2)}.`);
+    tx.update(rideRef, { tipAddedAt: Date.now() });
+    return r;
+  });
+  if (tipCents === 0) {
+    await rideRef.update({ tipAmount: 0 });
+    return { ok: true, tipCents: 0 };
+  }
+  const r = await fees.chargeSavedCard({ stripe: getStripe(), ride, rideId, cents: tipCents, key: `tip_${rideId}_${tipCents}` });
+  if (!(r.chargedCents > 0)) {
+    await rideRef.update({ tipAddedAt: null });
+    throw new HttpsError("failed-precondition", "Your card didn't go through for the tip. You can tip your driver in cash.");
+  }
+  await rideRef.update({ tipAmount: r.chargedCents / 100, tipChargedCents: r.chargedCents });
+  await require("./lease")._creditLateTip(ride.driverId, rideId, r.chargedCents).catch((e) => console.error("tip credit", rideId, e));
+  return { ok: true, tipCents: r.chargedCents };
+});
 
 // Dispatcher calls in the total, and it's deducted from the customer's
 // stored Radio Co-op wallet balance (a prepaid/loaded balance) rather than
