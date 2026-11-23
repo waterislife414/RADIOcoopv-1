@@ -43,14 +43,21 @@ def outreach_blockers(conn: sqlite3.Connection, owner_id: int, today_str: str, r
         if business_status == 'unknown':
             blockers.append('business status unknown')
         elif business_status == 'dissolved':
-            cur.execute("SELECT COUNT(*) FROM contacts WHERE owner_id = ?", (owner_id,))
+            # Check for contacts tied to the owner or heirs of the owner
+            cur.execute(
+                """
+                SELECT COUNT(*) FROM contacts
+                WHERE owner_id = ? OR heir_id IN (SELECT id FROM heirs WHERE owner_id = ?)
+                """,
+                (owner_id, owner_id)
+            )
             contact_count = cur.fetchone()[0]
             if contact_count == 0:
                 blockers.append('business dissolved: no heir/officer contact')
 
     cur.execute(
         """
-        SELECT COUNT(*) FROM contacts 
+        SELECT COUNT(*) FROM contacts
         WHERE kind = 'mail' AND (owner_id = ? OR heir_id IN (SELECT id FROM heirs WHERE owner_id = ?))
         """,
         (owner_id, owner_id)

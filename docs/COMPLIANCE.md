@@ -5,6 +5,7 @@ Source: Ala. Code 35-12-93 as amended by HB104 (2026RS, eff. 2026-06-01). Re-ver
 - Agreement must: be written; describe the property and our services; state the property is in the custody of the State Treasurer's Office with recovery contact info; state the owner can recover it from the Treasurer WITHOUT a fee; be signed by the apparent owner; state our fee percentage; list any other compensation.
 - Claim filing: give the Treasurer a full unredacted copy of the signed agreement. The Treasurer may ask for more proof of ownership.
 - No state finder license, registration or bond in Alabama (per the bill text). Other states: verify each before touching them. Georgia requires one: do not work Georgia properties.
+- Readiness check: An owner is ready for outreach only if they pass all checks in `uprec.readiness.outreach_blockers()`.
 ## Practice rules
 - Letters by first-class mail first. No automated texts or robocalls without prior written consent (TCPA).
 - Say who we are, never imply we are the state. Always state the free claim option up front.
