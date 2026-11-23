@@ -36,7 +36,7 @@ export default function PostSignupUpsell() {
               className="border-2 border-gold-400 bg-amber-50 rounded-2xl p-4 text-center relative hover:-translate-y-0.5 transition"
             >
               <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-gold-500 text-navy-950 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
-                MOST POPULAR
+                MOST PERKS
               </span>
               <p className="font-display font-bold text-lg text-slate-800">Premium</p>
               <p className="text-2xl font-bold text-slate-800 my-1">

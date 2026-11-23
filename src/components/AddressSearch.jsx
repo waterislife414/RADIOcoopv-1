@@ -101,9 +101,22 @@ export default function AddressSearch({
               <p className="text-sm text-slate-500 truncate">{r.address}</p>
             </button>
           ))}
+          {onPin && (
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                setOpen(false);
+                onPin();
+              }}
+              className="w-full text-left px-4 py-3 hover:bg-slate-50 min-h-[48px] text-base font-semibold text-blue-600"
+            >
+              &#128205; Drop a pin on the map
+            </button>
+          )}
         </div>
       )}
-      {(showNotFound || (onPin && trimmed.length < 3)) && open && (
+      {(showNotFound || (onPin && trimmed.length < 3)) && open && !(activeResults.length > 0) && (
         <p className="text-xs text-slate-500 mt-1.5 flex items-center justify-between">
           <span>
             {showNotFound ? "Can't find it? Type full address or" : "Type address or"}

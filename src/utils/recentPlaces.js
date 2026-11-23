@@ -14,7 +14,8 @@ export function recentPlaces() {
 
 export function rememberPlaces(...places) {
   try {
-    const clean = places.map((p) => (p || "").trim()).filter((p) => p.length > 3);
+    // "Pin dropped" has no address to reuse, so it is not a recent place.
+    const clean = places.map((p) => (p || "").trim()).filter((p) => p.length > 3 && p !== "Pin dropped");
     const next = [...clean, ...recentPlaces().filter((p) => !clean.includes(p))].slice(0, MAX);
     localStorage.setItem(KEY, JSON.stringify(next));
   } catch {

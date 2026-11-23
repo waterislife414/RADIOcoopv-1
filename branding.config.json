@@ -124,6 +124,12 @@
       "CARD_APP_FEE_MEMBER": 1.8,
       "HIGH_ESTIMATE_MULTIPLIER": 1.15
     },
+    "estimate": {
+      "_note": "Price shown before booking. roadFactor turns straight-line miles into road miles; highMultiplier sets the top of the range; past maxMiles the rider is asked to call.",
+      "roadFactor": 1.3,
+      "highMultiplier": 1.15,
+      "maxMiles": 60
+    },
     "outOfAreaMinimumFare": 25,
     "outOfAreaEntryFee": 5.35,
     "subscriptionTrialDays": 7,

@@ -14,7 +14,7 @@ function PlanCard({ tierKey, name, price, yearlyPrice, savings, perks, highlight
     >
       {highlight && (
         <p className="text-gold-400 text-xs font-bold tracking-widest uppercase mb-2 relative">
-          Most Popular
+          Most perks
         </p>
       )}
       <h2

@@ -114,24 +114,18 @@ export default function Home() {
 
         <div className="px-6 pb-8 max-w-md mx-auto w-full space-y-4">
           {/* 2. Book */}
-          {signedIn ? (
-            <Link to="/trip-details" className={`${big} bg-gradient-to-b from-gold-300 to-gold-500 text-navy-950 text-2xl py-5 ring-4 ring-gold-400/25`}>
-              Book a Ride &rarr;
-            </Link>
-          ) : (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <Link to="/sign-in" className={`${big} bg-gradient-to-b from-gold-300 to-gold-500 text-navy-950 text-xl py-5 ring-4 ring-gold-400/25`}>
-                  Log In
-                </Link>
-                <Link to="/sign-up" className={`${big} bg-gradient-to-b from-white to-slate-200 text-navy-950 text-xl py-5 ring-4 ring-white/15`}>
-                  Sign Up
-                </Link>
-              </div>
-              <Link to="/trip-details" className="block text-center border-2 border-white/50 hover:bg-white/[0.06] text-white font-bold text-xl py-4 rounded-full">
-                Continue as Guest
-              </Link>
-            </>
+          {/* One way in: anyone can book. The price shows before they pay. */}
+          <Link to="/trip-details" data-testid="book-ride" className={`${big} bg-gradient-to-b from-gold-300 to-gold-500 text-navy-950 text-2xl py-5 ring-4 ring-gold-400/25`}>
+            Book a Ride &rarr;
+            <span className="block text-sm font-bold text-navy-900/80">See your price first. No account needed.</span>
+          </Link>
+          {!signedIn && (
+            <p className="text-center text-base text-slate-200" data-testid="account-links">
+              <Link to="/sign-in" className="font-bold text-gold-200 underline underline-offset-4">Log in</Link>
+              {" · "}
+              <Link to="/sign-up" className="font-bold text-gold-200 underline underline-offset-4">Sign up free</Link>
+              <span className="block text-sm text-slate-300">Free account: lower card fee, and your name and number are filled in.</span>
+            </p>
           )}
 
           {/* 3. Call */}

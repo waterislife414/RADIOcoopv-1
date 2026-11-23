@@ -14,6 +14,8 @@ const RIDER_DOCS = ["rider-terms", "privacy"];
 import { useRide } from "../context/RideContext";
 import BrandHeader from "../components/BrandHeader";
 import { recentPlaces, rememberPlaces } from "../utils/recentPlaces";
+import { useTripEstimate } from "../lib/tripEstimate";
+import { dollars } from "../../functions/lib/fareEstimate.mjs";
 import {
   SURROUNDING_SERVICE_CITIES,
   OUT_OF_AREA_MINIMUM_FARE,
@@ -57,6 +59,15 @@ export default function TripDetails() {
   const [locating, setLocating] = useState(false);
   const [locateError, setLocateError] = useState("");
   const [pickerTarget, setPickerTarget] = useState(null); // 'pickup' | 'dropoff' | null
+  const estimate = useTripEstimate(ride, { signedIn: !!currentUser });
+  // Extras stay folded away unless the rider already set one.
+  const [showMore, setShowMore] = useState(
+    () => !!(ride.outOfArea || ride.roundTrip || ride.needsAccessibleVehicle || ride.stops.length || (ride.passengers || 1) > 1 || ride.shareLocation === false || ride.scheduleType === "later")
+  );
+  // Signed-in riders with name and phone on file just see who's riding.
+  const profileReady = !!(currentUser && userProfile?.firstName && userProfile?.lastName && userProfile?.phone);
+  const [editWho, setEditWho] = useState(false);
+  const showWho = !profileReady || editWho;
 
   // Optional: attaches the rider's GPS pin so the ride lands in the right
   // zone and the driver can navigate straight to them.
@@ -180,7 +191,9 @@ export default function TripDetails() {
     rememberPlaces(ride.pickup, ride.dropoff);
     if (currentUser) saveLegalConsent(consent).catch(() => {});
     const pass = dayPass ? { wantsPriorityPass: true, fastPassId: dayPass.id } : {};
-    updateRide({ scheduleType, consent, shareLocation: !extra.callIn, ...extra, ...pass });
+    // Road miles from the estimate ride along so the office, driver and receipt see the same number.
+    const est = estimate ? { estMiles: estimate.miles } : {};
+    updateRide({ scheduleType, consent, shareLocation: !extra.callIn, ...extra, ...pass, ...est });
     navigate(dayPass || !ride.wantsPriorityPass ? "/payment" : "/fast-pass");
   }
 
@@ -192,7 +205,7 @@ export default function TripDetails() {
       <div className="px-6 py-8">
         <div className="max-w-md mx-auto">
           <h1 className="text-3xl font-display font-semibold text-slate-800 mb-6">
-            Trip Details
+            Where to?
           </h1>
 
           {error && (
@@ -202,6 +215,83 @@ export default function TripDetails() {
           )}
 
           <div className="space-y-5">
+            <div>
+              <div className="flex justify-between items-center mb-1.5">
+                <label htmlFor="pickup" className="block text-base font-semibold text-slate-700">
+                  Pickup Location
+                </label>
+                <button
+                  type="button"
+                  onClick={shareLocation}
+                  disabled={locating}
+                  className="text-sm font-semibold text-blue-600 hover:underline"
+                >
+                  {typeof ride.pickupLat === "number"
+                    ? "✓ Location attached"
+                    : locating
+                      ? "Finding you…"
+                      : "📍 Use my location"}
+                </button>
+              </div>
+              <AddressSearch
+                id="pickup"
+                testid="pickup-search"
+                className="w-full border-2 border-slate-300 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+                value={ride.pickup}
+                onChange={(t) => updateRide({ pickup: t })}
+                onPick={(r) => updateRide({ pickup: r.text || r.address, pickupLat: r.lat, pickupLng: r.lng })}
+                placeholder={typeof ride.pickupLat === "number" ? "Your current location" : COPY.pickupPlaceholder}
+                onPin={() => setPickerTarget("pickup")}
+                recents={recentList}
+              />
+              {locateError && <p className="text-sm text-red-600 mt-1">{locateError}</p>}
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-1.5">
+                <label htmlFor="dropoff" className="block text-base font-semibold text-slate-700">
+                  Drop-off Location
+                </label>
+              </div>
+              <AddressSearch
+                id="dropoff"
+                testid="dropoff-search"
+                className="w-full border-2 border-slate-300 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+                value={ride.dropoff}
+                onChange={(t) => updateRide({ dropoff: t })}
+                onPick={(r) => updateRide({ dropoff: r.text || r.address, dropoffLat: r.lat, dropoffLng: r.lng })}
+                placeholder={COPY.dropoffPlaceholder}
+                onPin={() => setPickerTarget("dropoff")}
+                recents={recentList}
+              />
+            </div>
+
+            <div data-testid="price-estimate" aria-live="polite" className="rounded-2xl border-2 border-emerald-500 bg-emerald-50 px-4 py-4">
+              {ride.outOfArea ? (
+                <p className="text-base font-semibold text-slate-700">
+                  Out-of-area trips run on the meter. Call {COMPANY_PHONE_DISPLAY} for a quote.
+                </p>
+              ) : estimate ? (
+                <>
+                  <p className="text-sm font-bold uppercase tracking-wider text-emerald-800">Your price</p>
+                  <p className="text-4xl font-extrabold text-slate-900 leading-tight" data-testid="price-amount">
+                    About {dollars(estimate.fareCents)}
+                  </p>
+                  <p className="text-sm text-slate-600 mt-1">
+                    {dollars(estimate.fareCents)}&ndash;{dollars(estimate.highCents)} on the meter &middot; about {estimate.miles} mi
+                    {ride.roundTrip ? " each way" : ""}. No surge, ever.
+                  </p>
+                  <p className="text-sm text-slate-600" data-testid="price-fees">
+                    Cash: no fee. Card: + {dollars(estimate.cardFeeCents)} card fee.
+                  </p>
+                </>
+              ) : (
+                <p className="text-base text-slate-600">Pick your pickup and drop-off from the list to see your price.</p>
+              )}
+            </div>
+
+            {showWho ? (
+              <>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-base font-semibold text-slate-700 mb-1.5">
@@ -228,58 +318,76 @@ export default function TripDetails() {
                 />
               </div>
             </div>
-
             <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label htmlFor="pickup" className="block text-base font-semibold text-slate-700">
-                  Pickup Location
-                </label>
-                <button
-                  type="button"
-                  onClick={shareLocation}
-                  disabled={locating}
-                  className="text-sm font-semibold text-blue-600 hover:underline"
-                >
-                  {typeof ride.pickupLat === "number"
-                    ? "✓ Location attached"
-                    : locating
-                      ? "Finding you…"
-                      : "📍 Use my location"}
+              <label className="block text-base font-semibold text-slate-700 mb-1.5">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                required
+                className="w-full border-2 border-slate-300 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+                value={ride.phone}
+                onChange={(e) => updateRide({ phone: e.target.value })}
+                placeholder="(706) 555-0100"
+              />
+              <p className="text-sm text-slate-500 mt-1.5">
+                Dispatch will text or call this number about your ride.
+              </p>
+            </div>
+              </>
+            ) : (
+              <div data-testid="riding-as" className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 border-2 border-slate-200 px-4 py-3">
+                <span className="text-base text-slate-700 min-w-0">
+                  Riding as <b>{ride.guestFirstName} {ride.guestLastName}</b>
+                  <span className="block text-sm text-slate-500">{ride.phone}</span>
+                </span>
+                <button type="button" onClick={() => setEditWho(true)} className="text-sm font-semibold text-blue-600 shrink-0">
+                  Change
                 </button>
               </div>
-              <AddressSearch
-                id="pickup"
-                testid="pickup-search"
-                className="w-full border-2 border-slate-300 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
-                value={ride.pickup}
-                onChange={(t) => updateRide({ pickup: t })}
-                onPick={(r) => updateRide({ pickup: r.text || r.address, pickupLat: r.lat, pickupLng: r.lng })}
-                placeholder={COPY.pickupPlaceholder}
-                onPin={() => setPickerTarget("pickup")}
-                recents={recentList}
-              />
-              {locateError && <p className="text-sm text-red-600 mt-1">{locateError}</p>}
-            </div>
+            )}
 
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label htmlFor="dropoff" className="block text-base font-semibold text-slate-700">
-                  Drop-off Location
-                </label>
+            {!premium && (
+              <div className="flex items-center justify-between gap-3 border-2 border-gold-400/50 bg-amber-50 rounded-xl px-4 py-3.5">
+                <span className="text-base text-slate-700 min-w-0">
+                  <span className="font-bold">&#9733; Skip the line all day</span>
+                  <span className="block text-sm text-slate-600">
+                    {dayPass ? "On until midnight." : `${BRAND.copy.dayPass.price}. Live map and calling your driver included.`}
+                  </span>
+                </span>
+                <button role="switch" aria-checked={!!(dayPass || ride.wantsPriorityPass)} aria-label={BRAND.copy.dayPass.title}
+                  type="button"
+                  disabled={!!dayPass}
+                  onClick={() => updateRide({ wantsPriorityPass: !ride.wantsPriorityPass })}
+                  className={`w-12 h-7 rounded-full transition after:absolute after:-inset-2.5 after:content-[''] shrink-0 ${
+                    dayPass || ride.wantsPriorityPass ? "bg-gold-500" : "bg-slate-300"
+                  } relative`}
+                >
+                  <span
+                    className={`absolute top-1 w-5 h-5 bg-white rounded-full transition ${
+                      dayPass || ride.wantsPriorityPass ? "left-6" : "left-1"
+                    }`}
+                  />
+                </button>
               </div>
-              <AddressSearch
-                id="dropoff"
-                testid="dropoff-search"
-                className="w-full border-2 border-slate-300 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
-                value={ride.dropoff}
-                onChange={(t) => updateRide({ dropoff: t })}
-                onPick={(r) => updateRide({ dropoff: r.text || r.address, dropoffLat: r.lat, dropoffLng: r.lng })}
-                placeholder={COPY.dropoffPlaceholder}
-                onPin={() => setPickerTarget("dropoff")}
-                recents={recentList}
-              />
-            </div>
+            )}
 
+            <button
+              type="button"
+              data-testid="more-options"
+              aria-expanded={showMore}
+              onClick={() => setShowMore((v) => !v)}
+              className="w-full flex items-center justify-between rounded-xl border-2 border-slate-300 px-4 py-3.5 text-left"
+            >
+              <span>
+                <span className="block text-base font-semibold text-slate-700">More options</span>
+                <span className="block text-sm text-slate-500">Passengers, stops, round trip, wheelchair van{currentUser ? ", schedule" : ""}</span>
+              </span>
+              <span aria-hidden="true" className="text-slate-500">{showMore ? "\u25B2" : "\u25BC"}</span>
+            </button>
+
+            {showMore && (
+              <div className="space-y-5">
             {/* Out of area: simple yes/no first, details only reveal after they engage */}
             <div className="border-2 border-slate-300 rounded-xl px-4 py-3.5">
               <div className="flex items-center justify-between">
@@ -342,24 +450,6 @@ export default function TripDetails() {
                 </div>
               )}
             </div>
-
-            <div>
-              <label className="block text-base font-semibold text-slate-700 mb-1.5">
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                required
-                className="w-full border-2 border-slate-300 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
-                value={ride.phone}
-                onChange={(e) => updateRide({ phone: e.target.value })}
-                placeholder="(706) 555-0100"
-              />
-              <p className="text-sm text-slate-500 mt-1.5">
-                Dispatch will text or call this number about your ride.
-              </p>
-            </div>
-
             <div>
               <label htmlFor="passengers-select" className="block text-base font-semibold text-slate-700 mb-1.5">
                 Passengers
@@ -468,35 +558,6 @@ export default function TripDetails() {
                 />
               </button>
             </div>
-
-{!premium && (
-              <div className="flex flex-col gap-2 border-2 border-gold-400/50 bg-amber-50 rounded-xl px-4 py-5">
-                <div className="flex items-center justify-between w-full">
-                  <span className="text-base font-semibold text-slate-700">
-                    &#9733; {BRAND.copy.dayPass.title} &mdash; {dayPass ? "active until midnight" : BRAND.copy.dayPass.price}
-                  </span>
-                  <button role="switch" aria-checked={!!(dayPass || ride.wantsPriorityPass)} aria-label={BRAND.copy.dayPass.title}
-                    type="button"
-                    disabled={!!dayPass}
-                    onClick={() => updateRide({ wantsPriorityPass: !ride.wantsPriorityPass })}
-                    className={`w-12 h-7 rounded-full transition after:absolute after:-inset-2.5 after:content-[''] shrink-0 ${
-                      dayPass || ride.wantsPriorityPass ? "bg-gold-500" : "bg-slate-300"
-                    } relative`}
-                  >
-                    <span
-                      className={`absolute top-1 w-5 h-5 bg-white rounded-full transition ${
-                        dayPass || ride.wantsPriorityPass ? "left-6" : "left-1"
-                      }`}
-                    />
-                  </button>
-                </div>
-                <p className="text-2xl font-extrabold text-navy-950">Skip the line all day</p>
-                <p className="text-base text-slate-700">Live driver updates</p>
-                <p className="text-base text-slate-700">Access to call your driver</p>
-                <p className="text-xs text-slate-500">Paid at checkout.</p>
-              </div>
-            )}
-
             <div className="flex items-center justify-between border-2 border-slate-200 rounded-xl px-4 py-3.5">
               <span className="text-base font-semibold text-slate-700">&#128205; Share my location with my driver</span>
               <button role="switch" aria-checked={sharing} aria-label="Share my location with my driver"
@@ -574,6 +635,8 @@ export default function TripDetails() {
                 )}
               </div>
             )}
+              </div>
+            )}
           </div>
 
           <p className="text-xs text-slate-500 mt-6 mb-3" data-testid="address-disclaimer">
@@ -586,6 +649,9 @@ export default function TripDetails() {
             disabled={going}
           >
             {going ? "Checking your location\u2026" : "Continue to Payment"}
+            {!going && estimate && (
+              <span className="block text-sm font-semibold text-blue-100">About {dollars(estimate.fareCents)}</span>
+            )}
           </button>
 
           <div className="mt-4 text-center">

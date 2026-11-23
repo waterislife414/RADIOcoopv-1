@@ -10,13 +10,11 @@ import {
   COMPANY_PHONE_TEL,
   COMPANY_EMAIL,
   GOOGLE_REVIEW_LINK,
-  FARE_CONFIG,
-  OUT_OF_AREA_ENTRY_FEE,
-  OUT_OF_AREA_MINIMUM_FARE,
-  SUBSCRIPTION_TIERS,
 } from "../config/constants";
 
 import { calcFareRange, calcSavings } from "../config/fareCalc";
+import { estimateFromMiles } from "../lib/tripEstimate";
+import { dollars } from "../../functions/lib/fareEstimate.mjs";
 
 function calcEstimate(ride, miles) {
   const { low, high } = calcFareRange(ride, miles);
@@ -46,6 +44,9 @@ export default function Success() {
     resetRide();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  // Priced on the booking screen: show the same number here, no typing.
+  const est = estimateFromMiles(ride.estMiles, ride, { signedIn: !!currentUser });
+  const estSavings = est && !ride.roundTrip ? calcSavings(est.miles, ride.passengers) : null;
   const [milesInput, setMilesInput] = useState("");
   const [estimate, setEstimate] = useState(null);
   const [savings, setSavings] = useState(null);
@@ -69,6 +70,22 @@ export default function Success() {
               ? "Our dispatcher will send your car and may call you."
               : "The app is finding your driver now."}
           </p>
+
+          {est && (
+            <div data-testid="success-price" className="border-2 border-emerald-500 bg-emerald-50 rounded-2xl p-5 text-left mb-6">
+              <p className="text-sm font-bold uppercase tracking-wider text-emerald-800">Your price</p>
+              <p className="text-3xl font-extrabold text-slate-900">About {dollars(ride.paymentMethod === "card" ? est.totalCents : est.fareCents)}</p>
+              <p className="text-sm text-slate-600 mt-1">
+                {ride.paymentMethod === "card" ? `Meter fare plus ${dollars(est.cardFeeCents)} card fee. ` : ""}The meter sets the final fare. No surge, ever.
+              </p>
+              {estSavings && estSavings.savings > 0 && (
+                <p className="text-sm font-semibold text-emerald-700 mt-1.5">
+                  About {dollars(Math.round(estSavings.savings * 100))} less than the national Uber/Lyft average.{" "}
+                  <Link to="/compare" className="underline">How we figure it</Link>
+                </p>
+              )}
+            </div>
+          )}
 
           {currentUser && <CurrentRideStatus />}
           {!currentUser && guestRideId && (
@@ -121,78 +138,58 @@ export default function Success() {
             )}
           </div>
 
+          {!est && (
           <div className="border-2 border-slate-300 rounded-2xl p-5 text-left">
-            <p className="text-base font-semibold text-slate-700 mb-2">
-              Want a rough price?
-            </p>
-            <a
-              href={`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(ride.pickup || "")}&destination=${encodeURIComponent(ride.dropoff || "")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block text-center text-sm font-semibold text-blue-600 mb-3"
-            >
-              Look up the real distance on Google Maps &rarr;
-            </a>
-            <div className="flex gap-2 mb-3">
-              <input
-                type="number"
-                min="0"
-                step="0.1"
-                placeholder="Estimated miles"
-                value={milesInput}
-                onChange={(e) => setMilesInput(e.target.value)}
-                className="flex-1 border-2 border-slate-300 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-600"
-              />
-              <button
-                onClick={handleEstimate}
-                className="bg-slate-800 hover:bg-slate-900 text-white font-bold text-base px-6 rounded-xl"
+              <p className="text-base font-semibold text-slate-700 mb-2">
+                Want a rough price?
+              </p>
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(ride.pickup || "")}&destination=${encodeURIComponent(ride.dropoff || "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-center text-sm font-semibold text-blue-600 mb-3"
               >
-                Go
-              </button>
-            </div>
-
-            {estimate && (
-              <div className="text-center mb-3">
-                <p className="text-3xl font-bold text-slate-800">
-                  ${estimate.low} - ${estimate.high}
-                </p>
-                {savings && savings.savings > 0 && (
-                  <p className="text-sm font-semibold text-emerald-600 mt-1.5">
-                    That's about ${savings.savings.toFixed(2)} ({savings.percent.toFixed(0)}%)
-                    less than the national Uber/Lyft average.{" "}
-                    <Link to="/compare" className="underline">See how we calculate this</Link>
-                  </p>
-                )}
+                Look up the real distance on Google Maps &rarr;
+              </a>
+              <div className="flex gap-2 mb-3">
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder="Estimated miles"
+                  value={milesInput}
+                  onChange={(e) => setMilesInput(e.target.value)}
+                  className="flex-1 border-2 border-slate-300 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-600"
+                />
+                <button
+                  onClick={handleEstimate}
+                  className="bg-slate-800 hover:bg-slate-900 text-white font-bold text-base px-6 rounded-xl"
+                >
+                  Go
+                </button>
               </div>
-            )}
-
-            <p className="text-sm text-slate-500 text-center">
-              Rough estimate only. Final price determined by cab meter.
-            </p>
-          </div>
-
-          {!currentUser && (
-            <Link
-              to="/join"
-              onClick={resetRide}
-              className="block mt-6 rounded-2xl bg-gradient-to-b from-navy-950 to-navy-900 p-5 text-left"
-            >
-              <p className="text-gold-300 text-xs font-bold tracking-widest uppercase mb-2">
-                Free Account, Free Live Tracking
+  
+              {estimate && (
+                <div className="text-center mb-3">
+                  <p className="text-3xl font-bold text-slate-800">
+                    ${estimate.low} - ${estimate.high}
+                  </p>
+                  {savings && savings.savings > 0 && (
+                    <p className="text-sm font-semibold text-emerald-600 mt-1.5">
+                      That's about ${savings.savings.toFixed(2)} ({savings.percent.toFixed(0)}%)
+                      less than the national Uber/Lyft average.{" "}
+                      <Link to="/compare" className="underline">See how we calculate this</Link>
+                    </p>
+                  )}
+                </div>
+              )}
+  
+              <p className="text-sm text-slate-500 text-center">
+                Rough estimate only. Final price determined by cab meter.
               </p>
-              <p className="text-white font-display font-semibold text-lg leading-snug mb-1.5">
-                Never Wonder Where Your Ride Is
-              </p>
-              <p className="text-slate-300 text-sm leading-relaxed">
-                Create a free account to see live status the moment your
-                driver is dispatched and on the way &mdash; no subscription
-                required. Want free entry fees and free miles too? Basic
-                (${SUBSCRIPTION_TIERS.BASIC.monthlyPrice}/mo) and Premium
-                (${SUBSCRIPTION_TIERS.PREMIUM.monthlyPrice}/mo) add those on
-                top, with a 7-day free trial. Tap to see everything.
-              </p>
-            </Link>
+            </div>
           )}
+
 
           <Link
             to="/"

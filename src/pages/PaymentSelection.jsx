@@ -10,6 +10,8 @@ import CardPaymentForm from "../components/CardPaymentForm";
 import BrandHeader from "../components/BrandHeader";
 import { FARE_CONFIG, PROMO_CODES, STRIPE_PUBLISHABLE_KEY } from "../config/constants";
 import { normalizePhone } from "../utils/phone";
+import { estimateFromMiles, cardFeeCentsFor } from "../lib/tripEstimate";
+import { dollars } from "../../functions/lib/fareEstimate.mjs";
 
 const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
 
@@ -22,6 +24,9 @@ export default function PaymentSelection() {
   const [promoStatus, setPromoStatus] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  // The price the rider saw on the booking screen, now per way of paying.
+  const est = estimateFromMiles(ride.estMiles, ride, { signedIn: !!currentUser });
+  const cardFee = cardFeeCentsFor(!!currentUser);
 
   function applyPromo() {
     const code = promoInput.trim().toUpperCase();
@@ -99,9 +104,21 @@ export default function PaymentSelection() {
       <BrandHeader />
       <div className="px-6 py-8">
         <div className="max-w-md mx-auto">
-          <h1 className="text-3xl font-display font-semibold text-slate-800 mb-6">
-            Payment Method
+          <h1 className="text-3xl font-display font-semibold text-slate-800 mb-4">
+            How will you pay?
           </h1>
+          <div data-testid="trip-summary" className="rounded-2xl bg-slate-50 border-2 border-slate-200 px-4 py-3 mb-5">
+            <p className="text-sm text-slate-600 truncate">
+              {ride.pickup || (typeof ride.pickupLat === "number" ? "Your location" : "")} &rarr; {ride.dropoff}
+            </p>
+            {est ? (
+              <p className="text-base text-slate-800">
+                About <b data-testid="summary-fare">{dollars(est.fareCents)}</b> on the meter &middot; {est.miles} mi
+              </p>
+            ) : (
+              <p className="text-base text-slate-800">Fare set by the meter.</p>
+            )}
+          </div>
           {ride.wantsPriorityPass && ride.fastPassId && (
             <div className="bg-emerald-50 border-2 border-emerald-500 text-emerald-800 rounded-2xl px-4 py-3 mb-5 font-semibold">
               &#10003; Priority Day Pass is on for this ride. Now choose how you&rsquo;ll pay for the ride.
@@ -120,8 +137,11 @@ export default function PaymentSelection() {
               disabled={submitting}
               className="w-full text-left border-2 border-slate-300 hover:border-blue-600 rounded-2xl px-5 py-5 flex justify-between items-center transition"
             >
-              <span className="font-bold text-lg text-slate-800">Cash</span>
-              <span className="text-slate-500 text-base">Pay driver directly</span>
+              <span>
+                <span className="block font-bold text-lg text-slate-800">Cash</span>
+                <span className="block text-slate-500 text-sm">Pay your driver. No extra fee.</span>
+              </span>
+              {est && <span data-testid="total-cash" className="font-bold text-lg text-slate-800">{dollars(est.fareCents)}</span>}
             </button>
 
             <button
@@ -129,16 +149,29 @@ export default function PaymentSelection() {
               disabled={submitting}
               className="w-full text-left border-2 border-slate-300 hover:border-blue-600 rounded-2xl px-5 py-5 flex justify-between items-center transition"
             >
-              <span className="font-bold text-lg text-slate-800">
-                Transfer (CashApp/Venmo)
+              <span>
+                <span className="block font-bold text-lg text-slate-800">Transfer (CashApp/Venmo)</span>
+                <span className="block text-slate-500 text-sm">Pay by app. No extra fee.</span>
               </span>
-              <span className="text-slate-500 text-base">Pay via app</span>
+              {est && <span className="font-bold text-lg text-slate-800">{dollars(est.fareCents)}</span>}
             </button>
 
             <div className="border-2 border-slate-300 rounded-2xl px-5 py-5">
               <div className="flex justify-between items-center mb-3">
-                <span className="font-bold text-lg text-slate-800">Card</span>
-                <span className="text-slate-500 text-base">+ ${(currentUser ? FARE_CONFIG.CARD_APP_FEE_MEMBER : FARE_CONFIG.CARD_APP_FEE).toFixed(2)} app fee</span>
+                <span>
+                  <span className="block font-bold text-lg text-slate-800">Card</span>
+                  <span className="block text-slate-500 text-sm">
+                    Includes {dollars(cardFee)} card fee
+                    {!currentUser && FARE_CONFIG.CARD_APP_FEE_MEMBER < FARE_CONFIG.CARD_APP_FEE
+                      ? ` (${dollars(cardFeeCentsFor(true))} with a free account)`
+                      : ""}
+                  </span>
+                </span>
+                {est ? (
+                  <span data-testid="total-card" className="font-bold text-lg text-slate-800">{dollars(est.totalCents)}</span>
+                ) : (
+                  <span className="text-slate-500 text-base">+ {dollars(cardFee)} card fee</span>
+                )}
               </div>
               <Elements stripe={stripePromise}>
                 <CardPaymentForm
