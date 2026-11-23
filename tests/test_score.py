@@ -1,5 +1,6 @@
-import pytest
 import sqlite3
+
+import pytest
 
 from uprec.config import load_rules
 from uprec.db import init_db
