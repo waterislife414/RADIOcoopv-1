@@ -1,0 +1,19 @@
+# Manager-owned. Maps whatever headers the Treasury portal export uses to our canonical fields.
+# Matching is case-insensitive, ignores punctuation and extra spaces. First alias hit wins.
+# When the real export arrives, the manager adds its exact headers here; no code change needed.
+canonical:
+  owner_name:  ["owner name", "name", "owner", "reported owner name", "apparent owner", "owner/business name"]
+  first_name:  ["first name", "firstname", "first"]
+  last_name:   ["last name", "lastname", "last", "surname"]
+  address:     ["address", "street", "owner address", "address 1", "street address", "last known address"]
+  city:        ["city", "owner city"]
+  state:       ["state", "st", "owner state"]
+  zip:         ["zip", "zip code", "zipcode", "postal code", "owner zip"]
+  holder:      ["holder", "holder name", "reported by", "reporting company", "reported by holder", "company"]
+  property_type: ["property type", "type", "type of property", "category", "property category"]
+  amount:      ["amount", "cash reported", "value", "amount range", "cash amount", "value range", "amount bucket"]
+  reported:    ["date reported", "report date", "reported", "year reported", "reported year", "date", "report year"]
+  property_id: ["property id", "claim id", "id", "property number", "record id"]
+name_join:
+  # when only first/last exist, build owner_name as "LAST FIRST" uppercase to match portal style
+  order: "last_first"

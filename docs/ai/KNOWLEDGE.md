@@ -7,3 +7,5 @@ Portal fields we expect (UNVERIFIED until the first real CSV): owner name, addre
 Code map: uprec/db.py (connect/init), uprec/config.py (load rules), uprec/ingest.py, uprec/gate.py, uprec/score.py, uprec/queries.py (search-string builders), uprec/letters.py (render), uprec/report.py (exports). Tests in tests/, synthetic data in fixtures/.
 Amounts: buckets give a lower bound ("over $500" -> min 50000 cents) or an upper bound ("under $100" -> max 10000 cents). Exact amounts are rare. Aggregate per owner using the lower bounds.
 Test commands: `ruff check .` and `pytest -q`. No services, keys or network needed.
+
+Stage 4 modules (being built): uprec/columns.py (portal header mapping via config/portal_columns.yaml), uprec/research.py (record_fact/add_heir/add_contact), uprec/casesheet.py (markdown case sheet), uprec/readiness.py (outreach blockers), uprec/work_queue.py (next cases to research). Research method: docs/RESEARCH-PLAYBOOK.md. Stage 3 modules exist: ingest, gate, score, queries, letters, report.
