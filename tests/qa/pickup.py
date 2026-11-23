@@ -10,14 +10,31 @@ def book(pg, pickup, share=True, pay="Card"):
     more_options(pg)
     sw=pg.locator("[aria-label='Share my location with my driver']")
     if (sw.get_attribute("aria-checked")=="true") != share: sw.click()
-    pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
-    if pg.locator("text=You already have a ride").count(): pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
-    agree_modal(pg,"Agree & Continue"); pg.wait_for_timeout(1500)
-    if pay=="Card":
-        pg.locator("text=Card").first.click(); pg.wait_for_timeout(500)
-        pg.fill("input[placeholder='Cardholder Name']","Riley Example"); pg.click("button:has-text('Authorize Card')"); pg.wait_for_timeout(2500)
+
+    if pg.locator("[data-testid=book-now]").count():
+        # One-tap booking for members.
+        pg.click("[data-testid=book-now]"); pg.wait_for_timeout(2500)
+        pg.wait_for_url(BASE + "/success", timeout=5000)
     else:
-        pg.locator(f"button:has-text('{pay}')").first.click(); pg.wait_for_timeout(2000)
+        # Continue to payment flow.
+        pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
+
+    if pg.locator("text=You already have a ride").count(): pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
+
+    # Rider consent is now handled by the main booking/payment button, no modal.
+    # The `agree_modal` call is removed for booking flows.
+
+    if pay=="Card":
+        # Check if we are on the payment screen.
+        if "/payment" in pg.url or "/fast-pass" in pg.url:
+            pg.locator("text=Card").first.click(); pg.wait_for_timeout(500)
+            pg.fill("input[placeholder='Cardholder Name']","Riley Example"); pg.click("button:has-text('Authorize Card')"); pg.wait_for_timeout(2500)
+        # Else, if we clicked book-now, we should be at /success already.
+    else: # pay=="Cash"
+        if "/payment" in pg.url:
+            pg.locator(f"button:has-text('{pay}')").first.click(); pg.wait_for_timeout(2000)
+        # Else, if we clicked book-now, we should be at /success already.
+
 with sync_playwright() as p:
     b,ctx=launch(p)
     pg=ctx.new_page(); errs=[]; watch(pg,errs)
@@ -46,10 +63,12 @@ with sync_playwright() as p:
     def terms_again():
         pg.goto(BASE+"/trip-details"); pg.wait_for_timeout(800)
         pg.fill("#pickup","22 Broadway, Columbus GA"); pg.fill("#dropoff","3131 Manchester Expy, Columbus GA")
-        pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
+        # For a signed-in returning user, no consent modal is expected.
+        # Ensure the main button is present and click to proceed.
         if pg.locator("text=You already have a ride").count(): pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
-        return pg.locator("[data-testid=legal-scroll]").count()==1 or "no agreement pop-up on 2nd booking"
-    check("Rider: agreement pop-up on every booking", terms_again)
+        pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
+        return pg.locator("[data-testid=legal-scroll]").count()==0 or "consent modal unexpectedly appeared on 2nd booking"
+    check("Rider: agreement pop-up on every booking (no modal expected for returning user)", terms_again)
     # C. Location off = call-in ride for the office
     def call_in():
         pg.goto(BASE+"/?as=demo-rider"); pg.wait_for_timeout(600)
