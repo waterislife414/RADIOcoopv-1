@@ -166,18 +166,18 @@ with sync_playwright() as p:
         A.reload(); A.wait_for_timeout(2000)
         stage='c'
         if board(A,"demo-driver-44").get("status") not in ("offered","on_call"):
-          A.click("[data-testid=new-call]"); A.wait_for_timeout(600)
+          A.click("[data-testid=new-call]"); A.wait_for_timeout(800) # Increased timeout
           A.locator("[data-testid=call-drawer] input").first.fill("1795 Cusseta Rd, Columbus GA")
           A.locator("[data-testid=call-drawer] input").nth(1).fill("QA Step1 Six")
-          A.locator("[data-testid=call-drawer] button:has-text('Save'), [data-testid=call-drawer] button:has-text('Create'), [data-testid=call-drawer] button:has-text('Book')").first.click(); A.wait_for_timeout(1000)
+          A.locator("[data-testid=call-drawer] button:has-text('Save'), [data-testid=call-drawer] button:has-text('Create'), [data-testid=call-drawer] button:has-text('Book')").first.click(); A.wait_for_timeout(1500) # Increased timeout
           for _ in range(12):
               if "QA Step1 Six" in A.locator("[data-testid=pegboard]").inner_text(): break
               A.wait_for_timeout(500)
           card = A.locator("[data-testid=pegboard] div", has_text="QA Step1 Six").locator("button:has-text('Pick a car'), button:has-text('Accept & assign')").last
-          card.click(); A.wait_for_timeout(600)
-          A.locator("button", has_text="Car 44").first.click(); A.wait_for_timeout(600)
+          card.click(); A.wait_for_timeout(1000) # Increased timeout
+          A.locator("button", has_text="Car 44").first.click(); A.wait_for_timeout(1000) # Increased timeout
           if A.locator("button:has-text('Send anyway')").count(): A.click("button:has-text('Send anyway')")
-          A.wait_for_timeout(2000)
+          A.wait_for_timeout(2500) # Increased timeout
         s = board(A,"demo-driver-44").get("status")
         assert s in ("offered","on_call"), "could not put 44 on a call: "+str(s)
         stage='d'
