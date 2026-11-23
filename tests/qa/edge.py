@@ -11,7 +11,8 @@ with sync_playwright() as p:
         pg.fill("#pickup",'Apt #5 & "B", 900 Broadway; Columbus GA <test>'); pg.fill("#dropoff","3131 Manchester Expy, Columbus GA")
         pg.fill("input[type=tel]","(706) 555-0100")
         pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
-        agree_modal(pg,"Agree & Continue"); pg.wait_for_timeout(700)
+        # Rider consent is now handled by the main booking/payment button, no modal for guest booking.
+        # The `agree_modal` call is removed for booking flows.
         pg.click("button:has-text('Cash')"); pg.wait_for_timeout(2200)
         r=[v for k,v in db(pg).items() if k.startswith("rides/") and "Apt #5" in v.get("pickup","")]
         return ("/success" in pg.url and r and r[0].get("lastName")=="O'Brien 😀") or f"url={pg.url} saved={bool(r)}"
@@ -38,7 +39,8 @@ with sync_playwright() as p:
         return pg.locator("[data-testid=legal-scroll]").count()==1 or f"no agreement pop-up on the next booking: {pg.url}"
     check("Agreement pop-up comes back on every booking, even for members", signup_then_book_no_repeat)
     def recent_chips():
-        if pg.locator("[data-testid=legal-scroll]").count(): pg.keyboard.press("Escape")
+        # No modal to escape from in the new flow.
+        # if pg.locator("[data-testid=legal-scroll]").count(): pg.keyboard.press("Escape")
         pg.goto(BASE+"/trip-details"); pg.wait_for_timeout(900)
         return pg.locator("text=Recent places").count()>0 or "no recent places after booking"
     check("Recent places show up after a booking", recent_chips)
