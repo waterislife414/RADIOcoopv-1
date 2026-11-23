@@ -1,8 +1,8 @@
 """CSV Ingestion, amount parsing, and signal classification."""
 import csv
+from pathlib import Path
 import re
 import sqlite3
-from pathlib import Path
 
 def parse_amount(text: str, rules: dict) -> tuple[int | None, int | None]:
     if not text:
