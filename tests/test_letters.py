@@ -1,5 +1,6 @@
 from uprec.letters import render_letter
 
+
 def test_render_letter():
     template = "Dear {name}, we found {property_count} properties for you at:\n{properties_list}"
     owner = {"name": "ZZ TESTPERSON ALPHA"}
