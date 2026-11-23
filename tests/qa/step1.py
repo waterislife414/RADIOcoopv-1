@@ -165,9 +165,15 @@ with sync_playwright() as p:
             D.locator("button:has-text('Check Ready in')").click(); D.wait_for_timeout(1500)
         A.reload(); A.wait_for_timeout(2000)
         stage='c'
-        # The app may already have sent the waiting ride to 44 by itself (auto dispatch). Only assign by hand if not.
         if board(A,"demo-driver-44").get("status") not in ("offered","on_call"):
-          card = A.locator("[data-testid=pegboard] div", has_text="QA Step1 Dropoff").locator("button:has-text('Pick a car'), button:has-text('Accept & assign'), button:has-text('Change car')").last
+          A.click("[data-testid=new-call]"); A.wait_for_timeout(600)
+          A.fill("input[placeholder='123 Broadway, Columbus GA']", "1795 Cusseta Rd, Columbus GA")
+          A.fill("input[placeholder='456 14th St, Phenix City AL']", "QA Step1 Six")
+          A.click("button:has-text('Save'), button:has-text('Create'), button:has-text('Book')"); A.wait_for_timeout(1000)
+          for _ in range(12):
+              if "QA Step1 Six" in A.locator("[data-testid=pegboard]").inner_text(): break
+              A.wait_for_timeout(500)
+          card = A.locator("[data-testid=pegboard] div", has_text="QA Step1 Six").locator("button:has-text('Pick a car'), button:has-text('Accept & assign')").last
           card.click(); A.wait_for_timeout(600)
           A.locator("button", has_text="Car 44").first.click(); A.wait_for_timeout(600)
           if A.locator("button:has-text('Send anyway')").count(): A.click("button:has-text('Send anyway')")
