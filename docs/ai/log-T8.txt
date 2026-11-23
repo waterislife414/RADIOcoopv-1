@@ -1,0 +1,40 @@
+ from uprec.db import connect, init_db                                          
+-from uprec.research import record_fact, add_heir, add_contact                  
++from uprec.research import add_contact, add_heir, record_fact                  
+                                                                                
+-@pytest.fixture                                                                
+-def db():                                                                      
+-    conn = connect(":memory:")                                                 
+-    init_db(conn)                                                              
+-    # Insert a test owner                                                      
+-    cur = conn.cursor()                                                        
+-    cur.execute("INSERT INTO owners (id, name, status) VALUES (1, 'Test Owner',
+'new')")                                                                        
+confidence='invalid')                                                           
+                                                                                
+@@ -1,6 +1,8 @@                                                                 
+ """Research facts, heirs, and contacts store."""                               
+ import sqlite3                                                                 
++                                                                               
+                                                                                
+ def record_fact(                                                               
+     conn: sqlite3.Connection,                                                  
+     owner_id: int,                                                             
+     fact_key: str,                                                             
+@@ -9,5 +10,6 @@                                                                
+     source_url: str | None = None,                                             
+         INSERT INTO research_log (owner_id, fact_key, fact_value, source_url,  
+source_note, confidence)                                                        
+         VALUES (?, ?, ?, ?, ?, ?)                                              
+         """,                                                                   
+         (owner_id, fact_key, fact_value, source_url, source_note, confidence)  
++  24 / 102 lines [███████░░░░░░░░░░░░░░░░░░░░░░░]  24%                         
+                                                                                
+Tokens: 11k sent, 1.5k received. Cost: $0.0069 message, $0.01 session.
+Applied edit to tests/test_research.py
+Applied edit to uprec/research.py
+Commit 965db80 style: fix linter errors and format imports
+All checks passed!
+All checks passed!
+.............................                                            [100%]
+29 passed in 0.11s
