@@ -181,6 +181,7 @@ with sync_playwright() as p:
         s = board(A,"demo-driver-44").get("status")
         assert s in ("offered","on_call"), "could not put 44 on a call: "+str(s)
         stage='d'
+        A.wait_for_timeout(1000) # Added to allow UI to settle after ride assignment.
         chip44().click(); A.wait_for_timeout(500)
         A.locator("button:text-is('Off')").click(); A.wait_for_timeout(1500)
         s2 = board(A,"demo-driver-44").get("status")
