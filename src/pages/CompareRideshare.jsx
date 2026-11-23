@@ -77,7 +77,7 @@ export default function CompareRideshare() {
               Uber prices: the average UberX price for each trip over the past month, as published on{" "}
               <a href={local.source} target="_blank" rel="noopener noreferrer" className="underline">Uber&rsquo;s Columbus page</a>
               , checked {local.checked}. Uber says they are not fixed or guaranteed prices. Our prices: the city meter for the same
-              miles, one rider, before wait time ($0.35/min) and the card fee. Long trips out of town can cost less with Uber: call{" "}
+              miles, one rider, before wait time ($0.35/min). No card fee. Long trips out of town can cost less with Uber: call{" "}
               {COMPANY_PHONE_DISPLAY} for our price.
             </p>
           </section>

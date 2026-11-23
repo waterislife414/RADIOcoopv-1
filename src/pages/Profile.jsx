@@ -9,6 +9,42 @@ import BrandHeader from "../components/BrandHeader";
 import CurrentRideStatus from "../components/CurrentRideStatus";
 import ConfirmModal from "../components/admin/ConfirmModal";
 import { SUBSCRIPTION_TIERS, HUB_NAME, PROMO_CODES } from "../config/constants";
+import { memberDealsFor, DEALS, tierReward } from "../lib/memberDeals";
+
+const money = (c) => `$${(c / 100).toFixed(2)}`;
+
+/** Your deals: ride credit, rides to the next reward, Price Lock. Plain and short. */
+function YourDeals({ profile }) {
+  const d = memberDealsFor(profile);
+  if (!d) return null;
+  const every = d.every;
+  const done = every - d.ridesToNext;
+  return (
+    <div className="border-2 border-emerald-500 bg-emerald-50 rounded-2xl p-5 mb-5" data-testid="your-deals">
+      <h2 className="font-bold text-lg text-slate-800 mb-2">Your deals</h2>
+      <p className="text-base text-slate-800" data-testid="deals-credit">
+        Ride credit: <span className="font-bold">{money(d.creditCents)}</span>
+        {d.creditCents > 0 ? " (comes off your next card ride)" : ""}
+      </p>
+      {d.rewardCents > 0 ? (
+        <>
+          <div className="w-full bg-white rounded-full h-3 my-2 overflow-hidden">
+            <div className="bg-emerald-600 h-3 rounded-full" style={{ width: `${(done / every) * 100}%` }} />
+          </div>
+          <p className="text-sm text-slate-700" data-testid="deals-next">
+            {d.ridesToNext} more ride{d.ridesToNext === 1 ? "" : "s"} to your next {money(d.rewardCents)} off.
+          </p>
+        </>
+      ) : (
+        <p className="text-sm text-slate-700 mt-1">
+          Members get {money(tierReward("BASIC"))} off every {every}th ride.{" "}
+          <Link to="/join" className="font-semibold text-blue-700 underline">See plans</Link>
+        </p>
+      )}
+      {DEALS.priceLock && <p className="text-sm text-slate-700 mt-1">Price Lock is on: card rides never cost more than the price shown.</p>}
+    </div>
+  );
+}
 
 export default function Profile() {
   const {
@@ -288,6 +324,8 @@ export default function Profile() {
               <p className="text-sm text-slate-600">Give it to a friend. When they become a member, you get a ride credit.</p>
             </div>
           )}
+
+          <YourDeals profile={userProfile} />
 
           {/* Perk tracker: hidden until checkout really takes the free entry off (branding promo.FREE_ENTRY_ACTIVE). */}
           {PROMO_CODES.FREE_ENTRY_ACTIVE && (

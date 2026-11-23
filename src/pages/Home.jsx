@@ -129,7 +129,7 @@ export default function Home() {
               <Link to="/sign-in" className="font-bold text-gold-200 underline underline-offset-4">Log in</Link>
               {" · "}
               <Link to="/sign-up" className="font-bold text-gold-200 underline underline-offset-4">Sign up free</Link>
-              <span className="block text-sm text-slate-300">Free account: lower card fee, and your name and number are filled in.</span>
+              <span className="block text-sm text-slate-300">Free account: Price Lock, $3 off your first card ride, one-tap booking.</span>
             </p>
           )}
 

@@ -12,12 +12,13 @@ import { BRAND, PROMO_CODES, STRIPE_PUBLISHABLE_KEY } from "../config/constants"
 import { normalizePhone } from "../utils/phone";
 import { estimateFromMiles } from "../lib/tripEstimate";
 import { cardFeeRule } from "../../functions/lib/cardFee.mjs";
+import { memberDealsFor } from "../lib/memberDeals";
 import { dollars } from "../../functions/lib/fareEstimate.mjs";
 
 const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
 
 export default function PaymentSelection() {
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
   const { ride, updateRide } = useRide();
   const navigate = useNavigate();
 
@@ -28,6 +29,10 @@ export default function PaymentSelection() {
   // The price the rider saw on the booking screen, now per way of paying.
   const est = estimateFromMiles(ride.estMiles, ride, { signedIn: !!currentUser });
   const feeRule = cardFeeRule(BRAND.pricing?.cardFee);
+  const deals = currentUser ? memberDealsFor(userProfile) : null;
+  const lockCents = deals?.priceLock && est && !ride.stops?.length ? est.highCents : null;
+  // Card total after ride credit (the server takes it off when the card is charged).
+  const cardTotal = est ? Math.max(0, est.totalCents - (deals?.creditCents || 0)) : null;
 
   function applyPromo() {
     const code = promoInput.trim().toUpperCase();
@@ -162,18 +167,25 @@ export default function PaymentSelection() {
                 <span>
                   <span className="block font-bold text-lg text-slate-800">Card</span>
                   <span className="block text-slate-500 text-sm" data-testid="card-fee-rule">{feeRule}</span>
-                  <span className="block text-slate-500 text-sm">Your driver enters the meter at drop-off and this card is charged.</span>
+                  {lockCents != null && (
+                    <span className="block text-emerald-700 text-sm font-semibold" data-testid="card-price-lock">
+                      {"\u{1F512}"} Never more than {dollars(Math.max(0, lockCents - (deals?.creditCents || 0)))}
+                    </span>
+                  )}
+                  {deals?.creditCents > 0 && (
+                    <span className="block text-emerald-700 text-sm font-semibold">{dollars(deals.creditCents)} ride credit included</span>
+                  )}
+                  <span className="block text-slate-500 text-sm">At drop-off you tap Pay on your driver&rsquo;s phone.</span>
                 </span>
                 {est ? (
                   <span data-testid="total-card" className="font-bold text-lg text-slate-800 text-right">
-                    {est.cardFeeCents > 0 ? "up to " : ""}{dollars(est.totalCents)}
+                    {dollars(cardTotal)}
                   </span>
-                ) : (
-                  <span className="text-slate-500 text-base">+ card fee</span>
-                )}
+                ) : null}
               </div>
               <Elements stripe={stripePromise}>
                 <CardPaymentForm
+                  allowSaved={!!currentUser}
                   onAuthorized={(paymentIntentId, cardholderName) => {
                     updateRide({ paymentMethod: "card" });
                     submitRide("card", paymentIntentId, cardholderName);

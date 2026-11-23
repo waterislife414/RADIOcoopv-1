@@ -52,11 +52,10 @@ with sync_playwright() as p:
         cash = money(pg.inner_text("[data-testid=total-cash]"))
         card = money(pg.inner_text("[data-testid=total-card]"))
         summary = money(pg.inner_text("[data-testid=summary-fare]"))
-        # Card: up to 3% on a credit card, never above cost (2.9% + 30c); debit pays none.
-        fc = round(fare * 100); fee = min(fc * 3 // 100, round(fc * 0.029 + 30)) / 100
-        ok = cash == fare and summary == fare and abs(card - (fare + fee)) < 0.005
+        # No card fee (Nov 23 decision): a guest's card total is the fare.
+        ok = cash == fare and summary == fare and abs(card - fare) < 0.005
         return ok or f"fare={fare} cash={cash} card={card} summary={summary}"
-    check("Payment: trip summary, cash total = fare, card total = fare + up to 3% credit-card fee", totals_per_method)
+    check("Payment: trip summary, cash total = fare, card total = fare (no card fee)", totals_per_method)
 
     def same_price_after():
         pg.locator("button:has-text('Cash')").first.click(); pg.wait_for_timeout(2000)

@@ -56,12 +56,13 @@ with sync_playwright() as p:
         pg.fill("input[placeholder='Jane']","Guest"); pg.fill("input[placeholder='Doe']","Tester")
         pg.fill("#pickup","900 Broadway, Columbus GA"); pg.fill("#dropoff","3131 Manchester Expy, Columbus GA"); pg.fill("input[type=tel]","7065550100")
         pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(400)
-        locked=pg.locator("[data-testid=consent-boxes] input[disabled]").count()
+        # Riders (Nov 23 decision): one box, Continue blocked until it's ticked.
+        blocked=pg.locator("button:has-text('Check the box to continue')").is_disabled()
         agree_modal(pg,"Agree & Continue"); pg.wait_for_timeout(700)
         assert "/payment" in pg.url, pg.url
         pg.click("button:has-text('Cash')"); pg.wait_for_timeout(2000)
-        return ("/success" in pg.url and locked==3) or f"url={pg.url} locked={locked}"
-    check("Guest: book with cash (agreement pops up, boxes locked until scrolled)", guest_book)
+        return ("/success" in pg.url and blocked) or f"url={pg.url} blocked={blocked}"
+    check("Guest: book with cash (one-box agreement pops up, Continue blocked until ticked)", guest_book)
     check("Guest: success page shows the booking and call-to-cancel", lambda: (len(pg.locator("#root").inner_text())>100 and pg.locator("text=Need to change or cancel? Call").count()==1) or "blank or missing")
     # --- Sign up
     email=f"qa{int(time.time())}@example.com"

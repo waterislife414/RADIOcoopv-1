@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { collection, getDocs, limit, orderBy, query, where } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { useAuth } from "../context/AuthContext";
+import { memberDealsFor, DEALS } from "../lib/memberDeals";
 import ConsentModal from "../components/legal/ConsentModal";
 import PinPicker from "../components/PinPicker";
 import AddressSearch from "../components/AddressSearch";
@@ -74,6 +75,7 @@ export default function TripDetails() {
   const laterDay = scheduleType === "later" && ride.scheduledFor && new Date(ride.scheduledFor).getTime() > (userProfile?.dayPass?.expiresAt || 0);
   const dayPass = userProfile?.dayPass?.expiresAt > Date.now() && !laterDay ? userProfile.dayPass : null;
   const premium = userProfile?.subscriptionTier === "PREMIUM";
+  const deals = currentUser ? memberDealsFor(userProfile) : null;
   const freePasses = currentUser ? memberPassesLeft(userProfile) : 0;
   async function claimFreePass() {
     setPassBusy(true);
@@ -314,8 +316,26 @@ export default function TripDetails() {
                     {ride.roundTrip ? " each way" : ""}. No surge, ever.
                   </p>
                   <p className="text-sm text-slate-600" data-testid="price-fees">
-                    Cash or debit card: no fee. Credit card: up to {dollars(estimate.cardFeeCents)} (3%).
+                    Same price cash or card. No fees.
                   </p>
+                  {deals ? (
+                    <>
+                      {deals.priceLock && !ride.stops.length && (
+                        <p className="text-sm font-semibold text-emerald-800 mt-1.5" data-testid="price-lock">
+                          {"\u{1F512}"} Price Lock: pay by card and you never pay more than {dollars(estimate.highCents)}.
+                        </p>
+                      )}
+                      {deals.creditCents > 0 && (
+                        <p className="text-sm font-semibold text-emerald-800" data-testid="ride-credit">
+                          {dollars(deals.creditCents)} ride credit comes off your card ride.
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <Link to="/sign-up" className="block text-sm font-semibold text-blue-700 underline mt-1.5" data-testid="deals-pitch">
+                      Sign up free: lock your price and get {dollars(DEALS.welcomeCreditCents)} off your first card ride.
+                    </Link>
+                  )}
                 </>
               ) : (
                 <p className="text-base text-slate-600">Pick your pickup and drop-off from the list to see your price.</p>
@@ -764,6 +784,7 @@ export default function TripDetails() {
             open={askConsent}
             docIds={RIDER_DOCS}
             confirmLabel="Agree & Continue"
+            quick
             onClose={() => setAskConsent(false)}
             onAccept={(record) => {
               setAskConsent(false);

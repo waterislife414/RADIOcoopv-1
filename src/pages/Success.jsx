@@ -76,7 +76,7 @@ export default function Success() {
               <p className="text-sm font-bold uppercase tracking-wider text-emerald-800">Your price</p>
               <p className="text-3xl font-extrabold text-slate-900">About {dollars(ride.paymentMethod === "card" ? est.totalCents : est.fareCents)}</p>
               <p className="text-sm text-slate-600 mt-1">
-                {ride.paymentMethod === "card" ? `Meter fare plus up to ${dollars(est.cardFeeCents)} if it's a credit card (debit: no fee). Your driver enters the meter at drop-off and your card is charged. ` : ""}The meter sets the final fare. No surge, ever.
+                {ride.paymentMethod === "card" ? "Same price as cash. At drop-off, tap Pay on your driver's phone. " : ""}The meter sets the final fare. No surge, ever.
               </p>
               {estSavings && estSavings.savings > 0 && (
                 <p className="text-sm font-semibold text-emerald-700 mt-1.5">

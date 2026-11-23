@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../config/firebase";
@@ -13,12 +13,70 @@ const cardElementOptions = {
   },
 };
 
-export default function CardPaymentForm({ onAuthorized, submitting }) {
+const mySavedCard = httpsCallable(functions, "mySavedCard");
+const brandName = (b) => ({ visa: "Visa", mastercard: "Mastercard", amex: "Amex", discover: "Discover" })[b] || "card";
+
+export default function CardPaymentForm({ onAuthorized, submitting, allowSaved = false }) {
   const stripe = useStripe();
   const elements = useElements();
   const [cardholderName, setCardholderName] = useState("");
   const [processing, setProcessing] = useState(false);
   const [cardError, setCardError] = useState("");
+  // Members: the card they used before, one tap (brand + last 4 only).
+  const [saved, setSaved] = useState(null);
+  const [typeNew, setTypeNew] = useState(false);
+  useEffect(() => {
+    if (!allowSaved) return undefined;
+    let live = true;
+    mySavedCard()
+      .then(({ data }) => live && setSaved(data || null))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [allowSaved]);
+
+  async function paySaved() {
+    if (!stripe) return;
+    setProcessing(true);
+    setCardError("");
+    try {
+      const { data } = await httpsCallable(functions, "createPaymentIntent")({ useSaved: true });
+      // Confirms with the saved card; the bank may ask the rider to approve (handled here).
+      const result = await stripe.confirmCardPayment(data.clientSecret);
+      if (result.error) {
+        setCardError(result.error.message);
+        setProcessing(false);
+        return;
+      }
+      onAuthorized(result.paymentIntent.id, "");
+    } catch (err) {
+      setCardError(err?.message || "That card didn't work. Type a card instead.");
+      setTypeNew(true);
+      setProcessing(false);
+    }
+  }
+
+  if (saved && !typeNew) {
+    return (
+      <div className="space-y-2">
+        <button
+          type="button"
+          data-testid="pay-saved-card"
+          onClick={paySaved}
+          disabled={!stripe || processing || submitting}
+          className="w-full min-h-[56px] bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg rounded-xl transition disabled:opacity-50"
+        >
+          {processing ? "Booking\u2026" : `Book with ${brandName(saved.brand)} \u2022\u2022${saved.last4}`}
+        </button>
+        {cardError && <p className="text-sm text-red-600">{cardError}</p>}
+        <button type="button" onClick={() => setTypeNew(true)} className="text-sm font-semibold text-blue-700 underline">
+          Use a different card
+        </button>
+        <p className="text-xs text-slate-500">A small hold checks the card. You pay the fare at drop-off.</p>
+      </div>
+    );
+  }
 
   async function handleAuthorize() {
     if (!stripe || !elements) return;
@@ -77,7 +135,7 @@ export default function CardPaymentForm({ onAuthorized, submitting }) {
         {processing ? "Authorizing..." : "Authorize Card"}
       </button>
       <p className="text-xs text-slate-500">
-        This places a hold only. You are not charged until dispatch confirms your final fare.
+        A small hold checks the card. You pay the fare at drop-off.
       </p>
     </div>
   );

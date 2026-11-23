@@ -169,6 +169,8 @@ export default function SignUp() {
             docIds={["rider-terms", "privacy"]}
             busy={loading}
             confirmLabel="Agree & Create Account"
+            quick
+            title="Before you join"
             onClose={() => setAskConsent(false)}
             onAccept={createAccount}
           />

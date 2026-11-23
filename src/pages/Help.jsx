@@ -13,6 +13,7 @@ import {
   SERVICE_HOURS,
 } from "../config/constants";
 import { cardFeeRule } from "../../functions/lib/cardFee.mjs";
+import { DEALS, tierReward } from "../lib/memberDeals";
 
 // Fees, minutes and the Day Pass come from the same settings the app charges by.
 const usd = (n) => `$${Number(n).toFixed(2).replace(/\.00$/, "")}`;
@@ -48,15 +49,26 @@ const QA = [
           Each extra passenger is {money(FARE_CONFIG.EXTRA_PAX_FEE)}. Trips outside the local area have a {money(OUT_OF_AREA_MINIMUM_FARE)} minimum.
         </p>
         <p>
-          {cardFeeRule(BRAND.pricing?.cardFee)} The fee is never more than it costs us to take the card. The price
-          shown before you ride is an estimate. <Link to="/compare" className="font-bold text-blue-700 underline">Compare us to Uber &amp; Lyft</Link>.
+          {cardFeeRule(BRAND.pricing?.cardFee)} The price shown before you ride is an estimate. With a free account and a
+          card, Price Lock means you never pay more than the top of that price (plus any waiting time). <Link to="/compare" className="font-bold text-blue-700 underline">Compare us to Uber &amp; Lyft</Link>.
         </p>
       </>
     ),
   },
   {
     q: "How can I pay?",
-    a: <p>Cash to the driver, or a card in the app. With a card, a hold is placed when you book. At drop-off your driver types in the meter and that card is charged. Your receipt shows in the app, where you can add a tip.</p>,
+    a: <p>Cash to the driver, or a card in the app (same price). With a card, a small hold checks it when you book. At drop-off your driver shows your fare on their phone: tap a tip or &ldquo;No tip&rdquo; and that card is charged. Your receipt shows in the app.</p>,
+  },
+  {
+    q: "What deals do members get?",
+    a: (
+      <p>
+        Free account: Price Lock on card rides, {money(DEALS.welcomeCreditCents / 100)} off your first card ride, and one-tap booking with your saved card.
+        Basic: {money(tierReward("BASIC") / 100)} off every {DEALS.rewardEveryRides}th ride. Premium: {money(tierReward("PREMIUM") / 100)} off every{" "}
+        {DEALS.rewardEveryRides}th ride, plus front of the line. Rides of {money(DEALS.rewardMinFareCents / 100)} or more count. Ride credit comes off your
+        next card ride by itself. <Link to="/join" className="font-bold text-blue-700 underline">See plans</Link>.
+      </p>
+    ),
   },
   {
     q: "Can I book ahead of time?",

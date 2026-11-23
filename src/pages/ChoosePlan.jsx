@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import BrandHeader from "../components/BrandHeader";
 import { BRAND, FARE_CONFIG, PROMO_CODES } from "../config/constants";
+import { DEALS, tierReward } from "../lib/memberDeals";
 
 function PlanCard({ tierKey, name, price, yearlyPrice, savings, perks, highlight }) {
   const { currentUser } = useAuth();
@@ -78,6 +79,11 @@ function PlanCard({ tierKey, name, price, yearlyPrice, savings, perks, highlight
 export default function ChoosePlan() {
   // Only perks the app actually gives today. Plan perks come from branding.config.json.
   const freeEntry = PROMO_CODES.FREE_ENTRY_ACTIVE ? ["A free entry fee every 10 rides over $5 (or every $50 in rides)"] : [];
+  // Ride credit every 10 rides of $5+ (pricing.tiers.X.rewardCents, memberDeals.rewardEveryRides).
+  const reward = (tier) => {
+    const c = tierReward(tier);
+    return c ? [`$${(c / 100).toFixed(0)} off every ${DEALS.rewardEveryRides}th ride, automatically`] : [];
+  };
   const passes = (tier) => {
     const n = Number(BRAND.pricing.tiers[tier]?.dayPassesPerMonth) || 0;
     return n ? [`${n} free Priority Day Pass${n === 1 ? "" : "es"} a month`] : [];
@@ -87,23 +93,28 @@ export default function ChoosePlan() {
     ...(BRAND.pricing?.cardFee?.mode === "flat"
       ? [`Lower card fee ($${FARE_CONFIG.CARD_APP_FEE_MEMBER.toFixed(2)} instead of $${FARE_CONFIG.CARD_APP_FEE.toFixed(2)})`]
       : []),
+    ...(DEALS.priceLock ? ["Price Lock: pay by card and never pay more than the price shown"] : []),
+    ...(DEALS.welcomeCreditCents > 0 ? [`$${(DEALS.welcomeCreditCents / 100).toFixed(0)} off your first card ride`] : []),
+    "Book with your saved card in one tap",
     "Your name and number filled in when you book",
     ...freeEntry,
     "Deals and offers in your area",
   ];
 
   const basicPerks = [
+    ...reward("BASIC"),
     ...freePerks,
     ...(perk("liveMap", "BASIC") ? ["See your driver live on the map"] : []),
     ...passes("BASIC"),
   ];
 
   const premiumPerks = [
+    ...reward("PREMIUM"),
+    ...passes("PREMIUM"),
     ...freePerks,
     "Front of the line on every ride",
     ...(perk("liveMap", "PREMIUM") ? ["See your driver live on the map"] : []),
     ...(perk("callDriver", "PREMIUM") ? ["Call your driver through the app (private number)"] : []),
-    // Premium already has everything a Day Pass gives, so its monthly passes aren't listed as extra.
   ];
 
   return (

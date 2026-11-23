@@ -1,7 +1,7 @@
-# Round 3 click-through: card rides are paid from the driver's phone.
-# The driver types the meter at drop-off, the card saved at booking is charged with the lawful
-# credit-card fee (up to 3%, never above cost; debit none), the rider gets a receipt and can tip once,
-# and a meter far above the estimate is refused.
+# Round 3 click-through (updated for the Nov 23 decisions): card rides are paid from the driver's phone.
+# The driver types the meter; the rider approves on the driver's phone with a tip (or the driver charges
+# with no tip if the rider left). No card fee; the $3 welcome credit and Price Lock come off; the driver is
+# credited the meter less the card company's cut; a meter far above the estimate is refused.
 # Run: QA_BASE=http://127.0.0.1:8790 python3 tests/qa/round3.py  (demo build served on that port)
 from common import *
 from playwright.sync_api import sync_playwright
@@ -16,7 +16,7 @@ def pin_dropoff(pg):
     pg.click("#dropoff"); pg.wait_for_timeout(300)
     pg.locator("button:has-text('drop a pin'), button:has-text('Drop a pin')").first.click(); pg.wait_for_timeout(900)
     pg.click("[data-testid=pin-use]"); pg.wait_for_timeout(600)
-def credit_fee(cents): return min(cents * 3 // 100, round(cents * 0.029 + 30))
+def card_cost(cents): return round(cents * 0.029) + 30
 
 with sync_playwright() as p:
     b, ctx = launch(p)
@@ -33,13 +33,13 @@ with sync_playwright() as p:
             if pg.locator("[data-testid=price-fees]").count(): break
             pg.wait_for_timeout(300)
         t = pg.inner_text("[data-testid=price-fees]")
-        assert "debit card: no fee" in t.lower() and "Credit card: up to" in t, t
+        assert "Same price cash or card" in t, t
         pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
         if pg.locator("text=You already have a ride").count(): pg.click("button:has-text('Continue to Payment')"); pg.wait_for_timeout(500)
         agree_modal(pg, "Agree & Continue"); pg.wait_for_timeout(1500)
         rule = pg.inner_text("[data-testid=card-fee-rule]")
-        return ("Credit cards: up to 3%" in rule and "Debit cards: no fee" in rule) or rule
-    check("Booking: price card and payment screen say credit up to 3%, debit no fee", fee_rule_shown)
+        return ("No card fee" in rule) or rule
+    check("Booking: price card and payment screen say no card fee, same price as cash", fee_rule_shown)
 
     # B. Card ride: the driver enters the meter; the rider does nothing.
     def driver_charges():
@@ -52,26 +52,26 @@ with sync_playwright() as p:
             t = pg.inner_text("body")
             if "at the car" in t and pg.locator("button:has-text('at the car')").count():
                 pg.click("button:has-text('at the car')"); pg.wait_for_timeout(1500)
-            if pg.locator("[data-testid=card-payment]").count() and "Your driver enters the meter" in pg.inner_text("[data-testid=card-payment]"):
+            if pg.locator("[data-testid=card-payment]").count() and "Tap Pay there" in pg.inner_text("[data-testid=card-payment]"):
                 notice = True
             k, v = rides(pg, "QA 7 Meter Card")[0]
             if v.get("finalFare") is not None: break
             pg.wait_for_timeout(1000)
         k, v = rides(pg, "QA 7 Meter Card")[0]
-        assert notice, "rider never saw 'Your driver enters the meter'"
+        assert notice, "rider never saw Tap Pay there (pay on the driver phone)"
         assert v.get("finalFare") is not None, f"never charged: status={v.get('status')}"
         meter = round(v["finalFare"] * 100)
-        want = credit_fee(meter)
         bad = []
         if v.get("meterEnteredBy") != "driver": bad.append(f"meterEnteredBy={v.get('meterEnteredBy')}")
         if v.get("settledBy") != "driver": bad.append(f"settledBy={v.get('settledBy')}")
-        if v.get("cardFunding") != "credit": bad.append(f"cardFunding={v.get('cardFunding')}")
-        if v.get("cardFeeCents") != want: bad.append(f"fee={v.get('cardFeeCents')} want {want} on {meter}")
-        if v.get("capturedAmountCents") != meter + want: bad.append(f"total={v.get('capturedAmountCents')}")
+        if v.get("cardFeeCents") != 0: bad.append(f"card fee={v.get('cardFeeCents')} (should be none)")
+        if v.get("creditUsedCents") != 300: bad.append(f"welcome credit used={v.get('creditUsedCents')} want 300")
+        if v.get("capturedAmountCents") != meter - 300: bad.append(f"charged={v.get('capturedAmountCents')} want {meter - 300}")
+        if v.get("driverCardCostCents") != card_cost(meter): bad.append(f"driver card cost={v.get('driverCardCostCents')} want {card_cost(meter)}")
         if not v.get("estFareCents"): bad.append("no estFareCents saved for price learning")
         if v.get("stripeStatus") != "succeeded": bad.append(f"stripe={v.get('stripeStatus')}")
         return not bad or "; ".join(bad)
-    check("Card ride: driver enters the meter at drop-off, saved card charged with 3% credit fee", driver_charges)
+    check("Card ride: driver enters the meter, saved card charged, no card fee, $3 welcome credit off", driver_charges)
 
     # C. Receipt and one tip.
     def receipt_tip():
@@ -79,7 +79,7 @@ with sync_playwright() as p:
             if pg.locator("[data-testid=receipt]").count(): break
             pg.wait_for_timeout(500)
         r = pg.inner_text("[data-testid=receipt]")
-        assert "Card fee (credit card)" in r and "Total" in r, r[:200]
+        assert "Ride credit" in r and "Total" in r and "Card fee" not in r, r[:200]
         assert pg.locator("[data-testid=tip-chooser]").count() == 1, "no tip buttons"
         k, v = rides(pg, "QA 7 Meter Card")[0]
         meter = round(v["finalFare"] * 100)
@@ -96,7 +96,7 @@ with sync_playwright() as p:
         led = [kk for kk in db(pg) if kk.startswith("ledger/") and kk.endswith(f"tip_{k.split('/')[1]}")]
         if not led: bad.append("tip not credited to the driver's ledger")
         return not bad or "; ".join(bad) + " | screen: " + shown.replace("\n", " ")[:300]
-    check("Receipt: meter, card fee, total; 15% tip charged once and credited to the driver", receipt_tip)
+    check("Receipt: meter, ride credit, total; 15% tip charged once and credited to the driver", receipt_tip)
 
     # D. Driver screen: Drop Off asks for the meter; a crazy number is refused, a real one charges.
     D = ctx.new_page(); derrs = []; watch(D, derrs)
@@ -124,15 +124,25 @@ with sync_playwright() as p:
         return ("more than this trip should cost" in t and "Drop off without charging" in t and v.get("finalFare") is None) or t[:200]
     check("Driver: a meter far over the estimate is refused, with a way to drop off anyway", meter_refused)
     def meter_charged():
-        D.fill("[data-testid=meter-input]", "11.73"); D.click("[data-testid=meter-charge-btn]"); D.wait_for_timeout(2500)
+        D.fill("[data-testid=meter-input]", "11.73"); D.click("[data-testid=meter-charge-btn]"); D.wait_for_timeout(1800)
+        assert D.locator("[data-testid=rider-pay]").count() == 1, "rider's pay screen didn't open"
+        total = D.inner_text("[data-testid=rider-pay-total]")
+        assert "Price Lock" in D.inner_text("[data-testid=rider-pay]"), "no Price Lock line (meter is over the 3-mile cap)"
+        D.locator("[data-testid=rider-pay] button", has_text="15%").click(); D.wait_for_timeout(2500)
         v = db(D).get("rides/qa-meter-44", {})
         bad = []
         if v.get("finalFare") != 11.73: bad.append(f"finalFare={v.get('finalFare')}")
-        if v.get("cardFeeCents") != 35: bad.append(f"fee={v.get('cardFeeCents')} want 35 (3% of $11.73)")
-        if v.get("settledBy") != "driver": bad.append(f"settledBy={v.get('settledBy')}")
-        if D.locator("[data-testid=meter-charge]").count(): bad.append("meter box still open")
-        return not bad or "; ".join(bad)
-    check("Driver: $11.73 on the meter charges $11.73 + $0.35 card fee and drops off", meter_charged)
+        if v.get("cardFeeCents") != 0: bad.append(f"card fee={v.get('cardFeeCents')}")
+        if not v.get("lockOffCents"): bad.append("no Price Lock discount")
+        if v.get("tipAmount") != 1.76: bad.append(f"tip={v.get('tipAmount')} want 1.76 (15% of the meter)")
+        if not v.get("riderApproved") or not v.get("tipAddedAt"): bad.append("not marked rider-approved")
+        if v.get("capturedAmountCents") != 1173 - (v.get("lockOffCents") or 0) + 176: bad.append(f"charged={v.get('capturedAmountCents')}")
+        if v.get("driverCardCostCents") != 64: bad.append(f"driver card cost={v.get('driverCardCostCents')} want 64")
+        led = [kv for kk, kv in db(D).items() if kk.endswith("ride_qa-meter-44")]
+        if not led or led[0].get("fareCents") != 1109 or led[0].get("tipCents") != 176: bad.append(f"lick credit {led[:1]} want fare 1109 tip 176")
+        if D.locator("[data-testid=rider-pay]").count(): bad.append("pay screen still open")
+        return not bad or "; ".join(bad) + f" | screen total {total}"
+    check("Driver: meter $11.73 -> rider taps 15% on the driver's phone; Price Lock off; driver credited meter less 64c + full tip", meter_charged)
 
     def price_check():
         A = ctx.new_page(); aerr = []; watch(A, aerr)
@@ -144,4 +154,4 @@ with sync_playwright() as p:
 
     check("No page errors", lambda: not (errs + derrs) or "; ".join(dict.fromkeys(errs + derrs))[:400])
     b.close()
-report("Round 3: driver-entered meter, lawful card fee, receipt and tip")
+report("Round 3: driver-entered meter, rider pays on the driver phone, no card fee, receipt and tip")

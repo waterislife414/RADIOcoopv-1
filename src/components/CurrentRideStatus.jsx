@@ -13,9 +13,37 @@ import { RIDE_RULES, useNow, money } from "../utils/rideLive";
 import { cancelQuote } from "../../functions/lib/rideTiming.mjs";
 import { maxCardFeeCents, cardFeeRule } from "../../functions/lib/cardFee.mjs";
 import { BRAND } from "../config/constants";
+import { memberDealsFor } from "../lib/memberDeals";
+import { estimateFromMiles } from "../lib/tripEstimate";
 
 const CARD_FEE_CFG = BRAND.pricing?.cardFee || {};
 const addTipFn = httpsCallable(functions, "addTip");
+const reportChargeFn = httpsCallable(functions, "reportCharge");
+
+/** One tap: the office sees this ride's meter next to its estimate and calls the rider. */
+function ChargeQuestion({ ride, rideId }) {
+  const [state, setState] = useState(ride.chargeQuestionAt ? "sent" : "");
+  if (state === "sent") return <p className="text-sm text-slate-600 text-center mt-3">Sent. The office will look at it and call you.</p>;
+  return (
+    <button
+      type="button"
+      data-testid="charge-question"
+      disabled={state === "busy"}
+      onClick={async () => {
+        setState("busy");
+        try {
+          await reportChargeFn({ rideId });
+          setState("sent");
+        } catch {
+          setState("");
+        }
+      }}
+      className="block mx-auto mt-3 text-sm text-slate-500 underline"
+    >
+      Something wrong with this charge?
+    </button>
+  );
+}
 
 const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
 
@@ -356,13 +384,28 @@ function CurrentRideStatusInner() {
  */
 function CardPayment({ ride, rideId }) {
   const onFile = !!ride.paymentIntentId;
+  const { userProfile } = useAuth();
+  const deals = memberDealsFor(userProfile);
+  const est = !ride.stops?.length && !ride.outOfArea ? estimateFromMiles(ride.estMiles, ride, { signedIn: true }) : null;
+  const lockCents = deals?.priceLock && est ? est.highCents : null;
+  const waitNote = ride.arrivedAt != null;
   const [self, setSelf] = useState(!onFile);
   return (
     <div className="mt-4 pt-4 border-t border-blue-200" data-testid="card-payment">
       {onFile && (
         <p className="text-base text-slate-700">
-          Your driver enters the meter when you arrive. The card you booked with is charged and your receipt shows up here.
+          When you arrive, your driver shows your fare on their phone. Tap Pay there (add a tip if you like). The card you booked with is
+          charged and your receipt shows up here.
           <span className="block text-sm text-slate-500 mt-1">{cardFeeRule(CARD_FEE_CFG)}</span>
+          {lockCents != null && (
+            <span className="block text-sm font-semibold text-emerald-700 mt-1" data-testid="ride-price-lock">
+              {"\u{1F512}"} Price Lock: you never pay more than {money(lockCents)}
+              {waitNote ? " (plus waiting time)" : ""}.
+            </span>
+          )}
+          {deals?.creditCents > 0 && (
+            <span className="block text-sm font-semibold text-emerald-700">{money(deals.creditCents)} ride credit comes off.</span>
+          )}
         </p>
       )}
       {onFile && !self && (
@@ -390,7 +433,7 @@ function Receipt({ ride, rideId }) {
   const meterCents = Math.round(Number(ride.finalFare) * 100);
   const feeCents = Math.max(0, Number(ride.cardFeeCents) || 0);
   const tipCents = Math.round(Number(ride.tipAmount || 0) * 100);
-  const totalCents = (Number(ride.capturedAmountCents) || meterCents + feeCents) + (ride.tipChargedCents ? tipCents : 0);
+  const totalCents = (ride.capturedAmountCents != null ? Number(ride.capturedAmountCents) : meterCents + feeCents) + (ride.tipChargedCents ? tipCents : 0);
   const card = ride.paymentMethod === "card" && ride.stripeStatus === "succeeded";
   const canTip = card && ride.tipAddedAt == null && !(tipCents > 0);
 
@@ -411,6 +454,12 @@ function Receipt({ ride, rideId }) {
       <p className="font-bold text-lg text-emerald-700 text-center">Paid. Thank you!</p>
       <div className="mt-3 space-y-1 text-base text-slate-700">
         <p className="flex justify-between"><span>Meter</span><span>{money(meterCents)}</span></p>
+        {ride.lockOffCents > 0 && (
+          <p className="flex justify-between text-emerald-700 font-semibold"><span>{"\u{1F512}"} Price Lock</span><span>&minus;{money(ride.lockOffCents)}</span></p>
+        )}
+        {ride.creditUsedCents > 0 && (
+          <p className="flex justify-between text-emerald-700 font-semibold"><span>Ride credit</span><span>&minus;{money(ride.creditUsedCents)}</span></p>
+        )}
         {feeCents > 0 && (
           <p className="flex justify-between"><span>Card fee (credit card)</span><span>{money(feeCents)}</span></p>
         )}
@@ -470,6 +519,7 @@ function Receipt({ ride, rideId }) {
         </div>
       )}
       {!canTip && tipCents > 0 && <p className="text-sm text-emerald-700 text-center mt-2">Thanks for tipping your driver.</p>}
+      {card && <ChargeQuestion ride={ride} rideId={rideId} />}
     </div>
   );
 }

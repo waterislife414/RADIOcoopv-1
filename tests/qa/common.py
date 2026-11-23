@@ -39,6 +39,9 @@ def accept_gate(pg):
         pg.locator("text=I have read and agree").click(); pg.click("button:has-text('Agree and continue')"); pg.wait_for_timeout(1500)
 def agree_modal(pg, confirm):
     pg.wait_for_selector("[data-testid=legal-scroll]", timeout=4000)
+    if pg.locator("[data-testid=consent-quick]").count():
+        # Riders: one box, no scrolling (Nov 23 decision).
+        pg.check("[data-testid=consent-agree]"); pg.click(f"button:has-text('{confirm}')"); return
     pg.evaluate("document.querySelector('[data-testid=legal-scroll]').scrollTo(0,1e6)"); pg.wait_for_timeout(300)
     pg.click("button:has-text('Check all')"); pg.click(f"button:has-text('{confirm}')")
 def launch(p, **kw):

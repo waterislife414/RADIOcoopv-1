@@ -41,6 +41,8 @@ function Stripe() {
     paymentMethods: {
       attach: async (pm) => ({ id: pm }),
       retrieve: async (pm) => ({ id: pm, card: { brand: "visa", funding: "credit", last4: "4242" } }),
+      // A demo member who booked by card before has the demo Visa saved.
+      list: async ({ customer }) => ({ data: customer ? [{ id: "pm_demo_saved", card: { brand: "visa", funding: "credit", last4: "4242" } }] : [] }),
     },
     subscriptions: { create: async (p) => ({ id: id("sub"), status: p.trial_period_days ? "trialing" : "active", items: { data: [] } }) },
     webhooks: {
