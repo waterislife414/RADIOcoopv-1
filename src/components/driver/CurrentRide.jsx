@@ -261,7 +261,7 @@ export default function CurrentRide({ ride }) {
         {ride.wheelchair && <span className="rounded-full bg-sky-500/20 text-sky-200 px-3 py-1">{"♿"} Wheelchair</span>}
         {ride.paymentMethod && <span className="rounded-full bg-white/10 px-3 py-1 capitalize">{ride.paymentMethod}</span>}
       </div>
-      {ride.cardHold && <p className="text-sm text-emerald-300 font-semibold">{"\u2713"} Card on file: the fare is covered.</p>}
+      {ride.cardHold && <p className="text-sm text-emerald-300 font-semibold">{"\u2713"} Card on file: at drop-off, type the meter and the card is charged.</p>}
       {going && ride.paymentMethod === "cash" && <p className="text-sm text-amber-300 font-semibold">Cash rider. Collecting up front is your call.</p>}
       <div className="grid grid-cols-2 gap-2">
         {(ride.riderPhone || ride.riderPhoneLast4) && (

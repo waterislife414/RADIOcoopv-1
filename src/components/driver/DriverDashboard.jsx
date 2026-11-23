@@ -138,7 +138,7 @@ export default function DriverDashboard() {
 
         {offer && <OfferAlert offer={offer} warnings={driver.warnings ?? 0} />}
 
-        <DriverStatusPanel driver={driver} board={board} drivers={drivers} zones={zones} rideStatus={inbox.current?.status ?? null} />
+        <DriverStatusPanel driver={driver} board={board} drivers={drivers} zones={zones} rideStatus={inbox.current?.status ?? null} current={inbox.current || null} />
 
         <DriverNotice notice={inbox.notice} />
         {board?.status === "on_call" && <CurrentRide ride={inbox.current} />}

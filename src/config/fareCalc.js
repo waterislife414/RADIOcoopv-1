@@ -1,4 +1,6 @@
+import { maxCardFeeCents } from "../../functions/lib/cardFee.mjs";
 import {
+  BRAND,
   FARE_CONFIG,
   OUT_OF_AREA_ENTRY_FEE,
   OUT_OF_AREA_MINIMUM_FARE,
@@ -13,7 +15,11 @@ export function calcFareRange(ride, miles) {
   const { BASE_FARE, PER_MILE, FIRST_INCREMENT_MILES, EXTRA_PAX_FEE, CARD_APP_FEE, HIGH_ESTIMATE_MULTIPLIER } =
     FARE_CONFIG;
   const extraPax = Math.max(0, (ride.passengers || 1) - 1);
-  const cardFee = ride.paymentMethod === "card" ? CARD_APP_FEE : 0;
+  // Flat card fee, or (surcharge mode) the most a credit card can be charged on the base fare.
+  const flatFee = BRAND.pricing?.cardFee?.mode === "flat";
+  const cardFee = ride.paymentMethod === "card" && flatFee ? CARD_APP_FEE : 0;
+  const withPct = (dollarsAmt) =>
+    ride.paymentMethod === "card" && !flatFee ? dollarsAmt + maxCardFeeCents(Math.round(dollarsAmt * 100), BRAND.pricing?.cardFee || {}) / 100 : dollarsAmt;
   const billableMiles = Math.max(0, miles - FIRST_INCREMENT_MILES);
 
   if (ride.outOfArea) {
@@ -21,13 +27,13 @@ export function calcFareRange(ride, miles) {
     if (ride.roundTrip) low *= 2;
     low = Math.max(low, OUT_OF_AREA_MINIMUM_FARE);
     const high = Math.max(low * HIGH_ESTIMATE_MULTIPLIER, OUT_OF_AREA_MINIMUM_FARE);
-    return { low, high };
+    return { low: withPct(low), high: withPct(high) };
   }
 
   let low = BASE_FARE + billableMiles * PER_MILE + extraPax * EXTRA_PAX_FEE + cardFee;
   if (ride.roundTrip) low *= 2;
   const high = low * HIGH_ESTIMATE_MULTIPLIER;
-  return { low, high };
+  return { low: withPct(low), high: withPct(high) };
 }
 
 // Plain-dollar fare with no card fee, no round-trip doubling - the "real

@@ -12,6 +12,7 @@ import { inspectionNeeded } from "../../../functions/lib/inspectionCore.mjs";
 import AskDispatch from "./AskDispatch";
 import ApprovalAnswer from "./ApprovalAnswer";
 import AccuracyCircle from "./AccuracyCircle";
+import MeterCharge from "./MeterCharge";
 
 const OUT_OF_ZONE_MIN = BRAND.dispatch?.gps?.outOfZoneMin ?? 3;
 const MAX_WARNINGS = BRAND.dispatch?.maxWarnings ?? 3;
@@ -92,8 +93,11 @@ function PositionLine({ drivers, uid, zoneId }) {
 }
 
 /** Online / Check Ready / Moving / Drop Off / Offline, driven by the phone's GPS. */
-export default function DriverStatusPanel({ driver, board, drivers, zones, rideStatus = null }) {
+export default function DriverStatusPanel({ driver, board, drivers, zones, rideStatus = null, current = null }) {
   const uid = driver.id;
+  // Card ride with the rider's card on file: Drop Off asks for the meter and charges it.
+  const [meterOpen, setMeterOpen] = useState(false);
+  const cardRide = !!(current?.cardHold && current?.rideId && board?.rideId === current.rideId);
   const [starting, setStarting] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
@@ -295,9 +299,21 @@ export default function DriverStatusPanel({ driver, board, drivers, zones, rideS
 
         {status === "on_call" && (!board?.rideId || rideStatus === "in_transit") && (
           <>
-            <button className={PRIMARY} disabled={busy} onClick={() => run(dropOff)}>
-              Drop Off
+            <button className={PRIMARY} disabled={busy} onClick={() => (cardRide ? setMeterOpen(true) : run(dropOff))}>
+              {cardRide ? "Drop Off & Charge Card" : "Drop Off"}
             </button>
+            {meterOpen && (
+              <MeterCharge
+                rideId={current.rideId}
+                estMiles={current.estMiles}
+                passengers={current.passengers || 1}
+                onCancel={() => setMeterOpen(false)}
+                onDone={() => {
+                  setMeterOpen(false);
+                  run(dropOff);
+                }}
+              />
+            )}
             <p className="text-sm text-slate-500">
               {!gpsZone
                 ? "You're outside every zone, so you'll go to Moving."

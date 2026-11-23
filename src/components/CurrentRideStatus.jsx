@@ -6,11 +6,16 @@ import { loadStripe } from "@stripe/stripe-js";
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../config/firebase";
 import { useAuth } from "../context/AuthContext";
-import { FARE_CONFIG, STRIPE_PUBLISHABLE_KEY, COMPANY_PHONE_DISPLAY, COMPANY_PHONE_TEL } from "../config/constants";
+import { STRIPE_PUBLISHABLE_KEY, COMPANY_PHONE_DISPLAY, COMPANY_PHONE_TEL } from "../config/constants";
 import RiderPickup from "./RiderPickup";
 import LineStatus from "./LineStatus";
 import { RIDE_RULES, useNow, money } from "../utils/rideLive";
 import { cancelQuote } from "../../functions/lib/rideTiming.mjs";
+import { maxCardFeeCents, cardFeeRule } from "../../functions/lib/cardFee.mjs";
+import { BRAND } from "../config/constants";
+
+const CARD_FEE_CFG = BRAND.pricing?.cardFee || {};
+const addTipFn = httpsCallable(functions, "addTip");
 
 const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
 
@@ -40,7 +45,8 @@ function SettleFareForm({ ride, rideId }) {
   const tipAmount = useCustomTip
     ? parseFloat(customTip) || 0
     : meterNum * (tipPercent / 100);
-  const cardFee = FARE_CONFIG.CARD_APP_FEE_MEMBER; // self-checkout is member-only
+  // The server figures the exact fee from the card type (credit up to 3%, debit none): show the most it can be.
+  const cardFee = maxCardFeeCents(Math.round((meterNum + tipAmount) * 100), CARD_FEE_CFG) / 100;
   const priorityPassFee = ride.wantsPriorityPass && !ride.fastPassId ? 5 : 0;
   // Cancel/no-show fees still owed from an earlier ride are added here (the server adds the same amount).
   const earlierFees = Math.max(0, userProfile?.feesOwedCents || 0) / 100;
@@ -147,11 +153,11 @@ function SettleFareForm({ ride, rideId }) {
 
       <div className="flex justify-between text-sm text-slate-500 pt-1">
         <span>
-          Meter + tip + ${cardFee.toFixed(2)} member card fee
+          Meter + tip + up to ${cardFee.toFixed(2)} card fee (credit cards only)
           {priorityPassFee > 0 && ` + $${priorityPassFee.toFixed(2)} Day Pass`}
           {earlierFees > 0 && ` + $${earlierFees.toFixed(2)} earlier cancel/no-show fee`}
         </span>
-        <span className="font-bold text-slate-800 text-lg">${total.toFixed(2)}</span>
+        <span className="font-bold text-slate-800 text-lg">up to ${total.toFixed(2)}</span>
       </div>
 
       {error && (
@@ -163,7 +169,7 @@ function SettleFareForm({ ride, rideId }) {
         disabled={!stripe || processing}
         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4 rounded-full shadow-md transition disabled:opacity-50"
       >
-        {processing ? "Processing..." : `Pay Now $${total.toFixed(2)}`}
+        {processing ? "Processing..." : "Pay Now"}
       </button>
     </form>
   );
@@ -344,6 +350,130 @@ function CurrentRideStatusInner() {
   );
 }
 
+/**
+ * Card ride, not paid yet. With a card on file the driver types the meter at
+ * drop-off and that card is charged: the rider does nothing. Paying here is the backup.
+ */
+function CardPayment({ ride, rideId }) {
+  const onFile = !!ride.paymentIntentId;
+  const [self, setSelf] = useState(!onFile);
+  return (
+    <div className="mt-4 pt-4 border-t border-blue-200" data-testid="card-payment">
+      {onFile && (
+        <p className="text-base text-slate-700">
+          Your driver enters the meter when you arrive. The card you booked with is charged and your receipt shows up here.
+          <span className="block text-sm text-slate-500 mt-1">{cardFeeRule(CARD_FEE_CFG)}</span>
+        </p>
+      )}
+      {onFile && !self && (
+        <button type="button" onClick={() => setSelf(true)} className="mt-2 text-sm font-semibold text-blue-700 underline">
+          Pay it myself instead
+        </button>
+      )}
+      {self && (
+        <div className="mt-3">
+          <p className="text-base font-bold text-slate-800 mb-3">Settle Your Fare</p>
+          <SettleFareForm ride={ride} rideId={rideId} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+const TIP_CHOICES = [10, 15, 20];
+
+/** After the fare is charged: what was paid, and a tip for the driver (once). */
+function Receipt({ ride, rideId }) {
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [custom, setCustom] = useState("");
+  const meterCents = Math.round(Number(ride.finalFare) * 100);
+  const feeCents = Math.max(0, Number(ride.cardFeeCents) || 0);
+  const tipCents = Math.round(Number(ride.tipAmount || 0) * 100);
+  const totalCents = (Number(ride.capturedAmountCents) || meterCents + feeCents) + (ride.tipChargedCents ? tipCents : 0);
+  const card = ride.paymentMethod === "card" && ride.stripeStatus === "succeeded";
+  const canTip = card && ride.tipAddedAt == null && !(tipCents > 0);
+
+  async function tip(cents) {
+    setBusy(true);
+    setMsg("");
+    try {
+      await addTipFn({ rideId, tipCents: cents });
+    } catch (e) {
+      setMsg(e?.message || "Couldn't add the tip. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div data-testid="receipt" className="text-left">
+      <p className="font-bold text-lg text-emerald-700 text-center">Paid. Thank you!</p>
+      <div className="mt-3 space-y-1 text-base text-slate-700">
+        <p className="flex justify-between"><span>Meter</span><span>{money(meterCents)}</span></p>
+        {feeCents > 0 && (
+          <p className="flex justify-between"><span>Card fee (credit card)</span><span>{money(feeCents)}</span></p>
+        )}
+        {ride.earlierFeesCents > 0 && (
+          <p className="flex justify-between"><span>Earlier fees</span><span>{money(ride.earlierFeesCents)}</span></p>
+        )}
+        {tipCents > 0 && <p className="flex justify-between"><span>Tip</span><span>{money(tipCents)}</span></p>}
+        <p className="flex justify-between font-bold text-slate-900 border-t border-blue-200 pt-1">
+          <span>Total</span>
+          <span data-testid="receipt-total">{money(totalCents)}</span>
+        </p>
+        {ride.cardFunding && ride.cardFunding !== "credit" && card && (
+          <p className="text-xs text-slate-500">Debit card: no card fee.</p>
+        )}
+      </div>
+      {canTip && (
+        <div className="mt-4" data-testid="tip-chooser">
+          <p className="font-semibold text-slate-800 text-center">Tip your driver?</p>
+          <div className="flex gap-2 mt-2">
+            {TIP_CHOICES.map((pct) => (
+              <button
+                key={pct}
+                type="button"
+                disabled={busy}
+                onClick={() => tip(Math.max(100, Math.round((meterCents * pct) / 100)))}
+                className="flex-1 min-h-[52px] rounded-full bg-blue-600 text-white font-bold text-lg disabled:opacity-60"
+              >
+                {pct}%
+                <span className="block text-xs font-semibold">{money(Math.max(100, Math.round((meterCents * pct) / 100)))}</span>
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2 mt-2">
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              inputMode="decimal"
+              placeholder="Other $"
+              value={custom}
+              onChange={(e) => setCustom(e.target.value)}
+              className="flex-1 border-2 border-slate-300 rounded-full px-4 py-2.5 text-base"
+            />
+            <button
+              type="button"
+              disabled={busy || !(parseFloat(custom) > 0)}
+              onClick={() => tip(Math.round(parseFloat(custom) * 100))}
+              className="rounded-full bg-slate-800 text-white font-bold px-5 disabled:opacity-40"
+            >
+              Tip
+            </button>
+          </div>
+          <button type="button" disabled={busy} onClick={() => tip(0)} className="block mx-auto mt-2 text-sm text-slate-500 underline">
+            No tip
+          </button>
+          {msg && <p className="text-sm text-red-700 mt-2 text-center">{msg}</p>}
+        </div>
+      )}
+      {!canTip && tipCents > 0 && <p className="text-sm text-emerald-700 text-center mt-2">Thanks for tipping your driver.</p>}
+    </div>
+  );
+}
+
 function RideStatusCard({ ride, rideId, onCancelled, many }) {
   const { userProfile } = useAuth();
   const isPaid = ride.finalFare != null;
@@ -388,9 +518,8 @@ function RideStatusCard({ ride, rideId, onCancelled, many }) {
       )}
 
       {isPaid && (
-        <div className="text-center py-2">
-          <p className="font-bold text-lg text-emerald-700">Fare Settled &mdash; Thank You!</p>
-          <p className="text-sm text-slate-500 mt-1">${ride.finalFare.toFixed(2)} total, ride wrapping up.</p>
+        <div className="py-2">
+          <Receipt ride={ride} rideId={rideId} />
           {ride.memberDiscountApplied && (
             <p className="text-sm font-semibold text-gold-600 mt-2">
               Congratulations! You saved another 10% on transaction fees for
@@ -408,11 +537,8 @@ function RideStatusCard({ ride, rideId, onCancelled, many }) {
           {ride.paymentMethod === "wallet" ? "Your fare comes out of your account balance." : "Pay your driver in cash when you arrive."}
         </p>
       )}
-      {ride.status === "in_transit" && !isPaid && ride.paymentMethod === "card" && (
-        <div className="mt-4 pt-4 border-t border-blue-200">
-          <p className="text-base font-bold text-slate-800 mb-3">Settle Your Fare</p>
-          <SettleFareForm ride={ride} rideId={rideId} />
-        </div>
+      {["in_transit", "finished"].includes(ride.status) && !isPaid && ride.paymentMethod === "card" && (
+        <CardPayment ride={ride} rideId={rideId} />
       )}
     </div>
   );

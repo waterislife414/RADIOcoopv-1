@@ -4,6 +4,7 @@
 // address box) only to price it: the found point is NOT saved as the pickup.
 import { useEffect, useState } from "react";
 import { estimateTrip, priceMiles } from "../../functions/lib/fareEstimate.mjs";
+import { maxCardFeeCents, cardFeeCents } from "../../functions/lib/cardFee.mjs";
 import { BRAND, FARE_CONFIG } from "../config/constants";
 import { searchPlaces } from "./placeSearch";
 
@@ -31,9 +32,11 @@ function useLookedUpPoint(text, known) {
   return known || found;
 }
 
-/** Card fee in cents for this rider (lower with a free account). */
-export function cardFeeCentsFor(signedIn) {
-  return Math.round((signedIn ? FARE_CONFIG.CARD_APP_FEE_MEMBER : FARE_CONFIG.CARD_APP_FEE) * 100);
+/** Most the card fee can be on this fare (a credit card; debit cards pay none). */
+export function cardFeeCentsFor(signedIn, fareCents = 0) {
+  const cfg = BRAND.pricing?.cardFee;
+  if (cfg?.mode === "flat") return cardFeeCents({ baseCents: fareCents || 1, member: signedIn, cfg });
+  return maxCardFeeCents(fareCents, cfg || {});
 }
 
 /**
@@ -50,7 +53,7 @@ export function useTripEstimate(ride, { signedIn = false } = {}) {
     fare: FARE_CONFIG,
     passengers: ride.passengers,
     roundTrip: !!ride.roundTrip,
-    cardFeeCents: cardFeeCentsFor(signedIn),
+    cardFeeCents: (fareCents) => cardFeeCentsFor(signedIn, fareCents),
     cfg: BRAND.pricing.estimate || {},
   });
 }
@@ -63,7 +66,7 @@ export function estimateFromMiles(miles, ride, { signedIn = false } = {}) {
     fare: FARE_CONFIG,
     passengers: ride.passengers,
     roundTrip: !!ride.roundTrip,
-    cardFeeCents: cardFeeCentsFor(signedIn),
+    cardFeeCents: (fareCents) => cardFeeCentsFor(signedIn, fareCents),
     cfg: BRAND.pricing.estimate || {},
   });
 }

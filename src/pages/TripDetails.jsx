@@ -314,7 +314,7 @@ export default function TripDetails() {
                     {ride.roundTrip ? " each way" : ""}. No surge, ever.
                   </p>
                   <p className="text-sm text-slate-600" data-testid="price-fees">
-                    Cash: no fee. Card: + {dollars(estimate.cardFeeCents)} card fee.
+                    Cash or debit card: no fee. Credit card: up to {dollars(estimate.cardFeeCents)} (3%).
                   </p>
                 </>
               ) : (

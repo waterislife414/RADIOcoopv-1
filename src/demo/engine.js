@@ -11,6 +11,8 @@ import timers from "../../functions/timers.js";
 import push from "../../functions/push.js";
 import { addTimer } from "./engine-timers";
 import { setSimulated } from "./geo";
+import { priceMiles } from "../../functions/lib/fareEstimate.mjs";
+import { BRAND, FARE_CONFIG } from "../config/constants";
 
 timers.impl = (data, delaySec) => addTimer(data, delaySec);
 push.impl = async (tokens) => ({ responses: tokens.map(() => ({ success: true })) });
@@ -161,6 +163,11 @@ async function runBots(now) {
         } else if (cur.status === "in_transit" && now - (bot.pickedAt || 0) > (bot.rideSec ?? 25) * 1000) {
           const ride = admin().doc(`rides/${cur.rideId}`) || {};
           const at = (ride.dropLat != null && { lat: ride.dropLat, lng: ride.dropLng }) || zoneCenter(ride.dropZoneId) || zoneCenter(board.zoneId) || { lat: bot.lat, lng: bot.lng };
+          // Card ride with a card on file: the example driver types the meter (the estimate) and charges it.
+          if (cur.cardHold && ride.paymentMethod === "card" && ride.finalFare == null) {
+            const est = priceMiles({ miles: Number(ride.estMiles) || 3, fare: FARE_CONFIG, passengers: ride.passengers || 1, cfg: BRAND.pricing?.estimate || {} });
+            await runAs(uid, "captureFare", { rideId: cur.rideId, meterFare: (est?.fareCents ?? 975) / 100 }).catch((e) => console.warn("[demo] meter", e.message));
+          }
           await runAs(uid, "driverDropOff", at);
         }
       }

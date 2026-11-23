@@ -5,6 +5,7 @@ import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../../config/firebase";
 import { DUE_TEXT, LEASE_CFG, clock, money } from "../../config/lease";
 import { leaseLocked, leasePeriodKey, leaseWindow } from "../../../functions/lib/dispatchCore.mjs";
+import PriceCheck from "../../components/admin/PriceCheck";
 
 const receive = httpsCallable(functions, "receiveEnvelope");
 const adjust = httpsCallable(functions, "adjustLease");
@@ -260,6 +261,7 @@ export default function LeaseAdmin() {
       </header>
 
       <main className="max-w-4xl mx-auto p-4 space-y-5">
+        <PriceCheck />
         <section className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
           <h2 className="font-bold text-lg">Envelopes to count ({dropped.length})</h2>
           {dropped.length === 0 && <p className="text-slate-400">None waiting.</p>}

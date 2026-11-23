@@ -8,9 +8,10 @@ import { useAuth } from "../context/AuthContext";
 import { useRide } from "../context/RideContext";
 import CardPaymentForm from "../components/CardPaymentForm";
 import BrandHeader from "../components/BrandHeader";
-import { FARE_CONFIG, PROMO_CODES, STRIPE_PUBLISHABLE_KEY } from "../config/constants";
+import { BRAND, PROMO_CODES, STRIPE_PUBLISHABLE_KEY } from "../config/constants";
 import { normalizePhone } from "../utils/phone";
-import { estimateFromMiles, cardFeeCentsFor } from "../lib/tripEstimate";
+import { estimateFromMiles } from "../lib/tripEstimate";
+import { cardFeeRule } from "../../functions/lib/cardFee.mjs";
 import { dollars } from "../../functions/lib/fareEstimate.mjs";
 
 const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
@@ -26,7 +27,7 @@ export default function PaymentSelection() {
   const [error, setError] = useState("");
   // The price the rider saw on the booking screen, now per way of paying.
   const est = estimateFromMiles(ride.estMiles, ride, { signedIn: !!currentUser });
-  const cardFee = cardFeeCentsFor(!!currentUser);
+  const feeRule = cardFeeRule(BRAND.pricing?.cardFee);
 
   function applyPromo() {
     const code = promoInput.trim().toUpperCase();
@@ -160,17 +161,15 @@ export default function PaymentSelection() {
               <div className="flex justify-between items-center mb-3">
                 <span>
                   <span className="block font-bold text-lg text-slate-800">Card</span>
-                  <span className="block text-slate-500 text-sm">
-                    Includes {dollars(cardFee)} card fee
-                    {!currentUser && FARE_CONFIG.CARD_APP_FEE_MEMBER < FARE_CONFIG.CARD_APP_FEE
-                      ? ` (${dollars(cardFeeCentsFor(true))} with a free account)`
-                      : ""}
-                  </span>
+                  <span className="block text-slate-500 text-sm" data-testid="card-fee-rule">{feeRule}</span>
+                  <span className="block text-slate-500 text-sm">Your driver enters the meter at drop-off and this card is charged.</span>
                 </span>
                 {est ? (
-                  <span data-testid="total-card" className="font-bold text-lg text-slate-800">{dollars(est.totalCents)}</span>
+                  <span data-testid="total-card" className="font-bold text-lg text-slate-800 text-right">
+                    {est.cardFeeCents > 0 ? "up to " : ""}{dollars(est.totalCents)}
+                  </span>
                 ) : (
-                  <span className="text-slate-500 text-base">+ {dollars(cardFee)} card fee</span>
+                  <span className="text-slate-500 text-base">+ card fee</span>
                 )}
               </div>
               <Elements stripe={stripePromise}>

@@ -31,12 +31,17 @@ function Stripe() {
       retrieve: async (pid) => {
         const pi = intents[pid] || {};
         const held = !pi.status || pi.capture_method === "manual" || pi.status === "requires_capture";
-        return { id: pid, ...pi, status: held ? "requires_capture" : pi.status, amount_capturable: held ? (pi.amount ?? 5000) : 0 };
+        // Demo holds always save the demo card to a customer (setup_future_usage), even after a page reload forgot the hold.
+        return { id: pid, payment_method: "pm_demo_saved", customer: "cus_demo_saved", ...pi, status: held ? "requires_capture" : pi.status, amount_capturable: held ? (pi.amount ?? 5000) : 0 };
       },
     },
     customers: { create: async (p) => ({ id: id("cus"), ...p }), update: async (cid, p) => ({ id: cid, ...p }) },
     setupIntents: { create: async () => ({ id: id("seti"), client_secret: `${id("seti")}_secret_demo` }) },
-    paymentMethods: { attach: async (pm) => ({ id: pm }) },
+    // Demo cards are Visa credit (4242), so the credit-card fee applies.
+    paymentMethods: {
+      attach: async (pm) => ({ id: pm }),
+      retrieve: async (pm) => ({ id: pm, card: { brand: "visa", funding: "credit", last4: "4242" } }),
+    },
     subscriptions: { create: async (p) => ({ id: id("sub"), status: p.trial_period_days ? "trialing" : "active", items: { data: [] } }) },
     webhooks: {
       constructEvent() {

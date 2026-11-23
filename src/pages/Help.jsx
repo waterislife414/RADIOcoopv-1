@@ -12,6 +12,7 @@ import {
   SURROUNDING_SERVICE_CITIES,
   SERVICE_HOURS,
 } from "../config/constants";
+import { cardFeeRule } from "../../functions/lib/cardFee.mjs";
 
 // Fees, minutes and the Day Pass come from the same settings the app charges by.
 const usd = (n) => `$${Number(n).toFixed(2).replace(/\.00$/, "")}`;
@@ -47,7 +48,7 @@ const QA = [
           Each extra passenger is {money(FARE_CONFIG.EXTRA_PAX_FEE)}. Trips outside the local area have a {money(OUT_OF_AREA_MINIMUM_FARE)} minimum.
         </p>
         <p>
-          Paying by card adds a {money(FARE_CONFIG.CARD_APP_FEE)} app fee ({money(FARE_CONFIG.CARD_APP_FEE_MEMBER)} with a free account). The price
+          {cardFeeRule(BRAND.pricing?.cardFee)} The fee is never more than it costs us to take the card. The price
           shown before you ride is an estimate. <Link to="/compare" className="font-bold text-blue-700 underline">Compare us to Uber &amp; Lyft</Link>.
         </p>
       </>
@@ -55,7 +56,7 @@ const QA = [
   },
   {
     q: "How can I pay?",
-    a: <p>Cash to the driver, or a card in the app. With a card, a hold is placed when you book and the final fare is charged after the ride. You can add a tip.</p>,
+    a: <p>Cash to the driver, or a card in the app. With a card, a hold is placed when you book. At drop-off your driver types in the meter and that card is charged. Your receipt shows in the app, where you can add a tip.</p>,
   },
   {
     q: "Can I book ahead of time?",

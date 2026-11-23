@@ -84,7 +84,9 @@ export default function ChoosePlan() {
   };
   const perk = (key, tier) => (BRAND.ridePerks?.[key] || []).includes(tier);
   const freePerks = [
-    `Lower card fee ($${FARE_CONFIG.CARD_APP_FEE_MEMBER.toFixed(2)} instead of $${FARE_CONFIG.CARD_APP_FEE.toFixed(2)})`,
+    ...(BRAND.pricing?.cardFee?.mode === "flat"
+      ? [`Lower card fee ($${FARE_CONFIG.CARD_APP_FEE_MEMBER.toFixed(2)} instead of $${FARE_CONFIG.CARD_APP_FEE.toFixed(2)})`]
+      : []),
     "Your name and number filled in when you book",
     ...freeEntry,
     "Deals and offers in your area",
