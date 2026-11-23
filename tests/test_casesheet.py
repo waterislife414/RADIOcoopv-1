@@ -77,12 +77,12 @@ def test_render_case_sheet(db_conn):
     db_conn.execute(
         "UPDATE owners SET address = NULL, life_status = 'unknown' WHERE id = 1"
     )
-    db_conn.execute("DELETE FROM heirs WHERE owner_id = 1") # Remove heirs to test deceased_no_heir_found
+    db_conn.execute("DELETE FROM heirs WHERE owner_id = 1")
+    db_conn.execute("DELETE FROM contacts WHERE owner_id = 1")
     db_conn.commit()
     sheet_missing = render_case_sheet(db_conn, 1, rules, "2026-06-01")
     assert "- [ ] Life status unknown" in sheet_missing
     assert "- [ ] No mailing address" in sheet_missing
-    assert "- [ ] Deceased with no heirs found" in sheet_missing # Now that heirs are deleted and life_status is deceased. Re-setting the owner status to deceased again
     db_conn.execute("UPDATE owners SET life_status = 'deceased' WHERE id = 1")
     db_conn.commit()
     sheet_missing_deceased = render_case_sheet(db_conn, 1, rules, "2026-06-01")
