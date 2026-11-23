@@ -1,7 +1,7 @@
 """CSV Ingestion, amount parsing, and signal classification."""
 import csv
-import re
 from pathlib import Path
+import re
 import sqlite3
 
 def parse_amount(text: str, rules: dict) -> tuple[int | None, int | None]:
@@ -17,7 +17,7 @@ def parse_amount(text: str, rules: dict) -> tuple[int | None, int | None]:
             try:
                 # convert float/int dollars to cents
                 dollars = float(val_str)
-                cents = int(round(dollars * 100))
+                cents = round(dollars * 100)
             except ValueError:
                 return None, None
 

@@ -1,10 +1,11 @@
 from pathlib import Path
 import sqlite3
+
 import pytest
 
 from uprec.config import load_rules
 from uprec.db import init_db
-from uprec.ingest import parse_amount, classify_signal, ingest_csv
+from uprec.ingest import classify_signal, ingest_csv, parse_amount
 
 @pytest.fixture
 def db():
