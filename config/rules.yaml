@@ -48,5 +48,7 @@ geography:
   near_counties_ga: [Muscogee, Harris, Chattahoochee]
   out_of_area: allow_if_tier_a_and_contact_easy   # easy win with real money overrides distance
 outreach:
+  follow_up_days: 14            # days after a send before a follow-up is due
+  max_attempts: 3               # after this many unanswered sends the case closes as closed_lost
   channel_order: [mail, phone_voice_manual, email]
   automated_text_or_robocall: false   # TCPA: no without prior consent
