@@ -33,7 +33,7 @@ test("estimate: one-way, card fee added once, range high >= low", () => {
   const a = { lat: 32.4559, lng: -84.9636 };
   const b = { lat: 32.4993, lng: -84.9636 };
   const e = E.estimateTrip({ points: [a, b], fare: FARE, cardFeeCents: 180 });
-  assert.ok(e.miles > 3 && e.miles < 4, `miles ${e.miles}`);
+  assert.ok(e.miles > 3.5 && e.miles < 4.5, `miles ${e.miles}`);
   assert.equal(e.fareCents, E.meterCents(E.roadMiles([a, b]), FARE));
   assert.equal(e.totalCents, e.fareCents + 180);
   assert.ok(e.highCents >= e.fareCents);

@@ -8,7 +8,7 @@ import { metersBetween } from "./dispatchCore.mjs";
 
 export const ESTIMATE_DEFAULTS = Object.freeze({
   // Straight line to road miles. City trips run about 1.2-1.4x the crow-fly distance.
-  roadFactor: 1.3,
+  roadFactor: 1.35, // same as rideRules.roadFactor (pickup ETA)
   // The high end of the range covers detours, traffic lights and wait at stops.
   highMultiplier: 1.15,
   // Beyond this the app does not guess; the rider calls for a price.

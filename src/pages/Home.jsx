@@ -12,7 +12,7 @@ import {
   COMPANY_NAME,
   COPY,
 } from "../config/constants";
-import { calcSavings } from "../config/fareCalc";
+import { calcMeterFareOnly, UBER_COLUMBUS_EXAMPLES } from "../config/fareCalc";
 
 const money = (n) => `$${n.toFixed(2)}`;
 
@@ -32,21 +32,24 @@ function AvailableBadge() {
   );
 }
 
-/** Uber/Lyft comparison: one headline and three bars for a 3-mile trip. */
+/** Price proof: a real Columbus trip, Uber's own published average vs our meter for the same miles. */
 function CompareCard() {
-  const r = calcSavings(3);
+  const trip = UBER_COLUMBUS_EXAMPLES.trips.find((t) => !t.outOfArea);
+  const ours = calcMeterFareOnly(trip.miles);
   const rows = [
-    { label: COMPANY_NAME, v: r.ours, bar: "bg-gradient-to-r from-gold-400 to-gold-300", text: "text-gold-200" },
-    { label: "Uber/Lyft", v: r.theirs, bar: "bg-slate-400", text: "text-slate-200" },
-    { label: "Uber/Lyft, busy times", v: r.theirsBusy, bar: "bg-rose-400", text: "text-rose-200" },
+    { label: COMPANY_NAME, v: ours, bar: "bg-gradient-to-r from-gold-400 to-gold-300", text: "text-gold-200" },
+    { label: "Uber (Columbus average)", v: trip.uber, bar: "bg-slate-400", text: "text-slate-200" },
   ];
+  const top = Math.max(...rows.map((r) => r.v));
   return (
-    <Link to="/compare" className="block rounded-3xl p-[2px] bg-gradient-to-br from-emerald-400 via-gold-300 to-rose-400 shadow-luxury">
+    <Link to="/compare" data-testid="compare-card" className="block rounded-3xl p-[2px] bg-gradient-to-br from-emerald-400 via-gold-300 to-rose-400 shadow-luxury">
       <div className="rounded-[22px] bg-navy-950 px-5 py-5">
         <p className="font-display text-2xl font-bold text-white leading-tight">
           No surge. <span className="text-gold-300">No booking fee.</span>
         </p>
-        <p className="text-sm text-slate-300 mt-1">A 3-mile ride:</p>
+        <p className="text-sm text-slate-300 mt-1">
+          {trip.from} to {trip.to}, {trip.miles} miles:
+        </p>
         <div className="mt-3 space-y-2.5">
           {rows.map((row) => (
             <div key={row.label}>
@@ -55,12 +58,14 @@ function CompareCard() {
                 <span className="font-mono">{money(row.v)}</span>
               </div>
               <div className="h-3 mt-1 rounded-full bg-white/10 overflow-hidden">
-                <div className={`h-full rounded-full ${row.bar}`} style={{ width: `${(row.v / r.theirsBusy) * 100}%` }} />
+                <div className={`h-full rounded-full ${row.bar}`} style={{ width: `${(row.v / top) * 100}%` }} />
               </div>
             </div>
           ))}
         </div>
-        <p className="mt-2 text-[11px] text-slate-400">Estimates only. See Compare prices for details.</p>
+        <p className="mt-2 text-[11px] text-slate-400">
+          Uber&rsquo;s own average for this trip (uber.com, checked {UBER_COLUMBUS_EXAMPLES.checked}). Ours: meter, 1 rider, before wait time.
+        </p>
         <p className="mt-4 text-center font-bold text-emerald-300">Compare prices &rarr;</p>
       </div>
     </Link>

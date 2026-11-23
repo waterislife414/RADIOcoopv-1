@@ -80,6 +80,23 @@ export const RIDESHARE_MEDIAN = {
 
 export const RIDESHARE_RATE = { perMile: 2.10, booking: 4.50, asOf: "Aug 5, 2026" };
 
+/**
+ * Uber's own published average prices for real Columbus trips (UberX, average
+ * over the past month, from uber.com's Columbus city page). This is the
+ * strongest proof we have: their numbers, our meter for the same miles.
+ * Re-check monthly; Uber says these are not fixed or guaranteed prices.
+ * outOfArea trips are priced by phone, so no meter number is shown for them.
+ */
+export const UBER_COLUMBUS_EXAMPLES = {
+  source: "https://www.uber.com/global/en/cities/columbus-ga/",
+  checked: "Nov 23, 2026",
+  trips: [
+    { from: "Best Buy", to: "Walmart Supercenter", miles: 5, uber: 18 },
+    { from: "Columbus, GA", to: "Phenix City, AL", miles: 8, uber: 22 },
+    { from: "Columbus, GA", to: "Auburn, AL", miles: 39, uber: 64, outOfArea: true },
+  ],
+};
+
 /** Median national rideshare fare for a trip, at normal (non-surge) rates. */
 export function calcRideshareEstimate(miles, surge = 1) {
   return (miles * RIDESHARE_RATE.perMile + RIDESHARE_RATE.booking) * surge;

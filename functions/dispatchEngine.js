@@ -70,6 +70,8 @@ function rideCard(rideId, ride, zones) {
     wheelchair: !!ride.needsAccessibleVehicle,
     paymentMethod: ride.paymentMethod || null,
     notes: ride.notes || null,
+    // Road miles priced on the rider's booking screen: lets the driver see the trip size before taking it.
+    estMiles: Number(ride.estMiles) > 0 ? Number(ride.estMiles) : null,
   };
 }
 

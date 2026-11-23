@@ -3,6 +3,7 @@ import { httpsCallable } from "firebase/functions";
 import { functions } from "../../config/firebase";
 import { BRAND } from "../../config/constants";
 import { ring } from "../../utils/alertSound";
+import TripSize from "./TripSize";
 
 const OFFER = { pings: 3, pingIntervalSec: 15, ...(BRAND.dispatch?.offer || {}) };
 const MAX_WARNINGS = BRAND.dispatch?.maxWarnings ?? 3;
@@ -63,6 +64,7 @@ export default function OfferAlert({ offer, warnings = 0 }) {
             {offer.dropZoneLabel ? ` (${offer.dropZoneLabel})` : ""}
           </p>
         )}
+        <TripSize miles={offer.estMiles} passengers={offer.passengers} className="mt-3 text-xl font-bold text-emerald-300" />
         {offer.notes && <p className="mt-3 text-amber-200">{"\u{1F4DD}"} {offer.notes}</p>}
         <div className="flex flex-wrap gap-2 mt-4 text-sm">
           {offer.wheelchair && <span className="rounded-full bg-sky-500/20 text-sky-200 px-3 py-1">{"♿"} Wheelchair</span>}

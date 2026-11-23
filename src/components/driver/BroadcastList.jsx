@@ -1,3 +1,4 @@
+import TripSize from "./TripSize";
 import { useEffect, useRef, useState } from "react";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../../config/firebase";
@@ -44,6 +45,7 @@ export default function BroadcastList({ broadcasts }) {
           </p>
           <p className="text-white mt-1">{b.pickup}</p>
           {b.dropoff && <p className="text-slate-300 text-sm">&rarr; {b.dropoff}</p>}
+          <TripSize miles={b.estMiles} passengers={b.passengers} className="text-emerald-300 text-sm font-semibold" />
           {b.wheelchair && <p className="text-sky-200 text-sm mt-1">{"♿"} Wheelchair</p>}
           <button
             disabled={!!busyId}
