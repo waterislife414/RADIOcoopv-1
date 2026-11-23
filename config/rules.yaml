@@ -9,6 +9,7 @@ law:
 floors:
   single_claim_min_cents: 10001   # a lone property must be strictly above $100 to be worth working
   multi_claim_override: true      # owner with 2+ properties is kept even if each is small
+  unknown_upper_hold_min_cents: 10000   # single 'over $100' bucket (lower bound 10000, no upper) => Tier C hold
 amount_buckets:
   # regexes against the portal's amount text; first match wins. kind: lower|upper|exact
   - { pattern: '(?i)^\s*under\s*\$?\s*([\d,]+)', kind: upper }

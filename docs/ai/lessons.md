@@ -14,3 +14,6 @@ L12 (unclaimed-recovery) Never use real names, addresses, amounts or phone numbe
 L13 Do not hard-code thresholds, keywords, percentages or date windows. Read them from config/rules.yaml via uprec/config.load_rules().
 L14 Money is integer cents; unknown amounts are None (NULL), never 0. Dates are ISO strings. Read db/schema.sql for exact column names before writing SQL.
 L15 Code you write must not make network calls or scrape websites. Query builders return strings only.
+L16 When a task says "create" a file, write it ONCE. A past run pasted the whole module twice (duplicate imports/defs); read your finished file top to bottom before finishing.
+L17 Rules keys are exact: use rules['signals'] (plural) and read config/rules.yaml, never guess a key name; a wrong .get() silently returns an empty default.
+L18 SQL MAX() on text sorts alphabetically; rank text enums with a CASE expression.
