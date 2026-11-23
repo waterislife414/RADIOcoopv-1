@@ -1,4 +1,3 @@
-import pytest
 from uprec.letters import render_letter
 
 def test_render_letter():
