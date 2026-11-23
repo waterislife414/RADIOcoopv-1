@@ -1,0 +1,4 @@
+task T12
+code_files_changed 1
+lint FAIL
+tests pass

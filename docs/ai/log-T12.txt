@@ -1,0 +1,40 @@
+Applied edit to uprec/followups.py
+Commit 9040d54 fix: resolve syntax error in followups.py
+invalid-syntax: unexpected EOF while parsing
+  --> uprec/followups.py:11:10
+   |
+ 9 | def log_outreach(
+10 |     conn: sqlite3.Connection,
+11 |     owner
+   |          ^
+
+Found 1 error.
+
+# Fix any errors below, if possible.
+
+## Running: ruff check uprec/followups.py
+
+invalid-syntax: unexpected EOF while parsing
+  --> uprec/followups.py:11:10
+   |
+ 9 | def log_outreach(
+10 |     conn: sqlite3.Connection,
+11 |     owner
+   |          ^
+
+Found 1 error.
+
+## See relevant line below marked with █.
+
+uprec/followups.py:
+...⋮...
+  8│
+  9│def log_outreach(
+ 10│    conn: sqlite3.Connection,
+ 11█    owner
+
+
+
+ • Plan:                                                                        
+
+Tokens: 10k sent, 4 received. Cost: $0.0031 message, $0.02 session.
