@@ -36,6 +36,12 @@ export const accounts = {
   setClaims(uid, claims) {
     accounts.update(uid, { claims });
   },
+  remove(uid) {
+    const users = read();
+    delete users[uid];
+    write(users);
+    if (accounts.currentUid() === uid) accounts.signIn(null);
+  },
   reset(users = {}) {
     write(users);
   },

@@ -113,6 +113,9 @@ export const auth = () => ({
   async setCustomUserClaims(uid, claims) {
     accounts.setClaims(uid, claims || {});
   },
+  async deleteUser(uid) {
+    accounts.remove(uid);
+  },
 });
 export const messaging = () => ({ sendEachForMulticast: async ({ tokens }) => ({ responses: tokens.map(() => ({ success: true })) }) });
 export const initializeApp = () => ({});

@@ -116,8 +116,8 @@ export function noShowCheck(ride, nowMs, rules = DEFAULT_RULES) {
   return { allowed: true, feeCents: near ? Math.round(rules.noShowFee * 100) : 0, near };
 }
 
-/** Line order: Premium members, then Day Pass riders, then everyone by when they booked. */
-export const PRIORITY_RANK = { premium: 0, vip: 1 };
+/** Line order: Premium members and Day Pass riders together (by booking time), then everyone else. Owner decision Nov 18, 2026. */
+export const PRIORITY_RANK = { premium: 0, vip: 0 };
 const rank = (r) => PRIORITY_RANK[r.priority] ?? 2;
 
 /** 1 = next up. `waiting` = rides still waiting for a driver in the same line, each { id, priority, createdMs }. */

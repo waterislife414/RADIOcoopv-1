@@ -92,7 +92,7 @@ function PassCard() {
         ))}
       </ul>
       <p className="font-mono text-4xl font-bold text-gold-300 mt-4">{PASS.price}</p>
-      <p className="text-xs text-slate-400 mt-1">{currentUser ? PASS.fine : "For this ride. Premium members still go first."}</p>
+      <p className="text-xs text-slate-400 mt-1">{currentUser ? PASS.fine : "For this ride: front of the line."}</p>
       {!currentUser && (
         <p className="text-sm text-gold-200 mt-3 font-semibold">As a guest, the pass moves this ride up the line. The map and calling need a free account.</p>
       )}

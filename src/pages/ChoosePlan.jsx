@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import BrandHeader from "../components/BrandHeader";
+import { BRAND, FARE_CONFIG, PROMO_CODES } from "../config/constants";
 
 function PlanCard({ tierKey, name, price, yearlyPrice, savings, perks, highlight }) {
   const { currentUser } = useAuth();
@@ -75,30 +76,32 @@ function PlanCard({ tierKey, name, price, yearlyPrice, savings, perks, highlight
 }
 
 export default function ChoosePlan() {
+  // Only perks the app actually gives today. Plan perks come from branding.config.json.
+  const freeEntry = PROMO_CODES.FREE_ENTRY_ACTIVE ? ["A free entry fee every 10 rides over $5 (or every $50 in rides)"] : [];
+  const passes = (tier) => {
+    const n = Number(BRAND.pricing.tiers[tier]?.dayPassesPerMonth) || 0;
+    return n ? [`${n} free Priority Day Pass${n === 1 ? "" : "es"} a month`] : [];
+  };
+  const perk = (key, tier) => (BRAND.ridePerks?.[key] || []).includes(tier);
   const freePerks = [
-    "In-app wallet",
-    "A free entry fee every 10 rides over $5 (or every $50 in rides)",
+    `Lower card fee ($${FARE_CONFIG.CARD_APP_FEE_MEMBER.toFixed(2)} instead of $${FARE_CONFIG.CARD_APP_FEE.toFixed(2)})`,
+    "Your name and number filled in when you book",
+    ...freeEntry,
     "Deals and offers in your area",
   ];
 
   const basicPerks = [
-    "In-app wallet",
-    "A free entry fee every 10 rides over $5 (or every $50 in rides)",
-    "Deals and offers in your area",
-    "Alerts when your driver is about 4 minutes away and when they arrive",
-    "1 Priority Day Pass a month",
+    ...freePerks,
+    ...(perk("liveMap", "BASIC") ? ["See your driver live on the map"] : []),
+    ...passes("BASIC"),
   ];
 
   const premiumPerks = [
-    "In-app wallet",
-    "A free entry fee every 10 rides over $5 (or every $50 in rides)",
-    "Deals and offers in your area",
-    "Alerts when your driver is about 4 minutes away and when they arrive",
-    "1 Priority Day Pass a month",
-    "See your driver live on the map",
-    "Call or text your driver through the app (private number)",
-    "Tap I'm on my way out so your driver waits",
-    "3 Priority Day Passes a month",
+    ...freePerks,
+    "Front of the line on every ride",
+    ...(perk("liveMap", "PREMIUM") ? ["See your driver live on the map"] : []),
+    ...(perk("callDriver", "PREMIUM") ? ["Call your driver through the app (private number)"] : []),
+    // Premium already has everything a Day Pass gives, so its monthly passes aren't listed as extra.
   ];
 
   return (
@@ -107,7 +110,7 @@ export default function ChoosePlan() {
       <div className="px-6 py-8">
         <div className="max-w-md mx-auto">
           <h1 className="text-3xl font-display font-semibold text-slate-800 mb-2 text-center">
-            Start earning your free rides
+            Pick your plan
           </h1>
           <p className="text-slate-500 text-base mb-8 text-center">
             Pick the plan that fits how often you ride.

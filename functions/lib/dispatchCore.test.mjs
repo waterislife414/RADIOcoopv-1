@@ -55,9 +55,9 @@ test('requiredCertsForRide pulls base from either zone + wheelchair option', () 
   assert.deepEqual(c.requiredCertsForRide({ pickupZone: { id: 'baker' }, dropZone: fb, wheelchair: true }).sort(), ['base', 'wheelchair']);
 });
 
-test('priority: Premium > VIP > everyone, then oldest', () => {
+test('priority: Premium and Day Pass share the front (oldest first), then everyone', () => {
   const rides = [{ id: 'n1', createdAt: 1 }, { id: 'v', priority: 'vip', createdAt: 5 }, { id: 'p', priority: 'premium', createdAt: 9 }, { id: 'n0', createdAt: 0 }];
-  assert.deepEqual(c.sortPendingRides(rides).map((r) => r.id), ['p', 'v', 'n0', 'n1']);
+  assert.deepEqual(c.sortPendingRides(rides).map((r) => r.id), ['v', 'p', 'n0', 'n1']);
 });
 
 test('pick: requested driver first, skips ineligible without losing spot, then broadcast', () => {

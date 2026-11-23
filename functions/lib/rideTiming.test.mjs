@@ -52,7 +52,7 @@ test("no fee when the driver wasn't actually at the pickup", () => {
   assert.deepEqual(T.noShowCheck(far, 8 * MIN, R), { allowed: true, feeCents: 0, near: false });
 });
 
-test("line: Premium, then Day Pass, then by booking time", () => {
+test("line: Premium and Day Pass together by booking time, then everyone", () => {
   const w = [
     { id: "a", createdMs: 1 },
     { id: "b", createdMs: 2, priority: "vip" },
@@ -61,7 +61,9 @@ test("line: Premium, then Day Pass, then by booking time", () => {
   ];
   assert.equal(T.queuePosition(w[3], w), 4);
   assert.equal(T.queuePosition({ ...w[3], priority: "vip" }, w), 3);
-  assert.equal(T.queuePosition(w[2], w), 1);
+  // Premium booked after the Day Pass rider waits behind them.
+  assert.equal(T.queuePosition(w[2], w), 2);
+  assert.equal(T.queuePosition(w[1], w), 1);
   assert.equal(T.lineText(1), "next up");
   assert.equal(T.lineText(2), "2nd in line");
   assert.equal(T.lineText(3), "3rd in line");

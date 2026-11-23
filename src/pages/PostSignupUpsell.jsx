@@ -28,7 +28,7 @@ export default function PostSignupUpsell() {
                 <span className="text-sm font-normal text-slate-500">/mo</span>
               </p>
               <p className="text-xs text-slate-500 leading-snug">
-                1 free entry fee every {SUBSCRIPTION_TIERS.BASIC.ridesForFreeEntry} rides
+                Live driver map + a free Day Pass every month
               </p>
             </Link>
             <Link
@@ -44,7 +44,7 @@ export default function PostSignupUpsell() {
                 <span className="text-sm font-normal text-slate-500">/mo</span>
               </p>
               <p className="text-xs text-slate-500 leading-snug">
-                Free entry fee + free mile every {SUBSCRIPTION_TIERS.PREMIUM.ridesForFreeEntry} rides
+                Front of the line, live map, call your driver
               </p>
             </Link>
           </div>

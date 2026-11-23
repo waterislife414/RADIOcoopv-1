@@ -43,8 +43,8 @@ export default function Promotions() {
             <p>Share your referral code. When your friend becomes a member, you get ${PROMO_CODES.REFERRAL_BONUS} toward your next ride.</p>
           </Promo>
 
-          <Promo eyebrow="Free account" title="Lower card fee & Wallet" to="/sign-up" cta="Sign Up Free" tone="blue">
-            <p>Riders with an account get an in-app wallet, deals and offers, plus free entry fee every 10 rides over $5.</p>
+          <Promo eyebrow="Free account" title="Lower card fee" to="/sign-up" cta="Sign Up Free" tone="blue">
+            <p>Riders with a free account pay a lower card fee, get their name and number filled in, and get deals and offers.</p>
           </Promo>
 
           <Promo eyebrow="In a hurry?" title="Priority Day Pass, $5" to="/trip-details" cta="Book with the Day Pass">

@@ -137,7 +137,7 @@
     "approvalRepeatSeconds": 120,
     "autoPlaceParkedMin": 2
   },
-  "legalVersion": "2026-11-15.1",
+  "legalVersion": "2026-11-23.1",
   "rideRules": {
     "_note": "Pickup timing for app rides. Call-in and guest-without-account rides never pay these fees.",
     "headsUpMinutes": 4,
@@ -188,7 +188,11 @@
       "Watch your driver on the map as they come to you",
       "Call your driver directly. It’s private, and no numbers are shared."
     ],
-    "fine": "Good until midnight. Premium members still dispatch first. Your driver may not pick up while driving and will call back when it’s safe."
+    "fine": "Good until midnight. Same place in line as Premium members. Your driver may not pick up while driving and will call back when it’s safe."
+  },
+  "memberDayPasses": {
+    "BASIC": 1,
+    "PREMIUM": 3
   },
   "support": {
     "_note": "Problem reports (Report a problem / Ask dispatch) are saved and emailed to these addresses. Fill in when handing over.",

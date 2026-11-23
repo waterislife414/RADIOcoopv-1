@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import ProfilePhoto from "../components/ProfilePhoto";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { doc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../config/firebase";
@@ -8,7 +8,7 @@ import { useAuth } from "../context/AuthContext";
 import BrandHeader from "../components/BrandHeader";
 import CurrentRideStatus from "../components/CurrentRideStatus";
 import ConfirmModal from "../components/admin/ConfirmModal";
-import { SUBSCRIPTION_TIERS, HUB_NAME } from "../config/constants";
+import { SUBSCRIPTION_TIERS, HUB_NAME, PROMO_CODES } from "../config/constants";
 
 export default function Profile() {
   const {
@@ -289,38 +289,40 @@ export default function Profile() {
             </div>
           )}
 
-          {/* Perk tracker */}
-          <div className="border-2 border-slate-200 rounded-2xl p-5 mb-5">
-            <h2 className="font-bold text-lg text-slate-800 mb-3">Ride Perks</h2>
-            {perk ? (
-              <>
-                <div className="w-full bg-slate-100 rounded-full h-3 mb-2 overflow-hidden">
-                  <div
-                    className="bg-gold-500 h-3 rounded-full transition-all"
-                    style={{
-                      width: `${
-                        ((perk.ridesForFreeEntry - perk.ridesUntilFreePerk) /
-                          perk.ridesForFreeEntry) *
-                        100
-                      }%`,
-                    }}
-                  />
-                </div>
-                <p className="text-base text-slate-600">
-                  {perk.hasFreeRideNow
-                    ? "You have a free ride entry available on your next trip!"
-                    : `${perk.ridesUntilFreePerk} more completed ${
-                        perk.ridesUntilFreePerk === 1 ? "ride" : "rides"
-                      } until your next free entry.`}
-                </p>
-                <p className="text-sm text-slate-500 mt-1">
-                  {perk.completedRides} completed rides total
-                </p>
-              </>
-            ) : (
-              <p className="text-base text-slate-500">Loading...</p>
-            )}
-          </div>
+          {/* Perk tracker: hidden until checkout really takes the free entry off (branding promo.FREE_ENTRY_ACTIVE). */}
+          {PROMO_CODES.FREE_ENTRY_ACTIVE && (
+            <div className="border-2 border-slate-200 rounded-2xl p-5 mb-5">
+              <h2 className="font-bold text-lg text-slate-800 mb-3">Ride Perks</h2>
+              {perk ? (
+                <>
+                  <div className="w-full bg-slate-100 rounded-full h-3 mb-2 overflow-hidden">
+                    <div
+                      className="bg-gold-500 h-3 rounded-full transition-all"
+                      style={{
+                        width: `${
+                          ((perk.ridesForFreeEntry - perk.ridesUntilFreePerk) /
+                            perk.ridesForFreeEntry) *
+                          100
+                        }%`,
+                      }}
+                    />
+                  </div>
+                  <p className="text-base text-slate-600">
+                    {perk.hasFreeRideNow
+                      ? "You have a free ride entry available on your next trip!"
+                      : `${perk.ridesUntilFreePerk} more completed ${
+                          perk.ridesUntilFreePerk === 1 ? "ride" : "rides"
+                        } until your next free entry.`}
+                  </p>
+                  <p className="text-sm text-slate-500 mt-1">
+                    {perk.completedRides} completed rides total
+                  </p>
+                </>
+              ) : (
+                <p className="text-base text-slate-500">Loading...</p>
+              )}
+            </div>
+          )}
 
           {/* ID check: app rides, and the birthday credit */}
           <div id="verify-id" className="border-2 border-slate-200 rounded-2xl p-5 mb-5">
@@ -416,6 +418,9 @@ export default function Profile() {
             >
               Deactivate Account
             </button>
+            <Link to="/delete-account" data-testid="delete-account-link" className="block text-center text-slate-500 font-semibold py-1 text-sm underline">
+              Delete my account
+            </Link>
           </div>
         </div>
       </div>

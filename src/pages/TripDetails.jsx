@@ -15,6 +15,8 @@ import { useRide } from "../context/RideContext";
 import BrandHeader from "../components/BrandHeader";
 import { recentPlaces, rememberPlaces } from "../utils/recentPlaces";
 import { useTripEstimate } from "../lib/tripEstimate";
+import { httpsCallable } from "firebase/functions";
+import { functions } from "../config/firebase";
 import { dollars } from "../../functions/lib/fareEstimate.mjs";
 import {
   SURROUNDING_SERVICE_CITIES,
@@ -36,8 +38,25 @@ function looksLikeStreetAddress(s) {
   return words.length >= 2;
 }
 
+const claimMemberPass = httpsCallable(functions, "useMemberDayPass");
+
+/** Free Day Passes a member has left this month (same count the server keeps). */
+function memberPassesLeft(profile, nowMs = Date.now()) {
+  if (!profile || !["active", "trialing"].includes(profile.subscriptionStatus)) return 0;
+  const allowance = Number(BRAND.pricing.tiers[profile.subscriptionTier]?.dayPassesPerMonth) || 0;
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", { timeZone: BRAND.dispatch?.timeZone || "America/New_York", year: "numeric", month: "2-digit" })
+      .formatToParts(new Date(nowMs))
+      .map((x) => [x.type, x.value])
+  );
+  const used = profile.memberPasses?.month === `${p.year}-${p.month}` ? Number(profile.memberPasses.used) || 0 : 0;
+  return Math.max(0, allowance - used);
+}
+
 export default function TripDetails() {
-  const { currentUser, userProfile, saveLegalConsent } = useAuth();
+  const { currentUser, userProfile, saveLegalConsent, refreshProfile } = useAuth();
+  const [passBusy, setPassBusy] = useState(false);
+  const [passMsg, setPassMsg] = useState("");
   // Every rider reads and agrees to the terms on every booking.
   const [askConsent, setAskConsent] = useState(false);
   const [locBlocked, setLocBlocked] = useState(null);
@@ -55,6 +74,19 @@ export default function TripDetails() {
   const laterDay = scheduleType === "later" && ride.scheduledFor && new Date(ride.scheduledFor).getTime() > (userProfile?.dayPass?.expiresAt || 0);
   const dayPass = userProfile?.dayPass?.expiresAt > Date.now() && !laterDay ? userProfile.dayPass : null;
   const premium = userProfile?.subscriptionTier === "PREMIUM";
+  const freePasses = currentUser ? memberPassesLeft(userProfile) : 0;
+  async function claimFreePass() {
+    setPassBusy(true);
+    setPassMsg("");
+    try {
+      await claimMemberPass();
+      await refreshProfile(currentUser.uid);
+    } catch (e) {
+      setPassMsg(e?.message || "Couldn't use a free pass right now.");
+    } finally {
+      setPassBusy(false);
+    }
+  }
   const [error, setError] = useState("");
   const [locating, setLocating] = useState(false);
   const [locateError, setLocateError] = useState("");
@@ -352,9 +384,24 @@ export default function TripDetails() {
                 <span className="text-base text-slate-700 min-w-0">
                   <span className="font-bold">&#9733; Skip the line all day</span>
                   <span className="block text-sm text-slate-600">
-                    {dayPass ? "On until midnight." : `${BRAND.copy.dayPass.price}. Live map and calling your driver included.`}
+                    {dayPass
+                      ? "On until midnight."
+                      : freePasses > 0
+                        ? "Free with your plan. Live map and calling your driver included."
+                        : `${BRAND.copy.dayPass.price}. Live map and calling your driver included.`}
                   </span>
                 </span>
+                {!dayPass && freePasses > 0 ? (
+                  <button
+                    type="button"
+                    data-testid="use-free-pass"
+                    disabled={passBusy}
+                    onClick={claimFreePass}
+                    className="shrink-0 rounded-full bg-gold-500 text-navy-950 font-bold text-sm px-4 py-2 disabled:opacity-60"
+                  >
+                    {passBusy ? "\u2026" : `Use free pass (${freePasses} left)`}
+                  </button>
+                ) : (
                 <button role="switch" aria-checked={!!(dayPass || ride.wantsPriorityPass)} aria-label={BRAND.copy.dayPass.title}
                   type="button"
                   disabled={!!dayPass}
@@ -369,8 +416,10 @@ export default function TripDetails() {
                     }`}
                   />
                 </button>
+                )}
               </div>
             )}
+            {passMsg && <p className="text-sm text-red-600 -mt-3">{passMsg}</p>}
 
             <button
               type="button"

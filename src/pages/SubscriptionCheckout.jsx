@@ -188,7 +188,9 @@ export default function SubscriptionCheckout() {
           <p className="text-slate-500 text-base mb-5">
             {tierInfo.isAddon
               ? tierInfo.description
-              : `1 free entry every ${tierInfo.ridesForFreeEntry} rides${tierInfo.perks.freeMilePer10Rides ? " + 1 free mile" : ""}`}
+              : tierKey === "PREMIUM"
+                ? "Front of the line, live driver map and calling your driver."
+                : "Live driver map and a free Priority Day Pass every month."}
           </p>
 
           {!tierInfo.isAddon && (

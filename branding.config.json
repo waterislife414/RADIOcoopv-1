@@ -64,7 +64,7 @@
         "Watch your driver on the map as they come to you",
         "Call your driver directly. It’s private, and no numbers are shared."
       ],
-      "fine": "Good until midnight. Premium members still dispatch first. Your driver may not pick up while driving and will call back when it’s safe."
+      "fine": "Good until midnight. Same place in line as Premium members. Your driver may not pick up while driving and will call back when it’s safe."
     }
   },
   "colors": {
@@ -126,7 +126,7 @@
     },
     "estimate": {
       "_note": "Price shown before booking. roadFactor turns straight-line miles into road miles; highMultiplier sets the top of the range; past maxMiles the rider is asked to call.",
-      "roadFactor": 1.3,
+      "roadFactor": 1.35,
       "highMultiplier": 1.15,
       "maxMiles": 60
     },
@@ -139,6 +139,7 @@
         "monthlyPrice": 9.99,
         "yearlyPrice": 109.89,
         "ridesForFreeEntry": 10,
+        "dayPassesPerMonth": 1,
         "perks": {
           "freeEntryPer10Rides": true,
           "freeMilePer10Rides": false
@@ -149,6 +150,7 @@
         "monthlyPrice": 19.99,
         "yearlyPrice": 219.89,
         "ridesForFreeEntry": 10,
+        "dayPassesPerMonth": 3,
         "perks": {
           "freeEntryPer10Rides": true,
           "freeMilePer10Rides": true
@@ -159,6 +161,8 @@
       "FIRST_RIDE": "WELCOME2",
       "REFERRAL_BONUS": 5,
       "FIRST_RIDE_ACTIVE": false,
+      "FREE_ENTRY_ACTIVE": false,
+      "_freeEntryNote": "Free entry fee every 10 rides: hidden everywhere until FREE_ENTRY_ACTIVE is true AND checkout actually takes it off (not built: who pays for it, driver or company, is the owner's call).",
       "_note": "FIRST_RIDE code is hidden at checkout until FIRST_RIDE_ACTIVE is true AND the discount is applied at checkout (not built yet: amount not decided)."
     }
   },
@@ -307,7 +311,7 @@
   "policies": {
     "dataRetentionDays": 5,
     "mvrLookbackYears": 7,
-    "legalVersion": "2026-11-15.1"
+    "legalVersion": "2026-11-23.1"
   },
   "about": {
     "_note": "Confirm with Malcolm before going live. established: Yelp lists 'Established in 1980' and YellowPages '46 years in business'. owners: as given by Jared. community: leave null until confirmed (e.g. 'Proud supporters of our EMS, firefighters and police.').",

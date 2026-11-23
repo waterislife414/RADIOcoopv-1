@@ -14,6 +14,7 @@ import Home from "./pages/Home";
 import Careers from "./pages/Careers";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
+import DeleteAccount from "./pages/DeleteAccount";
 import Contact from "./pages/Contact";
 import TripDetails from "./pages/TripDetails";
 import Help from "./pages/Help";
@@ -115,6 +116,7 @@ export default function App() {
             />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/delete-account" element={<DeleteAccount />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/qr" element={<QRCode />} />
             <Route path="/join" element={<ChoosePlan />} />

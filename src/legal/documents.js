@@ -64,7 +64,7 @@ export const DOCUMENTS = {
           "Cancel and no-show fees go to your driver for the trip out. They are taken from your card hold or saved card. Fees that can't be collected that way may be added to a later card payment in the app.",
           "Riders who request an accessible vehicle, or who tell us they need extra time to reach or get into the car, are never charged wait time or no-show fees.",
           "Who dispatches your ride: the app sends rides to drivers on its own for riders with an account, a checked ID, location sharing on and a card or account balance. Other rides (phone bookings, guests, cash, no location, or an ID we haven't checked yet) are dispatched by our office. Cancel and no-show fees do not apply to them. Once a driver is assigned to one of these rides, call us to cancel.",
-          `The ${PASS} costs ${PASS_PRICE}. It moves your rides ahead of riders without priority (members on plans that dispatch first still go first), shows your driver on a map and lets you call your driver, for every ride you book until midnight (local time) on the day you buy it. A guest's pass covers one ride and moves it up the line; the map and calling need a free account. It does not promise a pickup time. The ${PASS} is non-refundable once paid.`,
+          `The ${PASS} costs ${PASS_PRICE}. It moves your rides ahead of riders without priority, to the same place in line as Premium members, shows your driver on a map and lets you call your driver, for every ride you book until midnight (local time) on the day you buy it. A guest's pass covers one ride and moves it up the line; the map and calling need a free account. It does not promise a pickup time. The ${PASS} is non-refundable once paid.`,
           "All rides, memberships and add-on fees are non-refundable once a ride has been dispatched or completed, except where the law requires a refund.",
           `You agree to pay for every ride you take. Refusing to pay, using a fraudulent payment method, or leaving without paying may be theft of services under Georgia law (O.C.G.A. \u00a7 16-8-5) and may be reported to the police. ${COMPANY_NAME} may pursue every legal remedy to recover unpaid fares, fees, court costs and reasonable attorney's fees, and may refuse future service to anyone flagged for non-payment.`,
         ],
@@ -154,6 +154,7 @@ export const DOCUMENTS = {
         h: "3. How long we keep it",
         p: [
           "We keep information for as long as we decide we have a business, safety or legal reason to, which may be indefinitely. Some records are cleared automatically on a schedule, but we do not promise to delete anything sooner than the law requires.",
+          "You can delete your rider account at any time in the app (My Account, then Delete my account) or on our website's Delete your account page. When you do, we delete your profile, your ID and face photos, and your sign-in. We keep ride and payment records, and a note of any unpaid fees, for business, tax and safety reasons.",
         ],
       },
       {

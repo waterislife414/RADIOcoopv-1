@@ -27,7 +27,12 @@ service cloud.firestore {
     function userServerKeys() {
       return ['walletBalance', 'subscriptionTier', 'subscriptionStatus', 'stripeCustomerId',
               'stripeSubscriptionId', 'smsAddonStatus', 'birthdayCredits',
-              'dayPass', 'feesOwedCents', 'feesOwed', 'extraTime'];
+              'dayPass', 'memberPasses', 'feesOwedCents', 'feesOwed', 'extraTime'];
+    }
+
+    // Notes kept after an account is deleted (unpaid fees). Cloud Functions only.
+    match /deleted_accounts/{uid} {
+      allow read, write: if false;
     }
 
     match /users/{userId} {

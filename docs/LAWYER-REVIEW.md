@@ -4,12 +4,45 @@ The app was built carefully, but none of this is legal advice. Each line says wh
 today and where to change it. Text lives in `src/legal/documents.js`; numbers live in
 `branding.config.json` (changing a fee there also bumps the terms version, so everyone agrees again).
 
+## Changed Nov 23, 2026 (legal version 2026-11-23.1; everyone agrees again)
+- [ ] **Terms §4, Priority Day Pass.** Now: the pass moves rides "to the same place in line as Premium
+  members" (owner decision Nov 18). Before: Premium went first. Code: `functions/lib/dispatchCore.mjs`,
+  `functions/lib/rideTiming.mjs` (`PRIORITY_RANK`), `copy.dayPass.fine`.
+- [ ] **Privacy §3, deleting an account.** New paragraph: riders can delete their account in the app or
+  on the Delete your account page; profile, ID/face photos and sign-in are deleted; ride and payment
+  records and any unpaid-fee note are kept. Google Play requires an in-app path and a web page.
+  Code: `functions/account.js` (`deleteMyAccount`), `src/pages/DeleteAccount.jsx`.
+- [ ] **Price shown before booking.** The booking screen shows "About $X" from the meter rate for the
+  estimated road miles, with the range, "The meter sets the final fare" and "No surge, ever." No
+  price lock yet. If the owner wants "you pay this or the meter, whichever is lower": a 2013 Columbus
+  draft (Sec. 21-9(b)) allows a flat or discounted fare equal to or less than the metered fare, with
+  the meter running. Confirm the current code text and Phenix City's rules first.
+- [ ] **Price comparison.** Home and Compare now show Uber's own published Columbus averages
+  (uber.com Columbus city page, average UberX over the past month, checked Nov 23, 2026) next to our
+  meter for the same miles; out-of-town trips say "call for a quote". Uber says those are not fixed
+  or guaranteed prices. Is the footnote enough? How often must it be re-checked (monthly suggested)?
+- [ ] **Membership perks.** The plan pages now list only what the app does. "A free entry fee every 10
+  rides" was advertised but never taken off at checkout; it is hidden (`promo.FREE_ENTRY_ACTIVE`)
+  until built. Members already sold on that promise (if any) need a decision.
+- [ ] **Agreement style (not changed).** Riders scroll to the end before the boxes unlock, every
+  booking for guests. Courts generally enforce a checkbox next to clearly linked terms
+  (Meyer v. Uber, 2d Cir. 2017; Berman v. Freedom Financial, 9th Cir. 2022: reasonably conspicuous
+  notice + an unambiguous act of assent). A one-line "I agree to the Terms and Privacy Policy" box with
+  links would cut booking friction. Owner and lawyer decide.
+
 ## Money
 - [ ] **$2 card fee ($1.80 with a free account).** It's a flat fee on every card ride, debit cards included.
   Card networks generally allow surcharges only on credit cards, as a percentage within a cap, with
   notice to the processor and disclosure before payment. Options: a percentage credit-only
   surcharge, a cash discount, or a booking fee on all app rides.
   Change: `functions/index.js` (`CARD_APP_FEE_CENTS`, `CARD_APP_FEE_MEMBER_CENTS`), `src/config/fareCalc.js`, Terms §4.
+  Research Nov 23, 2026 (not legal advice): Visa and Mastercard prohibit surcharging debit and prepaid
+  cards, even when run as credit. Georgia limits a credit-card surcharge to the merchant's cost of
+  acceptance. On an $8-$12 fare, Stripe's cost (about 2.9% + 30 cents) is roughly 55-65 cents, so a flat
+  $2 is likely above cost. Options to decide: (a) credit-only percentage within cost, debit/prepaid free
+  (Stripe reports card.funding); (b) a flat app booking fee on every app ride, any payment method
+  (then drop "No booking fee"); (c) fold costs into a cash discount. The booking and payment screens now
+  show the fee in the total before paying.
 - [ ] **Cancel fee $5, no-show fee $10, Priority Day Pass $5, wait time after 2 minutes.** These are charges
   on a city-licensed taxi beyond the meter. Do Columbus Code Ch. 21 and Phenix City's taxi rules
   allow them? Must they be on the rate card posted in the cab?

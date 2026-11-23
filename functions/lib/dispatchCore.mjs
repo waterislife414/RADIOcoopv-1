@@ -138,9 +138,10 @@ export function requiredCertsForRide({ pickupZone, dropZone, wheelchair }) {
 }
 
 // ---------------------------------------------------------------------------
-// Ride priority: Premium > $5 VIP pass > everyone else, then oldest first.
+// Ride priority: Premium and $5 Day Pass together, then everyone else; oldest first within each.
 
-const PRIORITY_RANK = { premium: 0, vip: 1 };
+// Premium and the $5 Day Pass share the front of the line (owner decision Nov 18, 2026).
+const PRIORITY_RANK = { premium: 0, vip: 0 };
 export function priorityRank(ride) {
   return PRIORITY_RANK[ride.priority] ?? 2;
 }

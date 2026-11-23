@@ -102,7 +102,7 @@ export default function LineStatus({ rideId, dark = false, onDone }) {
         }`}
       >
         {next ? "You’re next up!" : `You’re ${lineText(q.position)}`}
-        {q.premium && <span className="block text-xs font-semibold">Premium: members dispatch first</span>}
+        {q.premium && <span className="block text-xs font-semibold">Premium: front of the line</span>}
         {!next && !q.hasPriority && (
           <button type="button" onClick={() => setOffer(true)} className="block w-full mt-2 min-h-[48px] rounded-xl bg-white border-2 border-amber-400 px-3 text-base font-bold">
             Skip ahead for {PASS.price}
@@ -127,7 +127,7 @@ export default function LineStatus({ rideId, dark = false, onDone }) {
             </ul>
             <p className="font-mono text-4xl font-bold text-gold-300">{PASS.price}</p>
             <p className="text-xs text-slate-400">
-              {q.appRide ? PASS.fine : "Moves this ride up our dispatcher\u2019s list. Premium members still go first."}
+              {q.appRide ? PASS.fine : "Moves this ride to the front of our dispatcher\u2019s list."}
             </p>
             {!currentUser && <p className="text-sm text-gold-200 font-semibold">As a guest: priority for this ride. Map and calling need a free account.</p>}
             <button
