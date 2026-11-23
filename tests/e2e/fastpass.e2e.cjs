@@ -28,16 +28,16 @@ const get = async (p) => (await db.doc(p).get()).data();
   await ride("r1", { fastPassId: paid.id });
   await f.captureFare.run({ data: { rideId: "r1", meterFare: 10, tipAmount: 0 }, auth: ADMIN });
   const r1 = await get("rides/r1");
-  assert.equal(r1.capturedAmountCents, 1000 + 200, "meter + card fee only, no second $5");
+  assert.equal(r1.capturedAmountCents, 1000, "meter only, no card fee");
   assert.equal((await get(`fast_passes/${paid.id}`)).rideId, "r1");
 
   // The same pass can't be reused on another ride; no pass at all still charges $5 at checkout.
   await ride("r2", { fastPassId: paid.id });
   await f.captureFare.run({ data: { rideId: "r2", meterFare: 10, tipAmount: 0 }, auth: ADMIN });
-  assert.equal((await get("rides/r2")).capturedAmountCents, 1000 + 200 + 500);
+  assert.equal((await get("rides/r2")).capturedAmountCents, 1000 + 500);
   await ride("r3", {});
   await f.captureFare.run({ data: { rideId: "r3", meterFare: 10, tipAmount: 0 }, auth: ADMIN });
-  assert.equal((await get("rides/r3")).capturedAmountCents, 1000 + 200 + 500);
+  assert.equal((await get("rides/r3")).capturedAmountCents, 1000 + 500);
 
   console.log("fastpass e2e: ok");
   process.exit(0);

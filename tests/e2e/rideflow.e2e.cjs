@@ -174,7 +174,7 @@ async function freeDriver() {
   await db.doc("rides/p6").set({ customerId: "u1", status: "in_transit", paymentMethod: "card", driverId: "d1", finalFare: null, timestamp: admin.firestore.Timestamp.now() });
   await call("captureFare", { rideId: "p6", meterFare: 10, tipAmount: 0, paymentMethodId: "pm_card" }, rider("u1"));
   const p6 = await get("rides/p6");
-  assert.equal(p6.capturedAmountCents, 1000 + 180 + 500, "fare + member card fee + earlier fee");
+  assert.equal(p6.capturedAmountCents, 1000 + 500, "fare + earlier fee");
   assert.equal(p6.earlierFeesCents, 500);
   assert.equal((await get("users/u1")).feesOwedCents, 0);
   assert.equal((await get("drivers/d1")).leaseCreditCents, 1000, "both $5 fees reached the driver");
