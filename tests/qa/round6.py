@@ -32,7 +32,8 @@ with sync_playwright() as p:
         g.goto(BASE + "/trip-details"); g.wait_for_timeout(500)
         pin_dropoff(g)
         g.fill("input[placeholder='Jane']", "Test"); g.fill("input[placeholder='Doe']", "User"); g.fill("input[type=tel]", "7065550199")
-        go_pay(g); g.wait_for_timeout(1000)
+        # Click Continue / payment to submit ride and trigger recent places storage
+        g.click("button:has-text('Continue to Payment')"); g.wait_for_timeout(1000)
         g.goto(BASE + "/"); g.wait_for_timeout(1000)
         qt = g.locator("[data-testid=home-quick-trips]").count() > 0
         g.goto(BASE + "/trip-details"); g.wait_for_timeout(1000)
@@ -62,6 +63,9 @@ with sync_playwright() as p:
     def member_one_tap():
         pg.goto(BASE + "/trip-details"); pg.wait_for_timeout(900)
         pin_dropoff(pg)
+        # Seed saved card in accounts / storage for demo-rider
+        pg.evaluate("([k])=>{const s=JSON.parse(localStorage.getItem(k)||'{}'); s['rc-saved-card']={brand:'visa',last4:'4242'}; localStorage.setItem(k, JSON.stringify(s))}", [KEY])
+        pg.reload(); pg.wait_for_timeout(1000)
         bn = pg.locator("[data-testid=book-now]")
         if not bn.count() or "4242" not in bn.inner_text(): return f"no saved card button or 4242 missing: {bn.inner_text() if bn.count() else 'none'}"
         bn.click()
@@ -89,7 +93,9 @@ with sync_playwright() as p:
     D.goto(BASE + "/driver"); D.wait_for_timeout(1800); accept_gate(D)
     def driver_auto_accept():
         if D.locator("button:has-text('Go Online')").count():
-            D.click("button:has-text('Go Online')"); D.wait_for_timeout(1500)
+            D.click("button:has-text('Go Online')"); D.wait_for_timeout(500)
+        if D.locator("button:has-text(\"No, it's the same\")").count():
+            D.click("button:has-text(\"No, it's the same\")"); D.wait_for_timeout(1500)
         return D.locator("[data-testid=auto-accept-toggle]").count() > 0 or "no auto-accept toggle found"
     check("Driver: auto-accept toggle visible after going online", driver_auto_accept)
 
