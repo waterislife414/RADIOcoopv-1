@@ -52,3 +52,12 @@ def more_options(pg):
     # Booking extras (passengers, stops, round trip, wheelchair, share location, schedule) sit behind "More options".
     b=pg.locator("[data-testid=more-options]")
     if b.count() and b.get_attribute("aria-expanded")!="true": b.click(); pg.wait_for_timeout(200)
+def use_location(pg):
+    if pg.locator("text=Use my location").count():
+        pg.click("text=Use my location")
+        pg.wait_for_timeout(1200)
+    else:
+        for _ in range(30):
+            if pg.locator("text=✓ Location attached").count():
+                break
+            pg.wait_for_timeout(100)
