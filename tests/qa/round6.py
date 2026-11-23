@@ -29,6 +29,7 @@ with sync_playwright() as p:
 
     # b) after one booking, Home shows [data-testid=home-quick-trips] and /trip-details shows [data-testid=quick-picks] while drop-off is empty
     def quick_trips_and_picks():
+        g.goto(BASE + "/trip-details"); g.wait_for_timeout(500)
         pin_dropoff(g)
         g.fill("input[placeholder='Jane']", "Test"); g.fill("input[placeholder='Doe']", "User"); g.fill("input[type=tel]", "7065550199")
         go_pay(g); g.wait_for_timeout(1000)
@@ -55,25 +56,25 @@ with sync_playwright() as p:
         return (inline and popup) or f"inline={inline} popup={popup}"
     check("Consent: inline consent box shows, no modal popup", consent_inline)
 
-    g.close()
-
     # e) demo-rider (?as=demo-rider), after one card booking, sees [data-testid=book-now] containing "4242" and one tap reaches /success
     pg = ctx.new_page(); watch(pg, errs)
     pg.goto(BASE + "/?as=demo-rider"); pg.wait_for_timeout(1500)
     def member_one_tap():
-        pg.goto(BASE + "/trip-details"); g.wait_for_timeout(900)
+        pg.goto(BASE + "/trip-details"); pg.wait_for_timeout(900)
         pin_dropoff(pg)
         bn = pg.locator("[data-testid=book-now]")
         if not bn.count() or "4242" not in bn.inner_text(): return f"no saved card button or 4242 missing: {bn.inner_text() if bn.count() else 'none'}"
-        bn.click(); pg.wait_for_timeout(2000)
+        bn.click()
+        try:
+            pg.wait_for_url("**/success", timeout=3000)
+        except:
+            pg.wait_for_timeout(2000)
         return "/success" in pg.url or f"url={pg.url}"
     check("Member: saved card one-tap booking reaches /success", member_one_tap)
 
     # f) a finished ride shows [data-testid=ride-back] and tapping it opens /trip-details with pickup and drop-off swapped
     def ride_back():
-        pg.goto(BASE + "/"); pg.wait_for_timeout(1500)
-        # simulate finished ride or check if element exists if any finished ride present, or put one in db
-        # let's inject a finished ride with pickup/dropoff
+        pg.goto(BASE + "/?as=demo-rider"); pg.wait_for_timeout(1500)
         pg.evaluate("([k])=>{const s=JSON.parse(localStorage.getItem(k)||'{}'); s['rides/qa-fin']={status:'finished', finalFare:15, customerId:'demo-rider', pickup:'Columbus Airport', dropoff:'Peachtree Mall'}; localStorage.setItem(k, JSON.stringify(s))}", [KEY])
         pg.reload(); pg.wait_for_timeout(1500)
         rb = pg.locator("[data-testid=ride-back]")
