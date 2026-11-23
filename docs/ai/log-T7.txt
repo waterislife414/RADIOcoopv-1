@@ -1,0 +1,40 @@
+                                                                                
+ COLUMNS_PATH = Path(__file__).resolve().parent.parent / "config" /             
+"portal_columns.yaml"                                                           
+                                                                                
+@@ -10,5 +10,6 @@                                                               
+ def load_column_map(path=None) -> dict:                                        
+     if not result.get("owner_name") and (result.get("first_name") or           
+result.get("last_name")):                                                       
+         first = result.get("first_name", "")                                   
+         last = result.get("last_name", "")                                     
+         order = name_join.get("order", "last_first")                           
++  60 /  67 lines [██████████████████████████░░░░]  90%                         
+                                                                                
+Tokens: 13k sent, 581 received. Cost: $0.0053 message, $0.02 session.
+Applied edit to uprec/columns.py
+Commit f09382a style: sort imports in uprec/columns.py
+All checks passed!
+F...........................                                             [100%]
+=================================== FAILURES ===================================
+_______________________________ test_norm_header _______________________________
+
+    def test_norm_header():
+        assert norm_header("  Owner Name! ") == "owner name"
+>       assert norm_header("Zip-Code?") == "zip code"
+E       AssertionError: assert 'zipcode' == 'zip code'
+E         
+E         - zip code
+E         ?    -
+E         + zipcode
+
+tests/test_columns.py:6: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_columns.py::test_norm_header - AssertionError: assert 'zipcode' == 'zip code'
+  
+  - zip code
+  ?    -
+  + zipcode
+1 failed, 27 passed in 0.11s
+Added 21 lines of output to the chat.
+Only 3 reflections allowed, stopping.
