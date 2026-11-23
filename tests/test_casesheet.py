@@ -61,9 +61,9 @@ def test_render_case_sheet(db_conn):
     assert "- [mail] 123 Main St (verified)" in sheet
 
     assert "## Search These" in sheet
-    assert f'- "John Doe" probate Russell county AL estate' in sheet
-    assert f'- "John Doe" obituary Phenix City AL' in sheet
-    assert f'- site:facebook.com "John Doe" Phenix City' in sheet
+    assert '- "John Doe" probate Russell county AL estate' in sheet
+    assert '- "John Doe" obituary Phenix City AL' in sheet
+    assert '- site:facebook.com "John Doe" Phenix City' in sheet
 
     assert "## Still Missing Checklist" in sheet
     assert "None - all key checks present." not in sheet # Since we added address and heirs
@@ -101,8 +101,8 @@ def test_render_case_sheet(db_conn):
     )
     db_conn.commit()
     sheet_no_county = render_case_sheet(db_conn, 1, rules, "2026-06-01")
-    assert f'- "John Doe" probate Russell county AL estate' not in sheet_no_county
-    assert f'- "John Doe" will court Russell county AL' not in sheet_no_county
-    assert f'- "John Doe" property records Russell county AL tax assessor' not in sheet_no_county
-    assert f'- "John Doe" deed Russell county Alabama' not in sheet_no_county
-    assert f'- "John Doe" obituary Phenix City AL' in sheet_no_county # Still present
+    assert '- "John Doe" probate Russell county AL estate' not in sheet_no_county
+    assert '- "John Doe" will court Russell county AL' not in sheet_no_county
+    assert '- "John Doe" property records Russell county AL tax assessor' not in sheet_no_county
+    assert '- "John Doe" deed Russell county Alabama' not in sheet_no_county
+    assert '- "John Doe" obituary Phenix City AL' in sheet_no_county # Still present
