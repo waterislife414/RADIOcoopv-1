@@ -125,7 +125,7 @@ with sync_playwright() as p:
         D.locator("[data-testid=approval-answer] button").first.click(); D.wait_for_timeout(500)
         pegtxt = A.locator("[data-testid=pegboard]").inner_text()
         st = board(A,"demo-driver-44")
-        assert st.get("status") == "ready" and st.get("zoneId") == zone["id"], f"board={st.get('status')},{st.get('zoneId')}"
+        assert st.get("status") == "ready" and st.get("zoneId"] == zone["id"], f"board={st.get('status')},{st.get('zoneId')}"
         return True
     check("4b Ask-dispatch Check Ready -> approval popup -> approve -> driver answer, car 44 in zone", c4b)
 
@@ -167,9 +167,9 @@ with sync_playwright() as p:
         stage='c'
         if board(A,"demo-driver-44").get("status") not in ("offered","on_call"):
           A.click("[data-testid=new-call]"); A.wait_for_timeout(600)
-          A.fill("input[placeholder='123 Broadway, Columbus GA']", "1795 Cusseta Rd, Columbus GA")
-          A.fill("input[placeholder='456 14th St, Phenix City AL']", "QA Step1 Six")
-          A.click("button:has-text('Save'), button:has-text('Create'), button:has-text('Book')"); A.wait_for_timeout(1000)
+          A.locator("[data-testid=call-drawer] input").first.fill("1795 Cusseta Rd, Columbus GA")
+          A.locator("[data-testid=call-drawer] input").nth(1).fill("QA Step1 Six")
+          A.locator("[data-testid=call-drawer] button:has-text('Save'), [data-testid=call-drawer] button:has-text('Create'), [data-testid=call-drawer] button:has-text('Book')").first.click(); A.wait_for_timeout(1000)
           for _ in range(12):
               if "QA Step1 Six" in A.locator("[data-testid=pegboard]").inner_text(): break
               A.wait_for_timeout(500)
