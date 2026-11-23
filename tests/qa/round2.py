@@ -13,7 +13,7 @@ def pin_dropoff(pg):
     pg.click("[data-testid=pin-use]"); pg.wait_for_timeout(600)
 def to_price(pg):
     pg.goto(BASE + "/trip-details"); pg.wait_for_timeout(900)
-    pg.click("text=Use my location"); pg.wait_for_timeout(1200)
+    use_location(pg)
     pin_dropoff(pg)
     for _ in range(20):
         if pg.locator("[data-testid=price-fees]").count(): return
