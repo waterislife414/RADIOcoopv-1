@@ -18,7 +18,7 @@ exports.deleteMyAccount = onCall(async (request) => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError("unauthenticated", "Sign in to delete your account.");
   const claims = request.auth.token || {};
-  if (claims.driver === true || claims.admin === true || claims.mechanic === true) {
+  if (claims.driver === true || claims.admin === true || claims.shop === true) {
     throw new HttpsError("failed-precondition", "Driver and office accounts are closed by the office. Please call us.");
   }
   if (request.data?.confirm !== "DELETE") {
