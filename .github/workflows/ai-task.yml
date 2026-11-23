@@ -33,6 +33,7 @@ jobs:
           BR: ${{ github.ref_name }}
           INPUT_TASK: ${{ inputs.task }}
         run: |
+          set -x
           T="${INPUT_TASK:-${BR#ai-go/}}"
           TESTCMD="npm run build:demo"; { [ "$T" = T7 ] || [ "$T" = T2 ] || [ "$T" = T5 ]; } && TESTCMD="bash tests/qa/run.sh"; MODEL=gemini/gemini-2.5-flash; [ "$T" = T6 ] && MODEL=openrouter/cohere/north-mini-code:free
           git config user.name "ai-bot"; git config user.email "ai-bot@users.noreply.github.com"
