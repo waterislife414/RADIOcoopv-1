@@ -54,18 +54,11 @@ with sync_playwright() as p:
         if R.locator("input[placeholder='Doe']").count() and R.locator("input[placeholder='Doe']").input_value()=="": R.fill("input[placeholder='Doe']","Tester")
         R.fill("#pickup","1795 Cusseta Rd, Columbus GA"); R.fill("#dropoff","QA Step1 Dropoff")
         if R.locator("input[type=tel]").count() and R.locator("input[type=tel]").input_value()=="": R.fill("input[type=tel]","7065550199")
-
-        # Handle one-tap booking for members with saved cards or continue to payment
-        if R.locator("[data-testid=book-now]").count():
-            R.click("[data-testid=book-now]"); R.wait_for_timeout(2500)
-        else:
-            R.click("button:has-text('Continue to Payment')"); R.wait_for_timeout(500)
-            # Assuming the agree_modal will handle the inline consent on TripDetails
-            if R.locator("[data-testid=legal-scroll]").count(): agree_modal(R, "Agree & Continue"); R.wait_for_timeout(600)
-            assert "/payment" in R.url, "not on payment: "+R.url
-            R.locator("text=Card").first.click(); R.wait_for_timeout(500)
-            R.fill("input[placeholder='Cardholder Name']","Quinn Tester"); R.click("button:has-text('Authorize Card')"); R.wait_for_timeout(2500)
-
+        R.click("button:has-text('Continue to Payment')"); R.wait_for_timeout(500)
+        if R.locator("[data-testid=legal-scroll]").count(): agree_modal(R, "Agree & Continue"); R.wait_for_timeout(600)
+        assert "/payment" in R.url, "not on payment: "+R.url
+        R.locator("text=Card").first.click(); R.wait_for_timeout(500)
+        R.fill("input[placeholder='Cardholder Name']","Quinn Tester"); R.click("button:has-text('Authorize Card')"); R.wait_for_timeout(2500)
         assert "/success" in R.url, "no success: "+R.url
         for _ in range(12):
             if "QA Step1 Dropoff" in A.locator("[data-testid=pegboard]").inner_text(): return True
@@ -172,11 +165,13 @@ with sync_playwright() as p:
             D.locator("button:has-text('Check Ready in')").click(); D.wait_for_timeout(1500)
         A.reload(); A.wait_for_timeout(2000)
         stage='c'
-        card = A.locator("[data-testid=pegboard] div", has_text="QA Step1 Dropoff").locator("button:has-text('Pick a car'), button:has-text('Accept & assign')").last
-        card.click(); A.wait_for_timeout(600)
-        A.locator("button", has_text="Car 44").first.click(); A.wait_for_timeout(600)
-        if A.locator("button:has-text('Send anyway')").count(): A.click("button:has-text('Send anyway')")
-        A.wait_for_timeout(2000)
+        # The app may already have sent the waiting ride to 44 by itself (auto dispatch). Only assign by hand if not.
+        if board(A,"demo-driver-44").get("status") not in ("offered","on_call"):
+          card = A.locator("[data-testid=pegboard] div", has_text="QA Step1 Dropoff").locator("button:has-text('Pick a car'), button:has-text('Accept & assign'), button:has-text('Change car')").last
+          card.click(); A.wait_for_timeout(600)
+          A.locator("button", has_text="Car 44").first.click(); A.wait_for_timeout(600)
+          if A.locator("button:has-text('Send anyway')").count(): A.click("button:has-text('Send anyway')")
+          A.wait_for_timeout(2000)
         s = board(A,"demo-driver-44").get("status")
         assert s in ("offered","on_call"), "could not put 44 on a call: "+str(s)
         stage='d'

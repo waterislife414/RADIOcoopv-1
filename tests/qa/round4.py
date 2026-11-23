@@ -14,7 +14,7 @@ def pin_dropoff(pg):
     pg.click("[data-testid=pin-use]"); pg.wait_for_timeout(600)
 def to_price(pg):
     pg.goto(BASE + "/trip-details"); pg.wait_for_timeout(900)
-    pg.click("text=Use my location"); pg.wait_for_timeout(1200)
+    use_location(pg)
     pin_dropoff(pg)
     for _ in range(20):
         if pg.locator("[data-testid=price-fees]").count(): return
@@ -39,17 +39,17 @@ with sync_playwright() as p:
 
     def one_box():
         g.fill("input[placeholder='Jane']", "Quick"); g.fill("input[placeholder='Doe']", "Guest"); g.fill("input[type=tel]", "7065550199")
-        continue_to_pay(g)
-        assert g.locator("[data-testid=consent-inline]").count() == 1, "no one-box agreement"
-        summary = g.inner_text("[data-testid=consent-inline]")
+        box = g.locator("[data-testid=consent-inline]")
+        assert box.count() == 1, "no plain-words agreement on the booking screen"
+        summary = box.inner_text()
+        assert box.locator("a[href='/terms']").count() and box.locator("a[href='/privacy']").count(), "Terms/Privacy links missing"
+        assert box.locator("input[type=checkbox]:checked").count() == 0, "something is pre-ticked"
         btn = g.locator("button:has-text('Agree & Continue')")
-        # No longer explicitly blocked by checkbox in UI, but the text changes if unchecked
-        assert btn.count() == 1 and "Check the box to continue" not in btn.inner_text(), "continue blocked or wrong text"
-        # The prompt says "Agree & Continue" when the box is checked
-        g.check("input[type=checkbox]").nth(0) # The main consent checkbox
-        g.click("button:has-text('Agree & Continue')"); g.wait_for_timeout(1200)
-        return ("/payment" in g.url and "Free to cancel" in summary and "Same price cash or card" in summary) or f"url={g.url} summary={summary[:120]}"
-    check("Guest: one box to agree (money rules in plain words, no scrolling), deals box unticked", one_box)
+        assert btn.count() == 1 and btn.is_enabled(), "one-tap agree button missing or blocked"
+        btn.click(); g.wait_for_timeout(1200)
+        if g.locator("text=You already have a ride").count(): continue_to_pay(g)
+        return ("/payment" in g.url and "Free to cancel" in summary and "Same price cash or card" in summary and "you agree" in summary) or f"url={g.url} summary={summary[:120]}"
+    check("Guest: agreement in plain words on the booking screen, one tap agrees (no pop-up, nothing pre-ticked)", one_box)
 
     def plans():
         g.goto(BASE + "/join"); g.wait_for_timeout(1200)
