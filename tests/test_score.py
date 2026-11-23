@@ -1,5 +1,6 @@
-import sqlite3
 import pytest
+import sqlite3
+
 from uprec.config import load_rules
 from uprec.db import init_db
 from uprec.score import score_owner

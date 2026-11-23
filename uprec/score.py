@@ -1,5 +1,5 @@
-import re
 import sqlite3
+import re
 
 def matches_any_signal(text: str, regex_list: list[str]) -> bool:
     if not text:
@@ -51,13 +51,11 @@ def score_owner(conn: sqlite3.Connection, owner_id: int, rules: dict) -> str:
     a_known_min = tier_a.get('known_min_cents', 50000)
     a_high_min = tier_a.get('high_signal_min_cents', 10001)
     
-    is_tier_a = False
-    if total_min_cents >= a_known_min:
-        is_tier_a = True
-    elif tier_a.get('multi_claim_with_high_signal', True) and property_count >= 2 and high_signal_count > 0:
-        is_tier_a = True
-    elif high_signal_count > 0 and any((p['amount_min_cents'] or 0) >= a_high_min for p in properties if (p['signal'] == 'high' or matches_any_signal(f"{p['holder'] or ''} {p['property_type'] or ''}", high_patterns))):
-        is_tier_a = True
+    is_tier_a = (
+        total_min_cents >= a_known_min
+        or (tier_a.get('multi_claim_with_high_signal', True) and property_count >= 2 and high_signal_count > 0)
+        or (high_signal_count > 0 and any((p['amount_min_cents'] or 0) >= a_high_min for p in properties if (p['signal'] == 'high' or matches_any_signal(f"{p['holder'] or ''} {p['property_type'] or ''}", high_patterns))))
+    )
 
     if is_tier_a:
         tier = 'A'
@@ -66,11 +64,10 @@ def score_owner(conn: sqlite3.Connection, owner_id: int, rules: dict) -> str:
         b_known_min = tier_b.get('known_min_cents', 10001)
         b_multi_min = tier_b.get('multi_claim_min_total_cents', 10001)
 
-        is_tier_b = False
-        if total_min_cents >= b_known_min:
-            is_tier_b = True
-        elif property_count >= 2 and total_min_cents >= b_multi_min:
-            is_tier_b = True
+        is_tier_b = (
+            total_min_cents >= b_known_min
+            or (property_count >= 2 and total_min_cents >= b_multi_min)
+        )
 
         if is_tier_b:
             tier = 'B'
