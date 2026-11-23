@@ -6,12 +6,14 @@ from uprec.queries import (
     sos_business_queries,
 )
 
+
 def test_obituary_queries():
     queries = obituary_queries("John Doe", "Phenix City", "AL")
     assert isinstance(queries, list)
     assert len(queries) > 0
     assert any("John Doe" in q for q in queries)
     assert any("Phenix City" in q for q in queries)
+
 
 def test_probate_queries():
     queries = probate_queries("Jane Smith", "Russell")
@@ -20,11 +22,13 @@ def test_probate_queries():
     assert any("Jane Smith" in q for q in queries)
     assert any("Russell" in q for q in queries)
 
+
 def test_sos_business_queries():
     queries = sos_business_queries("Acme Corp")
     assert isinstance(queries, list)
     assert len(queries) > 0
     assert any("Acme Corp" in q for q in queries)
+
 
 def test_property_record_queries():
     queries = property_record_queries("John Doe", "Lee")
@@ -32,6 +36,7 @@ def test_property_record_queries():
     assert len(queries) > 0
     assert any("John Doe" in q for q in queries)
     assert any("Lee" in q for q in queries)
+
 
 def test_facebook_queries():
     queries = facebook_queries("John Doe", "Phenix City")
