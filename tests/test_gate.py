@@ -1,5 +1,6 @@
 """Tests for gating logic."""
 import sqlite3
+
 import pytest
 
 from uprec.db import init_db
