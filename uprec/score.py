@@ -1,5 +1,5 @@
-import re
 import sqlite3
+import re
 
 def matches_any_signal(text: str, regex_list: list[str]) -> bool:
     if not text:
