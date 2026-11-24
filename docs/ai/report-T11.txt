@@ -1,0 +1,7 @@
+task T11
+code_files_changed 0
+unit pass
+build pass
+build:demo pass
+qa  none
+tests ok
