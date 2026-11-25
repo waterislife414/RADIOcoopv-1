@@ -2,24 +2,29 @@
   "updated": "2026-11-25",
   "active_app": "radiocoop",
   "tasks_in_flight": [
-    {"app": "radiocoop", "tasks": "T52 (manual form + stops), T53 (moving demo car, 4s GPS), T48 retry", "source": "last commit on main e8e831d"}
+    {
+      "app": "radiocoop",
+      "tasks": "T52 (manual form + stops), T53 (moving demo car, 4s GPS), T48 retry",
+      "source": "last commit on main e8e831d"
+    }
   ],
   "last_decisions": [
     "Claude Code cloud session (\"Duet\") is the GM for all apps; HQ repo = ai-hq.",
-    "AI-team kit generalized: per-app ai-team.json replaces hard-coded branches/commands."
+    "AI-team kit generalized: per-app ai-team.json replaces hard-coded branches/commands.",
+    "ai-hq lives on branch ai-hq of waterislife414/RADIOcoopv-1 until a separate private repo exists."
   ],
   "findings": [
     "radiocoop merge-bot skipped T60: task lines T60-T63 had no FILES: tag. New parser reads 'edit only X'; T63 still needs FILES added.",
     "radiocoop verify/result: e2e:lease FAIL (expected 7000, got undefined) and e2e:rideflow FAIL. Both are money/lease logic, so GM-only work."
   ],
   "blockers": [
-    "ai-hq repo not created on GitHub yet (owner: create empty private repo waterislife414/ai-hq).",
-    "Other app repos not visible to Claude (owner: give Claude GitHub app access to all repos).",
+    "Other app repos not visible to Claude (owner: give Claude GitHub access to all repos).",
     "No PC connected via Remote Control."
   ],
   "next_steps": [
-    "Push ai-hq; attach it to a cloud environment with setup script.",
     "Install generalized kit into radiocoop on a branch; compare verify.txt to current.",
+    "Add FILES: to radiocoop T63.",
+    "Fix e2e:lease and e2e:rideflow (GM-only).",
     "Onboard the other apps."
   ]
 }

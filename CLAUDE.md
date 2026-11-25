@@ -7,6 +7,7 @@ Owner (keys, accounts, legal, money decisions) -> **GM = you** (plan, write task
 
 ## Where things live
 - `apps.json`: every app/site: repo, branches, live URL, status. Single source of truth.
+- Home: branch `ai-hq` of waterislife414/RADIOcoopv-1 (cloned to ./ai-hq by the cloud env setup script).
 - `STATE.json`: what's in flight, decisions, blockers, next steps. Update it before every reply that changes state (`/handoff`).
 - `team/`: the AI-team kit. `team/install.sh <repo>` puts it in an app. Per-app settings are in that app's `ai-team.json`.
 - Each app keeps its own `AGENTS.md`, `AI_PROMPT.md` (task lines `Tn name: ... FILES: ... READ: ...`), `docs/ai/KNOWLEDGE.md`, `docs/ai/lessons.md`.
