@@ -1,0 +1,24 @@
+{
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [ { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/bin/session-start.sh\"" } ] }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(bash bin/resume.sh*)",
+      "Bash(bash bin/session-start.sh*)",
+      "Bash(jq *)",
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git fetch*)",
+      "Bash(git pull*)"
+    ],
+    "deny": [
+      "Bash(firebase deploy*)",
+      "Bash(git push origin main*)",
+      "Bash(git push -f origin main*)"
+    ]
+  }
+}

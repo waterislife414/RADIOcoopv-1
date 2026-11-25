@@ -1,0 +1,19 @@
+{
+  "_README": "Per-app settings for the AI team workflows. Copied to the app repo root as ai-team.json by install.sh.",
+  "work_branch": "main",
+  "setup": "npm ci",
+  "lint": "npx oxlint src",
+  "lint_lang": "javascript",
+  "unit": "",
+  "builds": ["npm run build"],
+  "qa": "",
+  "qa_score_regex": "^== ",
+  "qa_tasks": [],
+  "needs_playwright": "",
+  "e2e": "",
+  "code_dirs": ["src", "tests"],
+  "read_always": ["AGENTS.md", "docs/ai/KNOWLEDGE.md", "docs/ai/lessons.md"],
+  "default_model": "gemini/gemini-2.5-flash",
+  "model_chain": ["gemini/gemini-3.5-flash-lite", "openrouter/cohere/north-mini-code:free", "openrouter/google/gemma-4-31b-it:free", "groq/llama-3.3-70b-versatile"],
+  "watch": []
+}

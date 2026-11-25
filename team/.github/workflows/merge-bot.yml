@@ -1,0 +1,50 @@
+name: merge-bot
+# Starts when an ai-task worker finishes (or dispatch tasks="T18 T19"). One at a time. Takes ONLY each task's FILES from ai/<Tn>,
+# applies to the work branch, merges only if unit + builds + QA all pass. Result: branch merge-bot/result.
+# Manager-only areas (money, rules, permissions) must never be in a worker's FILES list, so they never auto-merge.
+on:
+  workflow_run:
+    workflows: [ai-task]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      tasks: { description: 'Space separated task ids, e.g. T18 T19', required: true }
+permissions:
+  contents: write
+  actions: read
+jobs:
+  merge:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Wait for older merge-bot runs
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          for i in $(seq 1 160); do
+            n=$(gh run list -R "$GITHUB_REPOSITORY" -w merge-bot.yml -L 30 --json databaseId,status -q "[.[]|select(.status!=\"completed\" and .databaseId < $GITHUB_RUN_ID)]|length")
+            [ "$n" = "0" ] && break; sleep 30
+          done
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Merge
+        env:
+          IN_TASKS: ${{ github.event.inputs.tasks }}
+          RUN_TITLE: ${{ github.event.workflow_run.display_title }}
+          RUN_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          cp docs/ai/cfg.sh /tmp/cfg.sh; . /tmp/cfg.sh
+          git checkout -q -B "$WORK_BRANCH" "origin/$WORK_BRANCH"; . /tmp/cfg.sh
+          bash -c "${SETUP_CMD:-true}"; [ -n "$QA_CMD" ] && pip install playwright && python -m playwright install --with-deps chromium
+          TASKS="$IN_TASKS"; [ -n "$TASKS" ] || TASKS="$(echo "$RUN_TITLE" | grep -oE 'T[0-9]+$')"; [ -n "$TASKS" ] || TASKS="${RUN_BRANCH#ai-go/}"
+          bash docs/ai/merge-bot.sh $TASKS || true
+          cat /tmp/merge-bot.log || true
+      - name: Publish result
+        if: always()
+        run: |
+          mkdir -p docs/ai; cp /tmp/merge-bot.log docs/ai/merge-result.txt 2>/dev/null || echo "no log" > docs/ai/merge-result.txt
+          git checkout -q -B merge-bot/result; git add -f docs/ai/merge-result.txt; git commit -qm "merge-bot result"; git push -q -f origin merge-bot/result

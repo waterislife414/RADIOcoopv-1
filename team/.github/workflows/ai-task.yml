@@ -1,0 +1,71 @@
+name: ai-task
+# Push branch ai-go/<Tn> (or dispatch with task=Tn). Aider runs task Tn from AI_PROMPT.md across a free-model fallback chain,
+# auto-lint + auto-test, nudge-retry if no code changed. Result: branch ai/<Tn> + docs/ai/report-<Tn>.txt.
+# All app-specific settings come from ai-team.json.
+on:
+  push:
+    branches: ['ai-go/**']
+  workflow_dispatch:
+    inputs:
+      task: { description: 'Task id, e.g. T7', required: true }
+run-name: ai ${{ inputs.task || github.ref_name }}
+permissions:
+  contents: write
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Use work branch
+        run: . docs/ai/cfg.sh && git checkout -q "origin/$WORK_BRANCH" -B "$WORK_BRANCH" && echo "WORK_BRANCH=$WORK_BRANCH" >> $GITHUB_ENV
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: . docs/ai/cfg.sh && pip install aider-chat && bash -c "${SETUP_CMD:-true}"
+      - name: Playwright (QA tasks)
+        env: { BR: "${{ github.ref_name }}", INPUT_TASK: "${{ inputs.task }}" }
+        run: |
+          . docs/ai/cfg.sh; T="${INPUT_TASK:-${BR#ai-go/}}"
+          if [ -n "$NEEDS_PLAYWRIGHT" ] || echo " $QA_TASKS " | grep -q " $T "; then pip install playwright && python -m playwright install --with-deps chromium; fi
+      - name: Run task
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          BR: ${{ github.ref_name }}
+          INPUT_TASK: ${{ inputs.task }}
+        run: |
+          . docs/ai/cfg.sh
+          T="${INPUT_TASK:-${BR#ai-go/}}"
+          TESTCMD="$(echo "$BUILD_CMDS" | sed 's/ ;; / \&\& /g')"; echo " $QA_TASKS " | grep -q " $T " && TESTCMD="$QA_CMD"
+          LINTARGS=(); [ -n "$LINT_CMD" ] && LINTARGS=(--lint-cmd "${LINT_LANG:-javascript}: ${LINT_CMD%% src*}" --auto-lint)
+          TESTARGS=(); [ -n "$TESTCMD" ] && TESTARGS=(--test-cmd "$TESTCMD" --auto-test)
+          git config user.name "ai-bot"; git config user.email "ai-bot@users.noreply.github.com"
+          git checkout -b "ai/$T"
+          LINE="$(grep -E "^$T " AI_PROMPT.md || true)"; [ -n "$LINE" ] || { echo "no task line $T in AI_PROMPT.md"; exit 1; }
+          FILES="$(python3 docs/ai/prompt-files.py "$T" files)"; READS="$(python3 docs/ai/prompt-files.py "$T" read)"
+          STYLE="docs/ai/style-$(echo "$DEFAULT_MODEL" | cut -d/ -f1).txt"
+          { [ -f "$STYLE" ] && cat "$STYLE"; cat AGENTS.md; echo; echo "TASK:"; echo "$LINE"; echo "Rules: small diff; touch only needed files; no keys/deploys/money logic."; } > /tmp/task.txt
+          for ATTEMPT in 1 2; do
+            for M in $MODELS "$DEFAULT_MODEL"; do
+              echo "trying $M" >> /tmp/models.txt
+              timeout 230 aider --yes-always --no-check-update --model "$M" --map-tokens 8192 $READ_ALWAYS \
+                "${LINTARGS[@]}" "${TESTARGS[@]}" \
+                $(for r in $READS; do echo --read "$r"; done) --message-file /tmp/task.txt $FILES 2>&1 | tee /tmp/aider.log || true
+              RC=${PIPESTATUS[0]}
+              [ "$RC" = "124" ] || grep -qiE "$RATE_RE" /tmp/aider.log || break
+              sleep 40
+            done
+            [ "$(git diff --name-only "origin/$WORK_BRANCH" -- $CODE_DIRS | wc -l)" != "0" ] && break
+            echo "NUDGE: no code change after attempt $ATTEMPT" >> /tmp/models.txt
+            printf "\nYOU MADE NO CODE CHANGE LAST TIME. The task requires editing the named FILES. Read them, then make the edit now. Do not ask questions.\n" >> /tmp/task.txt
+          done
+          mkdir -p docs/ai; tail -40 /tmp/aider.log > "docs/ai/log-$T.txt"; cp /tmp/models.txt "docs/ai/models-$T.txt" 2>/dev/null || true
+          U=skip; [ -n "$UNIT_CMD" ] && { bash -c "$UNIT_CMD" > /tmp/unit.txt 2>&1 && U=pass || U=FAIL; }
+          CH=$(git diff --name-only "origin/$WORK_BRANCH" -- $CODE_DIRS | wc -l)
+          { printf "task %s\ncode_files_changed %s\nunit %s\n" "$T" "$CH" "$U"; run_builds; } > "docs/ai/report-$T.txt"
+          git add -A && git commit -qm "AI task $T (files $CH, unit $U)" || true
+          git push -f origin "ai/$T"

@@ -1,0 +1,21 @@
+{
+  "_README": "Every app/site the GM manages. Add with /onboard. status: active | paused | done.",
+  "apps": [
+    {
+      "name": "radiocoop",
+      "title": "Radio Co-op Taxi",
+      "repo": "waterislife414/RADIOcoopv-1",
+      "default_branch": "main",
+      "work_branch": "step1-wip",
+      "live_url": "https://radio-co-op-taxi-app.web.app",
+      "stack": "React 19 + Vite + Tailwind (JS) + Firebase + Stripe + Twilio",
+      "status": "active",
+      "notes": "Almost done. Repo is PUBLIC: consider making private."
+    }
+  ],
+  "pending_onboard": [
+    "golf app (T-Time VR Golf / Tee Time Anytime): repo not visible yet",
+    "ring configurator marketplace: repo not visible yet",
+    "other websites (2-3): repo names unknown"
+  ]
+}

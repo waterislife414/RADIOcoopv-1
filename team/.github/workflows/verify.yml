@@ -1,0 +1,38 @@
+name: verify
+# Free full-test bot. Push verify/<anything>: tests the work branch (or verify/<branch> if that branch exists). Result: branch verify/result.
+on:
+  push:
+    branches: ['verify/**']
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21' }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Run everything
+        env: { BR: "${{ github.ref_name }}" }
+        run: |
+          cp docs/ai/cfg.sh /tmp/cfg.sh; . /tmp/cfg.sh
+          TGT="${BR#verify/}"; git rev-parse -q --verify "origin/$TGT" >/dev/null || TGT="$WORK_BRANCH"
+          git checkout -q -B target "origin/$TGT"; . /tmp/cfg.sh
+          O=/tmp/verify.txt; echo "target $TGT $(git rev-parse --short HEAD)" > $O
+          step(){ n="$1"; shift; if bash -c "$*" > /tmp/step.log 2>&1; then echo "PASS $n" >> $O; else echo "FAIL $n" >> $O; tail -6 /tmp/step.log | cut -c1-200 | sed 's/^/    /' >> $O; fi; }
+          step setup "${SETUP_CMD:-true}"
+          [ -n "$LINT_CMD" ] && step lint "$LINT_CMD"
+          [ -n "$UNIT_CMD" ] && step unit "$UNIT_CMD"
+          run_builds | sed 's/^\(.*\) pass$/PASS \1/; s/^\(.*\) FAIL$/FAIL \1/' >> $O
+          [ -n "$E2E_CMD" ] && step e2e "$E2E_CMD"
+          if [ -n "$QA_CMD" ]; then pip -q install playwright && python -m playwright install --with-deps chromium >/dev/null 2>&1; step qa "$QA_CMD"; fi
+          cat $O
+          git checkout -q -B verify/result; mkdir -p docs/ai; cp $O docs/ai/verify.txt
+          git config user.name verify-bot; git config user.email verify-bot@users.noreply.github.com
+          git add -f docs/ai/verify.txt; git commit -qm "verify result ($TGT)"; git push -f origin verify/result

@@ -1,0 +1,56 @@
+name: integrate
+# Push integrate/<x> (or dispatch tasks="T7 T2"). Waits for ai-task runs, then scores each worker branch alone and all together
+# against the QA click-through. Result: branch integrate-result + docs/ai/integrate.txt. Merges nothing.
+on:
+  push:
+    branches: ['integrate/**']
+  workflow_dispatch:
+    inputs:
+      tasks: { description: 'Space separated task ids (default: ai-team.json watch list)', required: false }
+permissions:
+  contents: write
+  actions: read
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Wait for workers
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          for i in $(seq 1 30); do
+            N=$(gh run list --workflow ai-task.yml --status in_progress --json databaseId -q 'length')
+            Q=$(gh run list --workflow ai-task.yml --status queued --json databaseId -q 'length')
+            [ "$N" = "0" ] && [ "$Q" = "0" ] && break; sleep 60
+          done
+      - name: Score
+        env: { IN_TASKS: "${{ inputs.tasks }}" }
+        run: |
+          cp docs/ai/cfg.sh /tmp/cfg.sh; . /tmp/cfg.sh
+          git checkout -q -B base "origin/$WORK_BRANCH"; . /tmp/cfg.sh
+          bash -c "${SETUP_CMD:-true}"; pip install playwright && python -m playwright install --with-deps chromium
+          TASKS="${IN_TASKS:-$WATCH}"
+          OUT=/tmp/integrate.txt; : > $OUT
+          git config user.name integrate-bot; git config user.email integrate-bot@users.noreply.github.com
+          echo "baseline ($WORK_BRANCH): $(qa_score)" >> $OUT
+          for T in $TASKS; do
+            git fetch -q origin "ai/$T" 2>/dev/null || { echo "$T: no branch" >> $OUT; continue; }
+            MB=$(git merge-base base "origin/ai/$T"); git diff "$MB" "origin/ai/$T" -- $CODE_DIRS > "/tmp/$T.patch"
+            [ -s "/tmp/$T.patch" ] || { echo "$T: no code changes" >> $OUT; continue; }
+            git checkout -q -B try base
+            if git apply --3way "/tmp/$T.patch" 2>/dev/null; then echo "$T alone: $(qa_score)  ($(git diff --stat | tail -1))" >> $OUT; else echo "$T: patch does not apply" >> $OUT; fi
+            git reset -q --hard; git clean -fdq
+          done
+          git checkout -q -B all base
+          for T in $TASKS; do [ -s "/tmp/$T.patch" ] && git apply --3way "/tmp/$T.patch" 2>/dev/null || echo "$T: skipped in combined" >> $OUT; done
+          echo "ALL TOGETHER: $(qa_score)" >> $OUT
+          run_builds >> $OUT
+          cat $OUT; mkdir -p docs/ai; cp $OUT docs/ai/integrate.txt
+          git add -A; git commit -qm "integrated wave (candidate)" || true
+          git push -f origin all:integrate-result
