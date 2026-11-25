@@ -1,0 +1,49 @@
+{
+  "_README": "AI team settings for Radio Co-op. Read by docs/ai/cfg.sh in every workflow.",
+  "work_branch": "step1-wip",
+  "setup": "npm ci && (cd functions && npm ci) && (cd tests/rules && npm install --no-audit --no-fund)",
+  "lint": "npx oxlint src functions",
+  "lint_lang": "javascript",
+  "unit": "node --test functions/lib/*.test.mjs",
+  "builds": [
+    "npm run build",
+    "npm run build:demo"
+  ],
+  "qa": "bash tests/qa/run.sh",
+  "qa_score_regex": "^== ",
+  "qa_tasks": [
+    "T2",
+    "T5",
+    "T7"
+  ],
+  "needs_playwright": "",
+  "e2e": "npx -y firebase-tools@latest emulators:exec --config tests/emu/firebase.json --only firestore,auth --project demo-radio 'for t in profile board dispatch dispatcher lease closeout incentives phone fastpass inspections callissues rideflow support; do node tests/e2e/$t.e2e.cjs || exit 1; done; cd tests/rules && npm test'",
+  "code_dirs": [
+    "src",
+    "tests",
+    "functions"
+  ],
+  "read_always": [
+    "AGENTS.md",
+    "docs/ai/KNOWLEDGE.md",
+    "docs/ai/lessons.md",
+    "docs/CHANGES-AND-TODO.md",
+    "branding.config.json",
+    "firestore.rules"
+  ],
+  "default_model": "gemini/gemini-2.5-flash",
+  "model_chain": [
+    "gemini/gemini-3.5-flash-lite",
+    "openrouter/cohere/north-mini-code:free",
+    "openrouter/google/gemma-4-31b-it:free",
+    "groq/llama-3.3-70b-versatile"
+  ],
+  "watch": [
+    "T20",
+    "T10",
+    "T11",
+    "T30",
+    "T31",
+    "T32"
+  ]
+}

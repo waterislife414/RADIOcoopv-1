@@ -1,17 +1,16 @@
 #!/usr/bin/env bash
-# Print a short brief: STATE.json + latest bot results for every active app in apps.json.
-# Works with public repos anonymously (git); private repos need GitHub access for this session.
+# Short brief: STATE.json + latest bot results per active app. Data-light: no clone, no full fetch.
+# Lists branches with ls-remote and fetches only the 3 result branches at depth 1 into a tiny cache repo.
 cd "$(dirname "$0")/.."
 echo "## STATE"; jq -c '{active_app,blockers,next_steps}' STATE.json
-W="${HQ_WORK:-$HOME/hq-apps}"; mkdir -p "$W"
+C="${HQ_WORK:-$HOME/.hq-cache}"; [ -d "$C/.git" ] || git init -q "$C"
 for row in $(jq -c '.apps[]|select(.status=="active")|{name,repo}' apps.json); do
-  N=$(echo "$row" | jq -r .name); R=$(echo "$row" | jq -r .repo); D="$W/$N"
-  echo "## $N ($R)"
-  [ -d "$D/.git" ] || git clone -q --filter=blob:none --no-checkout "https://github.com/$R" "$D" 2>/dev/null || { echo "  cannot read repo"; continue; }
-  git -C "$D" fetch -q origin '+refs/heads/*:refs/remotes/origin/*' 2>/dev/null
-  show(){ git -C "$D" show "origin/$1:$2" 2>/dev/null | head -"${3:-8}" | sed 's/^/  /'; }
-  echo " merge-bot:"; show merge-bot/result docs/ai/merge-result.txt 12
-  echo " verify:";    show verify/result docs/ai/verify.txt 20 | grep -E "FAIL|target" || echo "  (all pass or no run)"
-  echo " qa:";        { show qa/result docs/ai/qa.txt 40 || show qa/result docs/ai/qa-step1.txt 40; } | grep -E "^  (==|  FAIL)" | head -6
-  echo " workers:";   git -C "$D" for-each-ref --sort=-committerdate --count=6 --format='  %(refname:short) %(committerdate:relative) %(contents:subject)' 'refs/remotes/origin/ai/T*'
+  N=$(echo "$row" | jq -r .name); U="https://github.com/$(echo "$row" | jq -r .repo)"
+  HEADS=$(git ls-remote --heads "$U" 2>/dev/null) || { echo "## $N: cannot read repo"; continue; }
+  W=$(echo "$HEADS" | grep -oE 'refs/heads/ai/T[0-9]+$' | sed 's|refs/heads/ai/||' | sort -V | tail -8 | tr '\n' ' ')
+  echo "## $N  workers(latest): ${W:-none}"
+  get(){ git -C "$C" fetch -q --depth 1 "$U" "$1" 2>/dev/null && git -C "$C" show "FETCH_HEAD:$2" 2>/dev/null; }
+  echo "$HEADS" | grep -q 'refs/heads/merge-bot/result$' && echo " merge: $(get merge-bot/result docs/ai/merge-result.txt | grep -vE '^== ' | tail -4 | tr '\n' ';')"
+  echo "$HEADS" | grep -q 'refs/heads/verify/result$'    && echo " verify: $(get verify/result docs/ai/verify.txt | grep -cE '^PASS') pass; fails: $(get verify/result docs/ai/verify.txt | grep -E '^FAIL' | cut -c6- | tr '\n' ' ')"
+  echo "$HEADS" | grep -q 'refs/heads/qa/result$'        && echo " qa: $( { get qa/result docs/ai/qa.txt || get qa/result docs/ai/qa-step1.txt; } | grep -E '^==' | head -2 | tr '\n' ' ')"
 done

@@ -18,6 +18,15 @@ Owner (keys, accounts, legal, money decisions) -> **GM = you** (plan, write task
 ## Running workers (no AI cost to the GM)
 Push branch `ai-go/<Tn>` to the app repo (needs push access) -> worker result on `ai/<Tn>` + `docs/ai/report-<Tn>.txt`. merge-bot auto-runs after. Results: `merge-bot/result:docs/ai/merge-result.txt`, `verify/result:docs/ai/verify.txt`, `qa/result:docs/ai/qa.txt`, `integrate-result:docs/ai/integrate.txt`.
 
+## Be data-efficient (usage limits are the bottleneck)
+- Replies: a few lines max. No recaps or restating the plan. Big output goes into a file, not into chat.
+- Reading: `grep`/`sed -n` the lines you need. Never read whole big files (radiocoop AI_PROMPT.md is ~60KB: `grep -E "^T52 "`). Read STATE.json, not chat history.
+- Git: `ls-remote` and `fetch --depth 1 <branch>`. Never fetch all branches, never do a full clone just to look. Pipe command output through `tail`/`grep`.
+- Delegation: anything worker-safe (UI, copy, tests, QA scripts) goes to free workers via `/dispatch`. You spend tokens only on planning, review, and money/security code.
+- Verification: let the verify/qa bots run full suites on GitHub (free minutes). Locally, run only the one check you need.
+- Subagents: avoid them. Each one starts cold and re-reads everything.
+- Batch: write a whole wave of task lines at once, dispatch once, check results once (`/resume`), not after each task.
+
 ## Hard rules (all apps)
 - Never type, print or commit secrets/keys/tokens/card or bank details. The owner adds keys (GitHub secrets / cloud env secrets). If a key appears in chat, say to rotate it.
 - Never deploy, `firebase deploy`, publish, or touch live Stripe/Twilio/Google accounts without the owner's explicit "yes" for that specific action.
