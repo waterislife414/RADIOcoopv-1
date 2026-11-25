@@ -14,4 +14,4 @@ for f in run.sh serve.cjs diagnostics-snippet.py; do [ -f "$T/tests/qa/$f" ] || 
 [ -f "$T/AI_PROMPT.md" ]         || cp "$H/templates/AI_PROMPT.template.md" "$T/AI_PROMPT.md"
 [ -f "$T/docs/ai/KNOWLEDGE.md" ] || cp "$H/templates/KNOWLEDGE.template.md" "$T/docs/ai/KNOWLEDGE.md"
 [ -f "$T/ai-team.json" ]         || cp "$H/templates/ai-team.json" "$T/ai-team.json"
-echo "Installed into $T. Fill ai-team.json (branch + commands), AGENTS.md, docs/ai/KNOWLEDGE.md. Workflows must also be on the DEFAULT branch. Repo secrets: GEMINI_API_KEY, OPENROUTER_API_KEY, GROQ_API_KEY (owner adds them in GitHub > Settings > Secrets)."
+echo "Installed into $T. Fill ai-team.json (branch + commands), AGENTS.md, docs/ai/KNOWLEDGE.md. Workflows must also be on the DEFAULT branch. Repo secrets: GEMINI_API_KEY, OPENROUTER_API_KEY, GROQ_API_KEY (the owner adds them in GitHub > Settings > Secrets)."
